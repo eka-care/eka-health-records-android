@@ -1,0 +1,52 @@
+<resources>
+    <string name="title_activity_documents">DocumentsActivity</string>
+    <string name="unsupported_file_type">Unsupported Record type, please select a pdf Record</string>
+    <string name="error_pdf_file_upload_size_limit">Can not upload pdf records larger than 5 MB</string>
+    <string name="file_not_found">File Not Found</string>
+    <string name="choose_option">Choose an option</string>
+    <string name="take_a_photo">Take a photo</string>
+    <string name="scan_and_upload">Scan and Upload</string>
+    <string name="choose_from_gallery">Choose from Gallery</string>
+    <string name="upload_pdf_file">Upload PDF File</string>
+    <string name="confirm">Confirm</string>
+    <string name="recommended">Recommended</string>
+    <string name="choose_an_option">Choose an option</string>
+    <string name="edit_doc_details">Edit document details</string>
+    <string name="delete_record">Delete record</string>
+    <string name="sort_by">Sort by</string>
+    <string name="upload_date">Upload Date</string>
+    <string name="no_medical_records_yet">No Medical Records yet</string>
+    <string name="add_or_upload_files_to_get_started">Add or upload files to get started</string>
+    <string name="add_files">Add Files</string>
+    <string name="document_date">Document Date</string>
+    <string name="edit_medical_record">Edit Medical Record</string>
+    <string name="add_medical_records">Add Medical Record</string>
+    <string name="upload">Upload</string>
+    <string name="file_provider" translatable="false">com.eka.care.records.fileprovider</string>
+    <string name="easily_store_mange_record">Easily store and manage all your medical files in one place, from lab reports and prescriptions to x-rays, invoices, and more.</string>
+    <string name="your_health_data">YOUR HEALTH DAYA IS 100% PRIVATE &amp; SECURE</string>
+    <string name="safe_secure">Your personal health data is 100\% safe and secure. It can never be shared without your permission.</string>
+    <string name="privacy_policy_heading">Privacy Policy</string>
+    <string name="rotate">Rotate</string>
+    <string name="crop">Crop</string>
+    <string name="save">Save</string>
+    <string name="close" translatable="false">Close</string>
+    <string name="common_error_msg">Something went wrong. Please try again </string>
+    <string name="upload_success">Upload Successful</string>
+    <string name="edit">Edit</string>
+    <string name="no_files_selected">No Records selected</string>
+    <string name="max_file_upload_limit">Reached max records upload limit</string>
+    <string name="image">Image</string>
+    <string name="images">Images</string>
+    <string name="offline">offline!</string>
+    <string name="offline_body">Your network is unavailable.\nCheck your data or wifi connection.</string>
+    <string name="back">Back</string>
+    <string name="file_delete_success">Record Deleted Successfully.</string>
+    <string name="confirm_file_delete">Are you sure you want to delete the Record?</string>
+    <string name="cancel">Cancel</string>
+    <string name="yes">Yes</string>
+    <string name="upload_health_record">Upload health record</string>
+    <string name="medical_records">Medical Records</string>
+    <string name="search_in_medical_records">Search in Medical Records</string>
+    <string name="title_activity_test">TestActivity</string>
+</resources>

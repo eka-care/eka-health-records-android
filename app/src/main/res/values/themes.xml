@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Document.Theme" parent="@style/Theme.MaterialComponents.Light.NoActionBar.Bridge">
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="materialCalendarStyle">@style/Widget.MaterialComponents.MaterialCalendar</item>
+        <item name="materialCalendarFullscreenTheme">
+            @style/ThemeOverlay.MaterialComponents.MaterialCalendar.Fullscreen
+        </item>
+        <item name="materialCalendarHeaderTitle"> @style/ThemeOverlay.MaterialComponents.MaterialCalendar</item>
+        <item name="materialCalendarTheme">@style/ThemeOverlay.MaterialComponents.MaterialCalendar
+        </item>
+    </style>
+    <style name="Theme.RecordsModule" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <style name="Document.Theme.Drive" parent="Document.Theme">
+        <item name="android:statusBarColor">#FFFFFF</item>
+    </style>
+</resources>
