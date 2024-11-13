@@ -3,9 +3,12 @@ package eka.care.documents.ui.presentation.screens
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -26,9 +29,16 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.work.Constraints
+import androidx.work.Data
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import com.example.reader.presentation.states.PdfSource
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.RESULT_FORMAT_JPEG
@@ -36,22 +46,20 @@ import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.SCANNER
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanning
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
 import eka.care.documents.data.utility.DocumentUtility.Companion.PARAM_RECORD_PARAMS_MODEL
+import eka.care.documents.sync.workers.SyncFileWorker
 import eka.care.documents.ui.presentation.activity.DocumentViewerActivity
 import eka.care.documents.ui.presentation.components.DocumentBottomSheetContent
 import eka.care.documents.ui.presentation.components.DocumentScreenContent
-import eka.care.documents.ui.presentation.components.DocumentScreenTopBar
+import eka.care.documents.ui.presentation.components.TopAppBarSmall
 import eka.care.documents.ui.presentation.model.RecordParamsModel
 import eka.care.documents.ui.presentation.viewmodel.RecordsViewModel
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun DocumentScreen(
-    params: RecordParamsModel,
-    viewModel: RecordsViewModel
-) {
+fun DocumentScreen(params: RecordParamsModel) {
     val context = LocalContext.current
-
+    val viewModel = viewModel<RecordsViewModel>()
     val options = GmsDocumentScannerOptions.Builder()
         .setGalleryImportAllowed(true)
         .setPageLimit(4)
@@ -112,6 +120,23 @@ fun DocumentScreen(
             }
         }
 
+    val pickMultipleMedia =
+        rememberLauncherForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(5)) { uris ->
+            if (uris.isNotEmpty()) {
+                val imageUris = ArrayList<String>()
+                for (uri in uris) {
+                    imageUris.add(uri.toString())
+                }
+                Intent(context, DocumentViewerActivity::class.java).apply {
+                    putStringArrayListExtra("IMAGE_URIS", imageUris)
+                    putExtra(PARAM_RECORD_PARAMS_MODEL, params)
+                }.also {
+                    documentViewerLauncher.launch(it)
+                }
+            } else {
+                Log.d("PhotoPicker", "No media selected")
+            }
+        }
     val modalBottomSheetState = ModalBottomSheetState(
         initialValue = ModalBottomSheetValue.Hidden,
         density = Density(context),
@@ -188,7 +213,8 @@ fun DocumentScreen(
                 pdfPickerLauncher = pdfPickerLauncher,
                 openSheet = openSheet,
                 viewModel = viewModel,
-                params = params
+                params = params,
+                galleryLauncher = pickMultipleMedia
             )
             Spacer(modifier = Modifier.height(16.dp))
         },
@@ -197,9 +223,21 @@ fun DocumentScreen(
     ) {
         Scaffold(
             topBar = {
-                DocumentScreenTopBar(onBackClick = {
-                    (context as? Activity)?.finish()
-                }, name = params.name ?: "")
+                TopAppBarSmall(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color.White),
+                    title = params.name,
+                    subTitle = if (params.age != null && params.age > 1) {
+                        "${params.gender}, ${params.age}y"
+                    } else {
+                        params.gender ?: ""
+                    },
+//                    leading = R.drawable.ic_back_arrow,
+                    onLeadingClick = {
+                        (context as? Activity)?.finish()
+                    }
+                )
             },
             content = {
                 DocumentScreenContent(
@@ -209,8 +247,8 @@ fun DocumentScreen(
                     openSheet = openSheet,
                     viewModel = viewModel,
                     listState = listState,
-                    params = params,
-                    isRefreshing = isRefreshing
+                    isRefreshing = isRefreshing,
+                    paramsModel = params
                 )
             },
         )
@@ -224,26 +262,26 @@ private fun initData(
     viewModel: RecordsViewModel,
     context: Context
 ) {
-//    val inputData = Data.Builder()
-//        .putString("p_uuid", patientUuid)
-//        .putString("oid", oid)
-//        .putString("doctorId", doctorId)
-//        .build()
-//
-//    val constraints = Constraints.Builder()
-//        .setRequiredNetworkType(NetworkType.CONNECTED)
-//        .build()
-//
-//    val periodicSyncWorkRequest =
-//        OneTimeWorkRequestBuilder<SyncFileWorker>()
-//            .setInputData(inputData)
-//            .setConstraints(constraints)
-//            .build()
-//
-//    WorkManager.getInstance(context)
-//        .enqueue(periodicSyncWorkRequest)
-//
-//    viewModel.sortBy.value = DocumentSortEnum.UPLOAD_DATE
-//    viewModel.getLocalRecords(oid = oid, doctorId = doctorId)
-//    viewModel.syncEditedDocuments(oid = oid, doctorId = doctorId)
+    val inputData = Data.Builder()
+        .putString("p_uuid", patientUuid)
+        .putString("oid", oid)
+        .putString("doctorId", doctorId)
+        .build()
+
+    val constraints = Constraints.Builder()
+        .setRequiredNetworkType(NetworkType.CONNECTED)
+        .build()
+
+    val periodicSyncWorkRequest =
+        OneTimeWorkRequestBuilder<SyncFileWorker>()
+            .setInputData(inputData)
+            .setConstraints(constraints)
+            .build()
+
+    WorkManager.getInstance(context)
+        .enqueue(periodicSyncWorkRequest)
+
+    viewModel.sortBy.value = DocumentSortEnum.UPLOAD_DATE
+    viewModel.getLocalRecords(oid = oid, doctorId = doctorId)
+    viewModel.syncEditedDocuments(oid = oid, doctorId = doctorId)
 }

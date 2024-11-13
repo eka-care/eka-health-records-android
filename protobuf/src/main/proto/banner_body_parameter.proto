@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package vault.banner_body_parameter;
+
+/* BannerBodyParameter is an enum used to represent dynamic parameter. */
+enum BannerBodyParameter {
+  BODY_PARAMETER_UNSPECIFIED = 0; // Unhandled dynamic parameter.
+  BODY_PARAMETER_MOBILE = 1;      // Mobile number dynamic parameter.
+}

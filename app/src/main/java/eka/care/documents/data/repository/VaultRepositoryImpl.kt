@@ -3,47 +3,44 @@ package eka.care.documents.data.repository
 import eka.care.documents.data.db.database.DocumentDatabase
 import eka.care.documents.data.db.entity.VaultEntity
 import eka.care.documents.data.db.model.AvailableDocTypes
-import eka.care.documents.data.repository.VaultRepository
+import kotlinx.coroutines.flow.Flow
 
 class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultRepository {
+    override suspend fun updateDocuments(vaultEntityList: List<VaultEntity>) {
+        database.vaultDao().updateDocuments(vaultEntityList)
+    }
+
     override suspend fun storeDocuments(vaultEntityList: List<VaultEntity>) {
         database.vaultDao().storeDocuments(vaultEntityList)
-        return
     }
 
     override suspend fun setThumbnail(thumbnail: String, documentId: String?) {
         database.vaultDao().setThumbnail(thumbnail = thumbnail, docId = documentId)
-        return
     }
 
     override suspend fun deleteDocument(oid: String, localId: String) {
         database.vaultDao().deleteDocument(oid = oid, localId = localId)
-        return
     }
 
     override suspend fun editDocument(
         localId: String,
         docType: Int?,
-        oid: String?,
         docDate: Long,
         tags: String,
-        isAbhaLinked: Boolean
+        patientId : String
     ) {
         database.vaultDao().editDocument(
             localId = localId,
             docType = docType,
-            oid = oid,
             docDate = docDate,
             tags = tags,
-            isAbhaLinked = isAbhaLinked
+            oid = patientId
         )
-        return
     }
 
     override suspend fun storeDocument(
         localId: String,
         oid: String?,
-        tags: String,
         isAbhaLinked: Boolean,
         docId: String,
         isAnalysing: Boolean,
@@ -53,7 +50,6 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
         database.vaultDao().storeDocument(
             localId = localId,
             oid = oid,
-            tags = tags,
             isAbhaLinked = isAbhaLinked,
             docId = docId,
             isAnalysing = isAnalysing,
@@ -86,24 +82,30 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
         return database.vaultDao().getAvailableDocTypes(oid = oid, doctorId = doctorId)
     }
 
-    override suspend fun fetchDocuments(
+    override fun fetchDocuments(
         oid: String,
         docType: Int,
         doctorId: String
-    ): List<VaultEntity> {
-        if (docType == -1)
-            return database.vaultDao().fetchDocuments(oid = oid, doctorId = doctorId)
-
-        return database.vaultDao().fetchDocumentsByDocType(oid = oid, docType = docType, doctorId = doctorId)
+    ): Flow<List<VaultEntity>> {
+        return if (docType == -1) {
+            database.vaultDao().fetchDocuments(oid = oid, doctorId = doctorId)
+        } else {
+            database.vaultDao().fetchDocumentsByDocType(oid = oid, docType = docType, doctorId = doctorId)
+        }
     }
 
-    override suspend fun fetchDocumentsByDocDate(oid: String, docType: Int, doctorId: String): List<VaultEntity> {
-
-        if (docType == -1)
-            return database.vaultDao().fetchDocumentsByDocDate(oid)
-
-        return database.vaultDao().fetchDocumentsByDocType(oid, docType, doctorId = doctorId)
+    override fun fetchDocumentsByDocDate(
+        oid: String,
+        docType: Int,
+        doctorId: String
+    ): Flow<List<VaultEntity>> {
+        return if (docType == -1) {
+            database.vaultDao().fetchDocumentsByDocDate(oid = oid)
+        } else {
+            database.vaultDao().fetchDocumentsByDocType(oid = oid, docType = docType, doctorId = doctorId)
+        }
     }
+
 
     override suspend fun updateDocumentId(documentId: String?, localId: String) {
         database.vaultDao().updateDocumentId(documentId, localId)
@@ -114,7 +116,7 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
         return database.vaultDao().getLocalIdBySource(oid, source)
     }
 
-    override suspend fun getLocalId(docId: String): String {
+    override suspend fun getLocalId(docId: String): String? {
         return database.vaultDao().getLocalId(docId)
     }
 

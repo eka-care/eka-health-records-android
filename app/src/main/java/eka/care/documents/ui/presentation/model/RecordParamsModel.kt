@@ -10,5 +10,7 @@ data class RecordParamsModel(
     val patientId : String,
     val doctorId : String,
     val name : String?,
-    val uuid : String
+    val uuid : String,
+    val gender : String?,
+    val age : Int?
 ):Parcelable

@@ -1,17 +1,21 @@
 package eka.care.documents.ui.presentation.viewmodel
 
+import android.app.Application
 import android.content.Context
 import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.reader.presentation.states.PdfSource
 import com.google.gson.Gson
+import eka.care.documents.data.db.database.DocumentDatabase
 import eka.care.documents.data.db.entity.VaultEntity
 import eka.care.documents.data.repository.VaultRepository
+import eka.care.documents.data.repository.VaultRepositoryImpl
 import eka.care.documents.ui.presentation.components.DocumentBottomSheetType
 import eka.care.documents.ui.presentation.components.DocumentViewType
 import eka.care.documents.ui.presentation.model.CTA
@@ -24,14 +28,14 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 
-class RecordsViewModel(
-    private val vaultRepository: VaultRepository
-) : ViewModel() {
+class RecordsViewModel(app: Application) : AndroidViewModel(app) {
 
+    private val vaultRepository: VaultRepository = VaultRepositoryImpl(DocumentDatabase.getInstance(app))
     val cardClickData = mutableStateOf<RecordModel?>(null)
 
     private val _getRecordsState = MutableStateFlow<GetRecordsState>(GetRecordsState.Loading)
@@ -71,6 +75,10 @@ class RecordsViewModel(
         }
     }
 
+    fun updateSelectedTags(newTags: List<String>) {
+        _selectedTags.value = newTags
+    }
+
     fun compressFile(fileList: List<File>, context: Context) {
         viewModelScope.launch {
             try {
@@ -94,45 +102,46 @@ class RecordsViewModel(
         documentType.intValue = docType
 
         viewModelScope.launch {
+            var dataEmitted = false
             try {
-
-                val documentsResp = if (sortBy.value == DocumentSortEnum.UPLOAD_DATE) {
+                val documentsFlowResp = if (sortBy.value == DocumentSortEnum.UPLOAD_DATE) {
                     vaultRepository.fetchDocuments(oid = oid, docType = documentType.intValue, doctorId = doctorId)
                 } else {
-                    vaultRepository.fetchDocumentsByDocDate(
-                        oid = oid,
-                        docType = documentType.intValue,
-                        doctorId = doctorId
-                    )
+                    vaultRepository.fetchDocumentsByDocDate(oid = oid, docType = documentType.intValue, doctorId = doctorId)
                 }
 
-                val records = mutableListOf<RecordModel>()
-                documentsResp.forEach { vaultEntity ->
-                    records.add(
-                        RecordModel(
-                            localId = vaultEntity.localId,
-                            documentId = vaultEntity.documentId,
-                            doctorId = doctorId,
-                            documentType = vaultEntity.documentType,
-                            documentDate = vaultEntity.documentDate,
-                            createdAt = vaultEntity.createdAt,
-                            thumbnail = vaultEntity.thumbnail,
-                            cta = Gson().fromJson(vaultEntity.cta, CTA::class.java),
-                            tags = vaultEntity.tags,
-                            source = vaultEntity.source,
-                            isAnalyzing = vaultEntity.isAnalyzing,
-                        )
-                    )
-                }
-                getAvailableDocTypes(oid = oid, doctorId = doctorId)
-
-                if (records.isEmpty()) {
-                    _getRecordsState.value = GetRecordsState.EmptyState
-                } else {
-                    _getRecordsState.value = GetRecordsState.Success(resp = records)
-                }
+                documentsFlowResp
+                    .onCompletion {
+                        if (!dataEmitted) {
+                            _getRecordsState.value = GetRecordsState.EmptyState
+                        }
+                    }
+                    .collect { vaultEntities ->
+                        val records = vaultEntities.map { vaultEntity ->
+                            RecordModel(
+                                localId = vaultEntity.localId,
+                                documentId = vaultEntity.documentId,
+                                doctorId = doctorId,
+                                documentType = vaultEntity.documentType,
+                                documentDate = vaultEntity.documentDate,
+                                createdAt = vaultEntity.createdAt,
+                                thumbnail = vaultEntity.thumbnail,
+                                cta = Gson().fromJson(vaultEntity.cta, CTA::class.java),
+                                tags = vaultEntity.tags,
+                                source = vaultEntity.source,
+                                isAnalyzing = vaultEntity.isAnalyzing
+                            )
+                        }
+                        getAvailableDocTypes(oid = oid, doctorId = doctorId)
+                        _getRecordsState.value = if (records.isEmpty()) {
+                            GetRecordsState.EmptyState
+                        } else {
+                            dataEmitted = true
+                            GetRecordsState.Success(resp = records)
+                        }
+                    }
             } catch (ex: Exception) {
-                _getRecordsState.value = GetRecordsState.Error(ex.localizedMessage?.toString())
+                _getRecordsState.value = GetRecordsState.Error(ex.localizedMessage ?: "An error occurred")
             }
         }
     }
@@ -152,12 +161,11 @@ class RecordsViewModel(
         oid: String,
         docDate: Long,
         tags: String,
-        isAbhaLinked: Boolean,
         doctorId: String
     ) {
         try {
             viewModelScope.launch {
-                vaultRepository.editDocument(localId, docType, oid, docDate, tags, isAbhaLinked)
+                vaultRepository.editDocument(localId, docType,  docDate, tags, patientId = oid)
                 getLocalRecords(oid, doctorId = doctorId)
             }
         } catch (_: Exception) {

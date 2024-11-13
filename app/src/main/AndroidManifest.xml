@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <application>
+        <activity android:name=".ui.presentation.activity.DocumentActivity"
+            android:theme="@style/Document.Theme.Drive"/>
+        <activity android:name=".ui.presentation.activity.DocumentViewerActivity" />
+    </application>
 </manifest>

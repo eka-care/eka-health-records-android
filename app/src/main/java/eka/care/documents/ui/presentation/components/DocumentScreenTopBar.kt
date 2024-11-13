@@ -13,6 +13,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -38,7 +39,7 @@ fun DocumentScreenTopBar(onBackClick: () -> Unit, name : String) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Image(
-            imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+            imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
             contentDescription = "",
             modifier = Modifier
                 .padding(start = 8.dp, end = 16.dp)

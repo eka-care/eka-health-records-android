@@ -22,4 +22,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "Documents"
 include(":app")
- 
+include(":test")
+include(":protobuf")

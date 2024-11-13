@@ -1,18 +1,20 @@
 package eka.care.documents.ui.presentation.components
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
+import android.app.Activity
+import android.content.Context
+import android.content.Intent
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -27,11 +29,8 @@ import androidx.compose.material.pullrefresh.PullRefreshState
 import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
@@ -39,33 +38,38 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.google.gson.Gson
+import com.google.gson.annotations.SerializedName
 import eka.care.documents.R
+import eka.care.documents.ui.DarwinTouchNeutral0
 import eka.care.documents.ui.DarwinTouchNeutral1000
-import eka.care.documents.ui.presentation.state.GetRecordsState
+import eka.care.documents.ui.presentation.model.RecordModel
 import eka.care.documents.ui.presentation.model.RecordParamsModel
 import eka.care.documents.ui.presentation.screens.DocumentEmptyStateScreen
+import eka.care.documents.ui.presentation.state.GetRecordsState
 import eka.care.documents.ui.presentation.viewmodel.RecordsViewModel
 import kotlinx.coroutines.Job
+import org.json.JSONObject
 
 @Composable
 @OptIn(ExperimentalMaterialApi::class, ExperimentalFoundationApi::class)
 fun DocumentScreenContent(
-    paddingValues : PaddingValues,
+    paddingValues: PaddingValues,
     pullRefreshState: PullRefreshState,
     recordsState: GetRecordsState,
     openSheet: () -> Job,
     viewModel: RecordsViewModel,
     listState: LazyListState,
-    params: RecordParamsModel,
-    isRefreshing: Boolean
+    isRefreshing: Boolean,
+    paramsModel: RecordParamsModel
 ) {
     val context = LocalContext.current
     Box(
         modifier = Modifier
-            .padding(paddingValues)
             .fillMaxSize()
+            .padding(paddingValues)
             .pullRefresh(pullRefreshState)
-            .background(MaterialTheme.colorScheme.surface)
+            .background(MaterialTheme.colorScheme.surfaceContainerLowest)
     ) {
         when (recordsState) {
             is GetRecordsState.Loading -> {
@@ -73,18 +77,13 @@ fun DocumentScreenContent(
             }
 
             is GetRecordsState.EmptyState -> {
-                val resp =(recordsState as? GetRecordsState.Success)?.resp ?: emptyList()
-                Column {
-                    if (resp.isNullOrEmpty()) {
-                        DocumentEmptyStateScreen(
-                            openBottomSheet = {
-                                openSheet()
-                                viewModel.documentBottomSheetType =
-                                    DocumentBottomSheetType.DocumentUpload
-                            }
-                        )
+                DocumentEmptyStateScreen(
+                    openBottomSheet = {
+                        openSheet()
+                        viewModel.documentBottomSheetType =
+                            DocumentBottomSheetType.DocumentUpload
                     }
-                }
+                )
             }
 
             is GetRecordsState.Error -> {
@@ -93,50 +92,25 @@ fun DocumentScreenContent(
 
             is GetRecordsState.Success -> {
                 val resp = (recordsState as? GetRecordsState.Success)?.resp ?: emptyList()
-                val showFilters = remember { mutableStateOf(false) }
                 LazyColumn(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .background(androidx.compose.material.MaterialTheme.colors.surface),
+                        .fillMaxWidth()
+                        .background(DarwinTouchNeutral0),
                     state = listState
                 ) {
-                    item {
-                        DocumentsHeader(
-                            onClickFilter = {
-                                showFilters.value = !showFilters.value
+                    stickyHeader {
+                        DocumentFilter(
+                            viewModel = viewModel,
+                            onClick = {
+                                viewModel.getLocalRecords(
+                                    oid = paramsModel.patientId,
+                                    doctorId = paramsModel.doctorId,
+                                    docType = it
+                                )
                             }
                         )
                     }
                     stickyHeader {
-                        AnimatedVisibility(
-                            visible = showFilters.value,
-                            enter = slideInVertically(
-                                initialOffsetY = {
-                                    it / 2
-                                }
-                            ),
-                            exit = slideOutVertically(targetOffsetY = {
-                                it / 6
-                            })
-                        ) {
-                            Surface(
-                                modifier = Modifier.fillParentMaxWidth(),
-                                color = androidx.compose.material.MaterialTheme.colors.surface
-                            ) {
-                                DocumentFilter(
-                                    viewModel = viewModel,
-                                    onClick = {
-                                        viewModel.getLocalRecords(
-                                            oid = params.patientId,
-                                            doctorId = params.doctorId,
-                                            docType = it
-                                        )
-                                    }
-                                )
-                            }
-                        }
-                    }
-                    item {
                         DocumentsSort(
                             viewModel = viewModel,
                             onClickSort = {
@@ -147,12 +121,18 @@ fun DocumentScreenContent(
                     }
                     if (viewModel.documentViewType == DocumentViewType.GridView) {
                         item {
-                            DocumentGrid(records = resp,
+                            DocumentGrid(
+                                records = resp,
                                 viewModel = viewModel,
-                                onClick = { cta ->
-                                    if(cta?.action == "open_deepThought"){
-
-                                    }else{
+                                onClick = { cta, model ->
+                                    viewModel.cardClickData.value = model
+                                    if (cta?.action == "open_deepThought") {
+                                        navigate(
+                                            context = context,
+                                            model = model,
+                                            oid = paramsModel.patientId
+                                        )
+                                    } else {
                                         openSheet()
                                         viewModel.documentBottomSheetType =
                                             DocumentBottomSheetType.DocumentOptions
@@ -164,11 +144,15 @@ fun DocumentScreenContent(
                             DocumentList(
                                 recordModel = model,
                                 onClick = { cta ->
-                                    if(cta?.action == "open_deepThought"){
-
-                                    }else{
+                                    viewModel.cardClickData.value = model
+                                    if (cta?.action == "open_deepThought") {
+                                        navigate(
+                                            context = context,
+                                            model = model,
+                                            oid = paramsModel.patientId
+                                        )
+                                    } else {
                                         viewModel.localId.value = model.localId ?: ""
-                                        viewModel.cardClickData.value = model
                                         openSheet()
                                         viewModel.documentBottomSheetType =
                                             DocumentBottomSheetType.DocumentOptions
@@ -229,3 +213,64 @@ fun DocumentScreenContent(
         )
     }
 }
+
+private fun navigate(context: Context, model: RecordModel, oid: String) {
+    if (isOnline(context)) {
+        if (model.tags?.split(",")?.contains("1") == false) {
+            val params = JSONObject()
+            params.put("doc_id", model.documentId)
+            params.put("user_id", oid)
+//            (context.applicationContext as IAmCommon).navigateTo(
+//                context as Activity,
+//                "doc_preview",
+//                params
+//            )
+            return
+        }
+        val requestParams = RequestParams(
+            documentId = model.documentId,
+            userId = oid
+        )
+        val requestParamsJson = Gson().toJson(requestParams)
+        val params = JSONObject()
+        params.put("page_type", "vitals_page")
+        params.put("context", requestParamsJson)
+
+//        (context.applicationContext as IAmCommon).navigateTo(
+//            context as Activity,
+//            "deepthought_page",
+//            params
+//        )
+    } else {
+//        Intent(context, DocumentPreview::class.java)
+//            .also {
+//                it.putExtra("document_model", model)
+//                it.putExtra("user_id", oid)
+//                context.startActivity(it)
+//            }
+        return
+    }
+}
+
+
+fun isOnline(context: Context): Boolean {
+    val connectivityManager =
+        context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+    val capabilities =
+        connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)
+    if (capabilities != null) {
+        if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) {
+            return true
+        } else if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
+            return true
+        } else if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)) {
+            return true
+        }
+    }
+    return false
+}
+
+data class RequestParams(
+    @SerializedName("document_id") val documentId: String?,
+    @SerializedName("user_id") val userId: String?
+)

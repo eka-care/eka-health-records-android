@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+package protobuf;
+
+import "google/protobuf/timestamp.proto";
+import "range.proto";
+import "interpretation.proto";
+import "coordinate.proto";
+
+/* VitalInsightsResponse represents insights
+response */
+message VitalInsightsResponse {
+  message Axis {
+    optional string title = 1; // Title for the axis.
+  }
+
+  message Axes {
+    optional Axis x = 1; // X Axis.
+    optional Axis y = 2; // Y Axis.
+  }
+
+  message Insight {
+    string title = 1; // Title for the insight.
+    string body = 2;  // Body for the insight.
+    repeated vault.common.Coordinate coordinates =
+        3;                           // Coordinates for the histogram.
+    string type = 4;                 // Type of the insight.
+    LatestValue latest_value = 5;    // Latest Value of the vital.
+    optional string name = 6;        // Display Name of the vital.
+    optional string test_eka_id = 7; // Test Eka ID of the vital.
+    optional string unit = 8;        // Normalised Unit of the vital.
+    optional Axes axes = 9;          // Axes of plot.
+  }
+
+  message AddLatestDataPrompt {
+    optional string text = 1; // Title for the prompt.
+  }
+
+  message LatestValue {
+    double value = 1;                          // Latest value.
+    google.protobuf.Timestamp result_date = 2; // Timestamp of latest value.
+    string display_result_date = 3; // Display timestamp of latest value.
+    optional AddLatestDataPrompt add_latest_data_prompt =
+        4;                                // Prompt for adding latest data.
+    double latest_value_y_coordinate = 5; // Y coordinate of the latest value.
+    optional vault.vitals.Interpretation result_id =
+        6; // Interpretation of latest value.
+    optional vault.common.ValueRange normal_range =
+        7; // Normal range of the vital.
+  }
+
+  repeated Insight insights = 1; // Insights for the vital.
+}
+
+/* VitalInsightsListResponse represents insights list
+response */
+message VitalInsightsListResponse {
+  repeated VitalInsightsResponse.Insight insights = 1; // Insights.
+  optional string token = 2; // Token for the next page.
+}

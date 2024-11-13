@@ -6,6 +6,8 @@ import android.net.Uri
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanner
 import eka.care.documents.ui.presentation.model.RecordParamsModel
@@ -24,6 +26,7 @@ fun DocumentBottomSheetContent(
     context: Context,
     scannerLauncher: ManagedActivityResultLauncher<IntentSenderRequest, ActivityResult>,
     pdfPickerLauncher: ManagedActivityResultLauncher<Array<String>, Uri?>,
+    galleryLauncher : ManagedActivityResultLauncher<PickVisualMediaRequest, List<@JvmSuppressWildcards Uri>>,
     openSheet: () -> Job,
     viewModel: RecordsViewModel,
     params: RecordParamsModel
@@ -45,6 +48,10 @@ fun DocumentBottomSheetContent(
                             .addOnFailureListener {
                                 it.message
                             }
+                    }
+
+                    RecordsAction.ACTION_CHOOSE_FROM_GALLERY -> {
+                        galleryLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
                     }
 
                     RecordsAction.ACTION_UPLOAD_PDF -> {

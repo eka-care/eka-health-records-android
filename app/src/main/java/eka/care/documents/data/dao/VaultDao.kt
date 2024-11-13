@@ -6,46 +6,48 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import eka.care.documents.data.db.entity.VaultEntity
 import eka.care.documents.data.db.model.AvailableDocTypes
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface VaultDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun storeDocuments(vaultEntityList: List<VaultEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun updateDocuments(vaultEntityList: List<VaultEntity>)
 
     @Query("UPDATE vault_table SET thumbnail=:thumbnail WHERE doc_id=:docId")
     suspend fun setThumbnail(thumbnail: String, docId: String?)
 
     @Query("SELECT * FROM vault_table WHERE oid=:oid AND is_deleted=0 AND doctor_id= :doctorId ORDER BY created_at DESC")
-    suspend fun fetchDocuments(oid: String?, doctorId: String): List<VaultEntity>
+    fun fetchDocuments(oid: String?, doctorId: String): Flow<List<VaultEntity>>
 
     @Query("SELECT * FROM vault_table WHERE oid=:oid AND doc_type =:docType AND is_deleted=0 AND doctor_id =:doctorId ORDER BY created_at DESC")
-    suspend fun fetchDocumentsByDocType(
+    fun fetchDocumentsByDocType(
         oid: String?,
         docType: Int,
         doctorId: String
-    ): List<VaultEntity>
+    ): Flow<List<VaultEntity>>
 
     @Query("SELECT * FROM vault_table WHERE oid=:oid AND is_deleted=0 ORDER BY doc_date DESC")
-    suspend fun fetchDocumentsByDocDate(oid: String?): List<VaultEntity>
+    fun fetchDocumentsByDocDate(oid: String?): Flow<List<VaultEntity>>
 
     @Query("SELECT * FROM vault_table WHERE oid=:oid AND doc_type =:docType AND is_deleted=0 ORDER BY doc_date DESC")
     suspend fun fetchDocumentsByDocDateAndDocType(oid: String?, docType: Int): List<VaultEntity>
 
-    @Query("UPDATE vault_table SET doc_type = :docType, oid = :oid, doc_date = :docDate, tags = :tags, is_abha_linked = :isAbhaLinked, is_edited = 1 WHERE local_id = :localId")
+    @Query("UPDATE vault_table SET doc_type = :docType,  doc_date = :docDate, tags = :tags, is_edited = 1 WHERE local_id = :localId AND oid = :oid")
     suspend fun editDocument(
         localId: String,
         docType: Int?,
-        oid: String?,
         docDate: Long,
         tags: String,
-        isAbhaLinked: Boolean
+        oid: String?
     )
 
-    @Query("UPDATE vault_table SET  oid = :oid, tags = :tags, is_abha_linked = :isAbhaLinked, is_analyzing = :isAnalysing, hash_id = :hasId, cta = :cta WHERE local_id = :localId AND doc_id = :docId")
+    @Query("UPDATE vault_table SET  oid = :oid, is_abha_linked = :isAbhaLinked, is_analyzing = :isAnalysing, hash_id = :hasId, cta = :cta WHERE local_id = :localId AND doc_id = :docId")
     suspend fun storeDocument(
         localId: String,
         oid: String?,
-        tags: String,
         isAbhaLinked: Boolean,
         docId: String,
         isAnalysing: Boolean,
@@ -69,7 +71,7 @@ interface VaultDao {
     suspend fun updateDocumentId(docId: String?, localId: String)
 
     @Query("SELECT local_id FROM vault_table WHERE doc_id=:docId")
-    suspend fun getLocalId(docId: String): String
+    suspend fun getLocalId(docId: String?): String?
 
     @Query("SELECT * FROM vault_table WHERE oid=:oid AND is_deleted=1 AND doctor_id =:doctorId")
     suspend fun getDeletedDocuments(oid: String?, doctorId: String?): List<VaultEntity>
@@ -82,4 +84,7 @@ interface VaultDao {
 
     @Query("SELECT * FROM vault_table WHERE doc_id=:docId")
     suspend fun getDocumentByDocId(docId: String): VaultEntity
+
+    @Query("UPDATE vault_table SET file_path=:filePath WHERE doc_id=:docId")
+    suspend fun updateFilePath(docId: String?, filePath: String)
 }

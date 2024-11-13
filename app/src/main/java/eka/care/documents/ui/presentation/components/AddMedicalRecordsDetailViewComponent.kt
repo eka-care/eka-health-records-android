@@ -66,11 +66,11 @@ import eka.care.documents.ui.DarwinTouchPrimaryBgDark
 import eka.care.documents.ui.DarwinTouchPrimaryDark
 import eka.care.documents.ui.DarwinTouchRed
 import eka.care.documents.ui.presentation.activity.DocumentActivity
-import eka.care.documents.ui.touchBodyBold
-import eka.care.documents.ui.touchHeadlineBold
 import eka.care.documents.ui.presentation.model.CTA
 import eka.care.documents.ui.presentation.model.RecordParamsModel
 import eka.care.documents.ui.presentation.viewmodel.RecordsViewModel
+import eka.care.documents.ui.touchBodyBold
+import eka.care.documents.ui.touchHeadlineBold
 import eka.care.documents.ui.utility.ThumbnailGenerator
 import java.io.File
 import java.text.SimpleDateFormat
@@ -91,11 +91,9 @@ fun AddMedicalRecordsDetailViewComponent(
     val context = LocalContext.current
     val compressedFiles by viewModel.compressedFiles.collectAsState(initial = emptyList())
     val initialSelectedDocType = viewModel.cardClickData.value?.documentType
-
     var selectedChipId by remember { mutableStateOf(initialSelectedDocType) }
     val selectedDate = remember { mutableStateOf("") }
     val openDialogRecord = remember { mutableStateOf(false) }
-
     val selectedTags by viewModel.selectedTags.collectAsState()
 
     LaunchedEffect(Unit) {
@@ -117,18 +115,16 @@ fun AddMedicalRecordsDetailViewComponent(
     }
 
     val onAddMedicalRecord = {
+
         if (editDocument) {
-            viewModel.cardClickData.value.let { it ->
-                viewModel.editDocument(
-                    localId = viewModel.localId.value,
-                    docType = selectedChipId,
-                    oid = paramsModel.patientId,
-                    docDate = timestampToLong(date ?: System.currentTimeMillis().toString()),
-                    tags = selectedTags.joinToString(separator = ","),
-                    isAbhaLinked = false,
-                    doctorId = paramsModel.doctorId
-                )
-            }
+            viewModel.editDocument(
+                localId = viewModel.cardClickData.value?.localId ?: "",
+                docType = selectedChipId,
+                oid = paramsModel.patientId,
+                docDate = timestampToLong(date ?: System.currentTimeMillis().toString()),
+                tags = selectedTags.joinToString(separator = ","),
+                doctorId = paramsModel.doctorId
+            )
             onClick(CTA(action = "onBackClick"))
         } else {
             if (selectedChipId != null) {
@@ -287,13 +283,14 @@ fun AddMedicalRecordsDetailViewComponent(
                             colorFilter = ColorFilter.tint(
                                 DarwinTouchPrimary
                             ),
-                            modifier = Modifier.padding(top = 4.dp, end = 8.dp)
+                            modifier = Modifier
+                                .padding(top = 4.dp, end = 8.dp)
                                 .size(16.dp)
                         )
                         Text(
                             text = "*",
                             color = DarwinTouchRed,
-                            modifier = Modifier.padding(start = 16.dp,bottom = 22.dp)
+                            modifier = Modifier.padding(start = 16.dp, bottom = 22.dp)
                         )
                     }
                     Spacer(modifier = Modifier.width(12.dp))
@@ -302,7 +299,10 @@ fun AddMedicalRecordsDetailViewComponent(
                             Chip(
                                 onClick = { selectedChipId = docType.idNew },
                                 shape = RoundedCornerShape(16.dp),
-                                border = if (selectedChipId == docType.idNew) BorderStroke(1.dp, DarwinTouchPrimaryBgDark) else BorderStroke(1.dp, DarwinTouchNeutral400),
+                                border = if (selectedChipId == docType.idNew) BorderStroke(
+                                    1.dp,
+                                    DarwinTouchPrimaryBgDark
+                                ) else BorderStroke(1.dp, DarwinTouchNeutral400),
                                 colors = ChipDefaults.chipColors(
                                     contentColor = if (selectedChipId == docType.idNew) DarwinTouchPrimaryDark else DarwinTouchNeutral1000,
                                     backgroundColor = if (selectedChipId == docType.idNew) DarwinTouchPrimaryBgDark else DarwinTouchNeutral0
@@ -340,7 +340,13 @@ fun AddMedicalRecordsDetailViewComponent(
                         style = touchBodyBold
                     )
                 }
-
+//                TagsComponent(
+//                    onChange = { newChips ->
+//                        viewModel.updateSelectedTags(newChips)
+//                    },
+//                    selectedChips = selectedTags,
+//                    source = SourceEnum.RECORDS
+//                )
             }
         },
         bottomBar = {
@@ -357,7 +363,11 @@ fun AddMedicalRecordsDetailViewComponent(
                     .padding(16.dp)
                     .fillMaxWidth()
             ) {
-                Text(text = "Save", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onPrimary)
+                Text(
+                    text = "Save",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
             }
         }
     )
