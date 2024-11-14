@@ -33,7 +33,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.work.Constraints
 import androidx.work.Data
 import androidx.work.NetworkType
@@ -57,9 +56,8 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun DocumentScreen(params: RecordParamsModel) {
+fun DocumentScreen(params: RecordParamsModel, viewModel: RecordsViewModel) {
     val context = LocalContext.current
-    val viewModel = viewModel<RecordsViewModel>()
     val options = GmsDocumentScannerOptions.Builder()
         .setGalleryImportAllowed(true)
         .setPageLimit(4)

@@ -11,8 +11,9 @@ android {
     compileSdk = 34
 
     defaultConfig {
-        minSdk = 24
+        minSdk = 23
         targetSdk = 34
+        multiDexEnabled = true
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -41,7 +42,7 @@ publishing {
         create<MavenPublication>("release") {
             groupId = "com.eka.records"
             artifactId = "eka-records"
-            version = "1.0.9"
+            version = "1.1.7"
 
             artifact("../app/build/outputs/aar/app-release.aar")
         }
@@ -55,8 +56,6 @@ dependencies {
     kapt(libs.room.compiler)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.material)
-    implementation(libs.androidx.appcompat)
-    implementation(libs.android.material)
     implementation(libs.androidx.compose.material3)
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
@@ -67,16 +66,22 @@ dependencies {
     implementation(libs.zelory.compressor)
     implementation(libs.google.gson)
     implementation("com.github.Saroj-EkaCare:Jet-Pdf-Reader:1.1.4")
-    implementation(files("libs/app-release.aar"))
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
+    implementation("com.github.eka-care:eka-network-android:1.0.1") {
+        exclude(group = "com.google.protobuf", module = "protobuf-java")
+    }
+    implementation(libs.protobuf.kotlin.lite)
+    implementation("com.google.protobuf:protobuf-javalite:4.26.1") {
+        exclude(module = "protobuf-java")
+    }
+//    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.appcompat)
-    implementation(libs.material)
     implementation(libs.google.gson)
     implementation(libs.okhttp)
     implementation(libs.okhttp.urlconnection)
     implementation(libs.okhttp.logging.interceptor)
-    implementation(libs.retrofit)
+    implementation(libs.retrofit) {
+        exclude(group = "com.google.protobuf", module = "protobuf-java")
+    }
     implementation(libs.retrofit.gson)
     implementation(libs.retrofit.scalars)
     implementation(libs.haroldadmin.networkresponseadapter)

@@ -8,12 +8,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import eka.care.documents.ui.presentation.model.RecordParamsModel
 import eka.care.documents.ui.presentation.screens.DocumentScreen
+import eka.care.documents.ui.presentation.viewmodel.RecordsViewModel
 
 class DocumentActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         window.statusBarColor = Color.White.toArgb()
+        val viewModel: RecordsViewModel by viewModels()
 
         setContent {
             DocumentScreen(
@@ -24,7 +26,8 @@ class DocumentActivity : AppCompatActivity() {
                     uuid = intent.getStringExtra(MedicalRecordParams.PATIENT_UUID.key) ?: "",
                     age = intent.getIntExtra(MedicalRecordParams.PATIENT_AGE.key, -1),
                     gender = intent.getStringExtra(MedicalRecordParams.PATIENT_GENDER.key)
-                )
+                ),
+                viewModel = viewModel
             )
         }
     }

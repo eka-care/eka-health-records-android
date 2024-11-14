@@ -5,7 +5,7 @@ import com.eka.network.Networking
 object Document {
     private var configuration: DocumentConfiguration? = null
 
-    fun initialize(chatInitConfiguration: DocumentConfiguration) {
+    fun init(chatInitConfiguration: DocumentConfiguration) {
         configuration = chatInitConfiguration
         configuration?.okHttpSetup?.let {
             Networking.init("https://vault.eka.care/", it)
