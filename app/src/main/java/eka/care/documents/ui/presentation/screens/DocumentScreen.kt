@@ -44,6 +44,7 @@ import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.RESULT_
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.SCANNER_MODE_FULL
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanning
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
+import eka.care.documents.R
 import eka.care.documents.data.utility.DocumentUtility.Companion.PARAM_RECORD_PARAMS_MODEL
 import eka.care.documents.sync.workers.SyncFileWorker
 import eka.care.documents.ui.presentation.activity.DocumentViewerActivity
@@ -56,8 +57,12 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun DocumentScreen(params: RecordParamsModel, viewModel: RecordsViewModel) {
+fun DocumentScreen(
+    params: RecordParamsModel,
+    viewModel: RecordsViewModel
+) {
     val context = LocalContext.current
+
     val options = GmsDocumentScannerOptions.Builder()
         .setGalleryImportAllowed(true)
         .setPageLimit(4)
@@ -231,7 +236,7 @@ fun DocumentScreen(params: RecordParamsModel, viewModel: RecordsViewModel) {
                     } else {
                         params.gender ?: ""
                     },
-//                    leading = R.drawable.ic_back_arrow,
+                    leading = R.drawable.ic_back_arrow,
                     onLeadingClick = {
                         (context as? Activity)?.finish()
                     }
@@ -260,26 +265,31 @@ private fun initData(
     viewModel: RecordsViewModel,
     context: Context
 ) {
-    val inputData = Data.Builder()
-        .putString("p_uuid", patientUuid)
-        .putString("oid", oid)
-        .putString("doctorId", doctorId)
-        .build()
-
-    val constraints = Constraints.Builder()
-        .setRequiredNetworkType(NetworkType.CONNECTED)
-        .build()
-
-    val periodicSyncWorkRequest =
-        OneTimeWorkRequestBuilder<SyncFileWorker>()
-            .setInputData(inputData)
-            .setConstraints(constraints)
-            .build()
-
-    WorkManager.getInstance(context)
-        .enqueue(periodicSyncWorkRequest)
+//    val inputData = Data.Builder()
+//        .putString("p_uuid", patientUuid)
+//        .putString("oid", oid)
+//        .putString("doctorId", doctorId)
+//        .build()
+//
+//    val constraints = Constraints.Builder()
+//        .setRequiredNetworkType(NetworkType.CONNECTED)
+//        .build()
+//
+//    val periodicSyncWorkRequest =
+//        OneTimeWorkRequestBuilder<SyncFileWorker>()
+//            .setInputData(inputData)
+//            .setConstraints(constraints)
+//            .build()
+//
+//    WorkManager.getInstance(context)
+//        .enqueue(periodicSyncWorkRequest)
 
     viewModel.sortBy.value = DocumentSortEnum.UPLOAD_DATE
-    viewModel.getLocalRecords(oid = oid, doctorId = doctorId)
+    viewModel.getLocalRecords(
+        oid = oid,
+        doctorId = doctorId,
+        docType = viewModel.documentType.intValue
+    )
+    viewModel.syncDeletedDocuments(oid = oid, doctorId = doctorId)
     viewModel.syncEditedDocuments(oid = oid, doctorId = doctorId)
 }

@@ -5,6 +5,8 @@
     <application>
         <activity android:name=".ui.presentation.activity.DocumentActivity"
             android:theme="@style/Document.Theme.Drive"/>
+        <activity android:name=".ui.presentation.activity.DocumentPreview"
+            android:theme="@style/Document.Theme.Drive"/>
         <activity android:name=".ui.presentation.activity.DocumentViewerActivity" />
     </application>
 </manifest>

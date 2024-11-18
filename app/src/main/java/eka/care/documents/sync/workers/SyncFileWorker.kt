@@ -20,6 +20,7 @@ import eka.care.documents.data.repository.VaultRepository
 import eka.care.documents.data.repository.VaultRepositoryImpl
 import eka.care.documents.data.utility.DocumentUtility.Companion.docTypes
 import eka.care.documents.sync.data.remote.dto.request.FileType
+import eka.care.documents.ui.utility.RecordsUtility.Companion.changeDateFormat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
@@ -101,16 +102,19 @@ class SyncFileWorker(
                                     documentDate = formatter.format(date)
                                 }
 
+                                val tagList = vaultEntity.tags?.split(",") ?: emptyList()
+                               // val tagNames = Tags().getTagNamesByIds(tagList)
                                 val updateFileDetailsRequest = UpdateFileDetailsRequest(
                                     oid = vaultEntity.oid,
                                     documentType = docTypes.firstOrNull { it.idNew == vaultEntity.documentType }?.id,
-                                    documentDate = documentDate,
-                                    userTags = null,
+                                    documentDate = changeDateFormat(documentDate),
+                                    userTags = emptyList(),
                                     linkAbha = vaultEntity.isABHALinked
                                 )
 
                                 myFileRepository.updateFileDetails(
                                     docId = documentId,
+                                    oid = oid,
                                     updateFileDetailsRequest = updateFileDetailsRequest
                                 )
                                 vaultRepository.updateDocumentId(documentId, vaultEntity.localId)
@@ -196,6 +200,8 @@ class SyncFileWorker(
                     hasId = it.record.hash.toString(),
                     isAbhaLinked = false,
                     oid = recordItem.patientOid,
+                    tags = recordItem.metadata.tagsValueList.joinToString(","),
+                    documentDate = recordItem.metadata.documentDate.seconds,
                 )
             }else{
                 vaultList.add(

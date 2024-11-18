@@ -44,7 +44,7 @@ interface VaultDao {
         oid: String?
     )
 
-    @Query("UPDATE vault_table SET  oid = :oid, is_abha_linked = :isAbhaLinked, is_analyzing = :isAnalysing, hash_id = :hasId, cta = :cta WHERE local_id = :localId AND doc_id = :docId")
+    @Query("UPDATE vault_table SET  oid = :oid, doc_date = :documentDate ,tags = :tags, is_abha_linked = :isAbhaLinked, is_analyzing = :isAnalysing, hash_id = :hasId, cta = :cta WHERE local_id = :localId AND doc_id = :docId")
     suspend fun storeDocument(
         localId: String,
         oid: String?,
@@ -52,7 +52,9 @@ interface VaultDao {
         docId: String,
         isAnalysing: Boolean,
         hasId: String,
-        cta: String?
+        cta: String?,
+        tags: String,
+        documentDate : Long
     )
 
     @Query("UPDATE vault_table SET is_deleted=1 WHERE oid=:oid AND local_id=:localId")
@@ -87,4 +89,7 @@ interface VaultDao {
 
     @Query("UPDATE vault_table SET file_path=:filePath WHERE doc_id=:docId")
     suspend fun updateFilePath(docId: String?, filePath: String)
+
+    @Query("DELETE FROM vault_table WHERE oid=:oid AND local_id=:localId")
+    suspend fun removeDocument(localId: String, oid: String?)
 }

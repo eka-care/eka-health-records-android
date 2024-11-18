@@ -1,21 +1,26 @@
 package eka.care.documents.ui.presentation.activity
 
+import android.app.Application
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import eka.care.documents.ui.presentation.model.RecordParamsModel
 import eka.care.documents.ui.presentation.screens.DocumentScreen
 import eka.care.documents.ui.presentation.viewmodel.RecordsViewModel
 
 class DocumentActivity : AppCompatActivity() {
+    private val viewModel: RecordsViewModel by viewModels {
+        RecordsViewModelFactory(application)
+    }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         window.statusBarColor = Color.White.toArgb()
-        val viewModel: RecordsViewModel by viewModels()
 
         setContent {
             DocumentScreen(
@@ -30,6 +35,16 @@ class DocumentActivity : AppCompatActivity() {
                 viewModel = viewModel
             )
         }
+    }
+}
+
+class RecordsViewModelFactory(private val application: Application) : ViewModelProvider.Factory {
+    @Suppress("UNCHECKED_CAST")
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(RecordsViewModel::class.java)) {
+            return RecordsViewModel(application) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
 

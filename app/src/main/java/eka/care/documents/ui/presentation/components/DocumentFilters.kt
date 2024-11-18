@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import eka.care.documents.data.utility.DocumentUtility.Companion.docTypes
 import eka.care.documents.ui.touchBodyRegular
 import eka.care.documents.ui.presentation.viewmodel.RecordsViewModel
+import eka.care.documents.ui.touchCalloutBold
 
 @Composable
 fun DocumentFilter(
@@ -46,7 +47,7 @@ fun DocumentFilter(
                     text = "All ($totalCount)",
                     border = if (documentType == -1) MaterialTheme.colorScheme.inversePrimary else MaterialTheme.colorScheme.outlineVariant,
                     textColor = if (documentType == -1) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
-                    textStyle = touchBodyRegular,
+                    textStyle = touchCalloutBold,
                     background = if (documentType == -1) MaterialTheme.colorScheme.inversePrimary else MaterialTheme.colorScheme.surfaceContainerLowest
                 )
             }
@@ -55,14 +56,14 @@ fun DocumentFilter(
                 if (docTypeModel != null) {
                     item {
                         ChipMedium(
-                            modifier = Modifier.clickable {
+                            modifier = Modifier.clip(RoundedCornerShape(4.dp)).clickable {
                                 onClick(availableDocType.docType)
                             },
                             textModifier = Modifier.padding(vertical = 4.dp),
                             text = "${docTypeModel.documentType} (${availableDocType.count})", // Use documentType here
                             border = if (documentType == availableDocType.docType) MaterialTheme.colorScheme.inversePrimary else MaterialTheme.colorScheme.outlineVariant,
                             textColor = if (documentType == availableDocType.docType) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
-                            textStyle = touchBodyRegular,
+                            textStyle = touchCalloutBold,
                             background = if (documentType == availableDocType.docType) MaterialTheme.colorScheme.inversePrimary else MaterialTheme.colorScheme.surfaceContainerLowest,
                         )
                     }

@@ -7,6 +7,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -56,15 +57,15 @@ import kotlinx.coroutines.launch
 import java.io.File
 import java.io.IOException
 
-class DocumentViewerActivity : ComponentActivity() {
+class DocumentViewerActivity : AppCompatActivity() {
 
     private val pdfReaderManager: PdfReaderManager by lazy { PdfReaderManager(this) }
     private var fileToUpload: File? = null
-    private val recordsViewModel: RecordsViewModel by viewModels()
 
     @OptIn(ExperimentalMaterialApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val recordsViewModel: RecordsViewModel by viewModels()
 
         val paramsRecord = intent.getParcelableExtra<RecordParamsModel>(PARAM_RECORD_PARAMS_MODEL)
         if (paramsRecord == null) {
@@ -134,7 +135,7 @@ class DocumentViewerActivity : ComponentActivity() {
                 sheetElevation = 0.dp,
                 content = {
                     PreviewComponent(
-                        pdfReaderManager =  null,
+                        pdfReaderManager = if (pdfUriString != null) pdfReaderManager else null,
                         recordsViewModel = recordsViewModel,
                         onClick = {
                             (context as Activity).setResult(RESULT_OK, intent)

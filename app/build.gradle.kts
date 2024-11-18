@@ -31,6 +31,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.4.3"
@@ -42,7 +43,7 @@ publishing {
         create<MavenPublication>("release") {
             groupId = "com.eka.records"
             artifactId = "eka-records"
-            version = "1.1.7"
+            version = "1.1.8"
 
             artifact("../app/build/outputs/aar/app-release.aar")
         }
@@ -88,4 +89,6 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    implementation(libs.google.accompanist.pager)
+    implementation(libs.google.accompanist.pager.indicators)
 }

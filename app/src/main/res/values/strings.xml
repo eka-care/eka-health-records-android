@@ -49,4 +49,5 @@
     <string name="medical_records">Medical Records</string>
     <string name="search_in_medical_records">Search in Medical Records</string>
     <string name="title_activity_test">TestActivity</string>
+    <string name="your_original_document_is_more_reliable">Your original document is the most reliable source of information.</string>
 </resources>

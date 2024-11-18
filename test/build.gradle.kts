@@ -68,4 +68,7 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+    implementation("com.github.eka-care:eka-network-android:1.0.1") {
+        exclude(group = "com.google.protobuf", module = "protobuf-java")
+    }
 }

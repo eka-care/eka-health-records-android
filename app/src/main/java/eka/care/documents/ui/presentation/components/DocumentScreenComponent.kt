@@ -33,9 +33,7 @@ import androidx.compose.ui.unit.dp
 import eka.care.documents.R
 import eka.care.documents.ui.presentation.screens.DocumentSortEnum
 import eka.care.documents.ui.presentation.viewmodel.RecordsViewModel
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import eka.care.documents.ui.touchLabelBold
 
 @Composable
 fun DocumentsHeader(
@@ -58,12 +56,12 @@ fun DocumentsSort(
     onClickSort: () -> Unit, viewModel: RecordsViewModel
 ) {
     val sortBy = viewModel.sortBy.value
-    var documentViewType by remember { mutableStateOf(DocumentViewType.ListView) }
+    var documentViewType by remember { mutableStateOf(DocumentViewType.GridView) }
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .background(androidx.compose.material.MaterialTheme.colors.surface)
-            .padding(start = 16.dp, end = 16.dp, top = 12.dp),
+            .padding(start = 16.dp, end = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
@@ -78,11 +76,11 @@ fun DocumentsSort(
             Text(
                 text = if (sortBy == DocumentSortEnum.UPLOAD_DATE) stringResource(id = R.string.upload_date) else stringResource(
                     id = R.string.document_date
-                ), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface
+                ), style = touchLabelBold, color = MaterialTheme.colorScheme.onSurface
             )
             Spacer(modifier = Modifier.width(8.dp))
             Image(
-                imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                painter = painterResource(id = R.drawable.ic_back_arrow),
                 contentDescription = "",
                 modifier = Modifier.rotate(90f),
                 colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurface)
@@ -120,15 +118,4 @@ enum class DocumentBottomSheetType {
 
 enum class DocumentViewType {
     ListView, GridView
-}
-
-fun formatLocalDateToCustomFormat(date: Date): String? {
-    val formatter = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
-    return formatter.format(date)
-}
-
-fun timestampToLong(timestamp: String, format: String = "EEE, dd MMM, yyyy"): Long {
-    val dateFormat = SimpleDateFormat(format, Locale.getDefault())
-    val date = dateFormat.parse(timestamp) ?: throw IllegalArgumentException("Invalid date format")
-    return date.time / 1000
 }

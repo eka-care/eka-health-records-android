@@ -31,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
@@ -39,11 +40,11 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import eka.care.documents.R
 import eka.care.documents.data.utility.DocumentUtility.Companion.docTypes
+import eka.care.documents.ui.DarwinTouchNeutral1000
 import eka.care.documents.ui.DarwinTouchNeutral300
 import eka.care.documents.ui.presentation.model.CTA
 import eka.care.documents.ui.presentation.model.RecordModel
 import eka.care.documents.ui.presentation.viewmodel.RecordsViewModel
-import eka.care.documents.ui.touchBodyBold
 import eka.care.documents.ui.touchLabelBold
 import eka.care.documents.ui.touchLabelRegular
 import java.text.SimpleDateFormat
@@ -71,7 +72,7 @@ fun DocumentGrid(
     ) {
         items(records) { recordModel ->
             viewModel.localId.value = recordModel.localId ?: ""
-            DocumentGridItem(recordModel = recordModel, onClick = onClick)
+            DocumentGridItem(recordModel = recordModel, onClick = onClick, viewModel)
         }
     }
 }
@@ -79,7 +80,8 @@ fun DocumentGrid(
 @Composable
 fun DocumentGridItem(
     recordModel: RecordModel,
-    onClick: (CTA?, RecordModel) -> Unit
+    onClick: (CTA?, RecordModel) -> Unit,
+    viewModel: RecordsViewModel
 ) {
     val docType = docTypes.find { it.idNew == recordModel.documentType }
     val uploadTimestamp = recordModel.documentDate ?: recordModel.createdAt ?: 0L
@@ -107,7 +109,7 @@ fun DocumentGridItem(
                 ),
                 contentDescription = ""
             )
-            Spacer(modifier = Modifier.width(4.dp))
+            Spacer(modifier = Modifier.width(8.dp))
             Column(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.Top,
@@ -115,7 +117,7 @@ fun DocumentGridItem(
             ) {
                 Text(
                     text = docType?.documentType.toString(),
-                    style = touchBodyBold,
+                    style = touchLabelBold,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -129,6 +131,7 @@ fun DocumentGridItem(
             }
             Icon(
                 modifier = Modifier.clickable {
+                    viewModel.localId.value = recordModel.localId ?: ""
                     onClick(CTA(action = "open_options"), recordModel)
                 },
                 imageVector = Icons.Rounded.MoreVert,
@@ -141,17 +144,19 @@ fun DocumentGridItem(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(12.dp))
-                    .background(color = DarwinTouchNeutral300),
+                    .background(color = DarwinTouchNeutral1000)
+                    .graphicsLayer(alpha = 0.4f)
+                ,
                 model = recordModel.thumbnail,
                 contentDescription = "",
                 contentScale = ContentScale.FillWidth,
             )
-//            if(recordModel.isAnalyzing){
-//                AnalysingChip()
-//            }
             if(recordModel.tags?.split(",")?.contains("1") == true){
                 SmartChip()
             }
+//            if(recordModel.isAnalyzing){
+//                AnalysingChip()
+//            }
         }
     }
 }

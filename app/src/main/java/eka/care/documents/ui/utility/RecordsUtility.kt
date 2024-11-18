@@ -8,6 +8,9 @@ import android.os.Build
 import android.provider.MediaStore
 import android.util.Log
 import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class RecordsUtility {
     companion object{
@@ -26,6 +29,37 @@ class RecordsUtility {
                 Log.e("log", "Exception in loadFromUri() = ", ex)
             }
             return bitmap
+        }
+
+        fun convertLongToFormattedDate(timestamp: Long): String {
+            val date = Date(timestamp * 1000)
+            val outputFormat = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
+            return outputFormat.format(date)
+        }
+
+        fun formatLocalDateToCustomFormat(date: Date): String? {
+            val formatter = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
+            return formatter.format(date)
+        }
+
+        fun timestampToLong(timestamp: String, format: String = "EEE, dd MMM, yyyy"): Long {
+            val dateFormat = SimpleDateFormat(format, Locale.getDefault())
+            val date = dateFormat.parse(timestamp) ?: throw IllegalArgumentException("Invalid date format")
+            return date.time / 1000
+        }
+
+        fun convertLongToDateString(time: Long?): String {
+            if (time == null) return ""
+            val date = Date(time * 1000)
+            val format = SimpleDateFormat("dd EEE yyyy", Locale.getDefault())
+            return format.format(date)
+        }
+
+        fun changeDateFormat(inputDate: String?): String {
+            val inputFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+            val outputFormat = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
+            val date = inputFormat.parse(inputDate)
+            return date?.let { outputFormat.format(it) } ?: ""
         }
     }
 }

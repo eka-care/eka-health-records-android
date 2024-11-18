@@ -71,6 +71,8 @@ import eka.care.documents.ui.presentation.model.RecordParamsModel
 import eka.care.documents.ui.presentation.viewmodel.RecordsViewModel
 import eka.care.documents.ui.touchBodyBold
 import eka.care.documents.ui.touchHeadlineBold
+import eka.care.documents.ui.utility.RecordsUtility.Companion.formatLocalDateToCustomFormat
+import eka.care.documents.ui.utility.RecordsUtility.Companion.timestampToLong
 import eka.care.documents.ui.utility.ThumbnailGenerator
 import java.io.File
 import java.text.SimpleDateFormat
@@ -88,6 +90,7 @@ fun AddMedicalRecordsDetailViewComponent(
     paramsModel: RecordParamsModel,
     editDocument: Boolean
 ) {
+    init(viewModel = viewModel, userId =  paramsModel.patientId, docId = viewModel.cardClickData.value?.documentId)
     val context = LocalContext.current
     val compressedFiles by viewModel.compressedFiles.collectAsState(initial = emptyList())
     val initialSelectedDocType = viewModel.cardClickData.value?.documentType
@@ -371,6 +374,11 @@ fun AddMedicalRecordsDetailViewComponent(
             }
         }
     )
+}
+private fun init(viewModel: RecordsViewModel, docId : String?, userId : String){
+    if (docId != null) {
+        viewModel.getTags(docId = docId, userId = userId)
+    }
 }
 
 enum class FileType {

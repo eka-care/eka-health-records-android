@@ -1,6 +1,5 @@
 package eka.care.documents.ui.presentation.components
 
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.ConnectivityManager
@@ -38,18 +37,19 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 import eka.care.documents.R
 import eka.care.documents.ui.DarwinTouchNeutral0
 import eka.care.documents.ui.DarwinTouchNeutral1000
+import eka.care.documents.ui.presentation.activity.DocumentPreview
+import eka.care.documents.ui.presentation.activity.SmartReportActivity
 import eka.care.documents.ui.presentation.model.RecordModel
 import eka.care.documents.ui.presentation.model.RecordParamsModel
 import eka.care.documents.ui.presentation.screens.DocumentEmptyStateScreen
 import eka.care.documents.ui.presentation.state.GetRecordsState
 import eka.care.documents.ui.presentation.viewmodel.RecordsViewModel
+import eka.care.documents.ui.utility.RecordsUtility.Companion.convertLongToDateString
 import kotlinx.coroutines.Job
-import org.json.JSONObject
 
 @Composable
 @OptIn(ExperimentalMaterialApi::class, ExperimentalFoundationApi::class)
@@ -130,7 +130,8 @@ fun DocumentScreenContent(
                                         navigate(
                                             context = context,
                                             model = model,
-                                            oid = paramsModel.patientId
+                                            oid = paramsModel.patientId,
+                                            documentId = model.documentId
                                         )
                                     } else {
                                         openSheet()
@@ -149,7 +150,8 @@ fun DocumentScreenContent(
                                         navigate(
                                             context = context,
                                             model = model,
-                                            oid = paramsModel.patientId
+                                            oid = paramsModel.patientId,
+                                            documentId = model.documentId,
                                         )
                                     } else {
                                         viewModel.localId.value = model.localId ?: ""
@@ -214,44 +216,35 @@ fun DocumentScreenContent(
     }
 }
 
-private fun navigate(context: Context, model: RecordModel, oid: String) {
-    if (isOnline(context)) {
+private fun navigate(context: Context, model: RecordModel, oid: String, documentId: String?) {
+    if(isOnline(context)){
         if (model.tags?.split(",")?.contains("1") == false) {
-            val params = JSONObject()
-            params.put("doc_id", model.documentId)
-            params.put("user_id", oid)
-//            (context.applicationContext as IAmCommon).navigateTo(
-//                context as Activity,
-//                "doc_preview",
-//                params
-//            )
+            Intent(context, DocumentPreview::class.java).also {
+                it.putExtra("document_id", model.documentId)
+                it.putExtra("user_id", oid)
+                context.startActivity(it)
+            }
+            return
+        } else {
+            val date = convertLongToDateString(model.documentDate ?: model.createdAt)
+            Intent(context, SmartReportActivity::class.java)
+                .also {
+                    it.putExtra("doc_id", documentId)
+                    it.putExtra("user_id", oid)
+                    it.putExtra("doc_date", date)
+                    context.startActivity(it)
+                }
             return
         }
-        val requestParams = RequestParams(
-            documentId = model.documentId,
-            userId = oid
-        )
-        val requestParamsJson = Gson().toJson(requestParams)
-        val params = JSONObject()
-        params.put("page_type", "vitals_page")
-        params.put("context", requestParamsJson)
-
-//        (context.applicationContext as IAmCommon).navigateTo(
-//            context as Activity,
-//            "deepthought_page",
-//            params
-//        )
-    } else {
-//        Intent(context, DocumentPreview::class.java)
-//            .also {
-//                it.putExtra("document_model", model)
-//                it.putExtra("user_id", oid)
-//                context.startActivity(it)
-//            }
+    }else{
+        Intent(context, DocumentPreview::class.java).also {
+            it.putExtra("document_id", model.documentId)
+            it.putExtra("user_id", oid)
+            context.startActivity(it)
+        }
         return
     }
 }
-
 
 fun isOnline(context: Context): Boolean {
     val connectivityManager =
