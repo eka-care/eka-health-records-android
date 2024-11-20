@@ -3,7 +3,6 @@ package eka.care.documents.ui.presentation.activity
 import android.app.Application
 import android.os.Bundle
 import androidx.activity.compose.setContent
-import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
@@ -14,9 +13,6 @@ import eka.care.documents.ui.presentation.screens.DocumentScreen
 import eka.care.documents.ui.presentation.viewmodel.RecordsViewModel
 
 class DocumentActivity : AppCompatActivity() {
-    private val viewModel: RecordsViewModel by viewModels {
-        RecordsViewModelFactory(application)
-    }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -25,14 +21,13 @@ class DocumentActivity : AppCompatActivity() {
         setContent {
             DocumentScreen(
                 params = RecordParamsModel(
-                    patientId = intent.getStringExtra(MedicalRecordParams.PATIENT_ID.key) ?: "",
-                    doctorId = intent.getStringExtra(MedicalRecordParams.DOCTOR_ID.key) ?: "",
-                    name = intent.getStringExtra(MedicalRecordParams.PATIENT_NAME.key),
-                    uuid = intent.getStringExtra(MedicalRecordParams.PATIENT_UUID.key) ?: "",
-                    age = intent.getIntExtra(MedicalRecordParams.PATIENT_AGE.key, -1),
-                    gender = intent.getStringExtra(MedicalRecordParams.PATIENT_GENDER.key)
-                ),
-                viewModel = viewModel
+                    patientId = "173106247826612",
+                    doctorId = "166356870250527",
+                    name = "Manish Kumar",
+                    uuid = "274b6c26-fa2d-4bde-9cd3-0cdd7750edb2",
+                    age = 0,
+                    gender = "Male"
+                )
             )
         }
     }

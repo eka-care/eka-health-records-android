@@ -2,11 +2,18 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <application>
+    <application
+        android:networkSecurityConfig="@xml/network_security_config"
+        >
         <activity android:name=".ui.presentation.activity.DocumentActivity"
             android:theme="@style/Document.Theme.Drive"/>
         <activity android:name=".ui.presentation.activity.DocumentPreview"
             android:theme="@style/Document.Theme.Drive"/>
-        <activity android:name=".ui.presentation.activity.DocumentViewerActivity" />
+        <activity android:name=".ui.presentation.activity.DocumentViewerActivity"
+            android:theme="@style/Document.Theme.Drive"
+            />
+        <activity android:name=".ui.presentation.activity.SmartReportActivity"
+            android:theme="@style/Document.Theme.Drive"
+            />
     </application>
 </manifest>

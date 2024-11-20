@@ -15,6 +15,7 @@ android {
         targetSdk = 34
         multiDexEnabled = true
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        signingConfig = signingConfigs.getByName("debug")
     }
 
     buildTypes {
@@ -33,6 +34,10 @@ android {
         compose = true
         buildConfig = true
     }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.4.3"
     }
@@ -43,7 +48,7 @@ publishing {
         create<MavenPublication>("release") {
             groupId = "com.eka.records"
             artifactId = "eka-records"
-            version = "1.1.8"
+            version = "1.2.4"
 
             artifact("../app/build/outputs/aar/app-release.aar")
         }
@@ -67,22 +72,18 @@ dependencies {
     implementation(libs.zelory.compressor)
     implementation(libs.google.gson)
     implementation("com.github.Saroj-EkaCare:Jet-Pdf-Reader:1.1.4")
-    implementation("com.github.eka-care:eka-network-android:1.0.1") {
-        exclude(group = "com.google.protobuf", module = "protobuf-java")
-    }
     implementation(libs.protobuf.kotlin.lite)
-    implementation("com.google.protobuf:protobuf-javalite:4.26.1") {
-        exclude(module = "protobuf-java")
+    implementation("com.squareup.retrofit2:converter-protobuf:2.9.0") {
+        exclude(group = "com.google.protobuf")
     }
+    implementation("com.google.protobuf:protobuf-javalite:3.23.0")
 //    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     implementation(libs.androidx.core.ktx)
     implementation(libs.google.gson)
     implementation(libs.okhttp)
     implementation(libs.okhttp.urlconnection)
     implementation(libs.okhttp.logging.interceptor)
-    implementation(libs.retrofit) {
-        exclude(group = "com.google.protobuf", module = "protobuf-java")
-    }
+    implementation(libs.retrofit)
     implementation(libs.retrofit.gson)
     implementation(libs.retrofit.scalars)
     implementation(libs.haroldadmin.networkresponseadapter)
@@ -91,4 +92,7 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     implementation(libs.google.accompanist.pager)
     implementation(libs.google.accompanist.pager.indicators)
+
+    // remove
+    implementation(libs.ok2curl)
 }

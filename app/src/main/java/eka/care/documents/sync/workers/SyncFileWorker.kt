@@ -137,40 +137,67 @@ class SyncFileWorker(
         doctorId: String
     ) {
         try {
-            val records = recordsRepository.getRecords(
-                updatedAt = null,
+            when (val result = recordsRepository.getRecords(
+                updatedAt = updatedAt?.toInt(),
                 offset = offset,
                 uuid = uuid
-            )
-            if (records?.error?.message.isNullOrEmpty()) {
-                if (!records?.response?.itemsList.isNullOrEmpty()) {
-                    records?.response?.let {
+            )) {
+                is SyncRecordsRepository.RecordsResult.Success -> {
+                    val records = result.records.response
+                    if (!records.itemsList.isNullOrEmpty()) {
+                        // Store records if we have them
                         storeRecords(
-                            recordsResponse = it,
+                            recordsResponse = records,
                             doctorId = doctorId,
-                            uuid = uuid,
+                            uuid = uuid
                         )
+                        getLocalRecords(oid = oid, doctorId = doctorId)
                     }
-                    getLocalRecords(oid = oid, doctorId = doctorId)
+
+                    // Check for next page
+                    val newOffset = records.nextPageToken
+                    if (!newOffset.isNullOrEmpty()) {
+                        // Recursively fetch next page
+                        fetchRecords(
+                            offset = newOffset,
+                            updatedAt = null,
+                            uuid = uuid,
+                            oid = oid,
+                            doctorId = doctorId
+                        )
+                    } else {
+                        // No more pages, get final local records
+                        getLocalRecords(oid = oid, doctorId = doctorId)
+                    }
                 }
 
-                val newOffset = records?.response?.nextPageToken
-                if (!newOffset.isNullOrEmpty()) {
-                    fetchRecords(
-                        offset = newOffset,
-                        updatedAt = updatedAt,
-                        uuid = uuid,
-                        oid = oid,
-                        doctorId = doctorId
-                    )
-                } else {
-                    getLocalRecords(oid = oid, doctorId = doctorId)
+                is SyncRecordsRepository.RecordsResult.Error -> {
+                    Log.e("RecordsFetch", "Error fetching records: ${result.errorMessage}")
+                    // Optionally handle specific error codes
+                    when (result.code) {
+                        401 -> {
+                            // Handle unauthorized
+                            Log.e("RecordsFetch", "Unauthorized access")
+                        }
+                        404 -> {
+                            // Handle not found
+                            Log.e("RecordsFetch", "Records not found")
+                            // Still try to get local records in case we have some
+                            getLocalRecords(oid = oid, doctorId = doctorId)
+                        }
+                        else -> {
+                            // Handle other errors
+                            Log.e("RecordsFetch", "General error: ${result.errorMessage}")
+                            // Attempt to get local records as fallback
+                            getLocalRecords(oid = oid, doctorId = doctorId)
+                        }
+                    }
                 }
-            } else {
-                Log.d("TEST", "${records?.error?.message}")
             }
         } catch (e: Exception) {
-            Log.d("TEST", "${e.message}")
+            Log.e("RecordsFetch", "Exception during fetch", e)
+            // Attempt to get local records as fallback
+            getLocalRecords(oid = oid, doctorId = doctorId)
         }
     }
 

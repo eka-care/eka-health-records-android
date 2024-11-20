@@ -1,6 +1,7 @@
 package eka.care.documents.ui.presentation.screens
 
 import android.app.Activity
+import android.app.Application
 import android.content.Context
 import android.content.Intent
 import android.util.Log
@@ -33,6 +34,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelStoreOwner
 import androidx.work.Constraints
 import androidx.work.Data
 import androidx.work.NetworkType
@@ -48,6 +52,7 @@ import eka.care.documents.R
 import eka.care.documents.data.utility.DocumentUtility.Companion.PARAM_RECORD_PARAMS_MODEL
 import eka.care.documents.sync.workers.SyncFileWorker
 import eka.care.documents.ui.presentation.activity.DocumentViewerActivity
+import eka.care.documents.ui.presentation.activity.RecordsViewModelFactory
 import eka.care.documents.ui.presentation.components.DocumentBottomSheetContent
 import eka.care.documents.ui.presentation.components.DocumentScreenContent
 import eka.care.documents.ui.presentation.components.TopAppBarSmall
@@ -58,10 +63,15 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun DocumentScreen(
-    params: RecordParamsModel,
-    viewModel: RecordsViewModel
+    params: RecordParamsModel
 ) {
     val context = LocalContext.current
+
+    val application = context.applicationContext as Application
+    val viewModel: RecordsViewModel = ViewModelProvider(
+        LocalContext.current as ViewModelStoreOwner,
+        RecordsViewModelFactory(application)
+    ).get(RecordsViewModel::class.java)
 
     val options = GmsDocumentScannerOptions.Builder()
         .setGalleryImportAllowed(true)
@@ -265,24 +275,24 @@ private fun initData(
     viewModel: RecordsViewModel,
     context: Context
 ) {
-//    val inputData = Data.Builder()
-//        .putString("p_uuid", patientUuid)
-//        .putString("oid", oid)
-//        .putString("doctorId", doctorId)
-//        .build()
-//
-//    val constraints = Constraints.Builder()
-//        .setRequiredNetworkType(NetworkType.CONNECTED)
-//        .build()
-//
-//    val periodicSyncWorkRequest =
-//        OneTimeWorkRequestBuilder<SyncFileWorker>()
-//            .setInputData(inputData)
-//            .setConstraints(constraints)
-//            .build()
-//
-//    WorkManager.getInstance(context)
-//        .enqueue(periodicSyncWorkRequest)
+    val inputData = Data.Builder()
+        .putString("p_uuid", patientUuid)
+        .putString("oid", oid)
+        .putString("doctorId", doctorId)
+        .build()
+
+    val constraints = Constraints.Builder()
+        .setRequiredNetworkType(NetworkType.CONNECTED)
+        .build()
+
+    val periodicSyncWorkRequest =
+        OneTimeWorkRequestBuilder<SyncFileWorker>()
+            .setInputData(inputData)
+            .setConstraints(constraints)
+            .build()
+
+    WorkManager.getInstance(context)
+        .enqueue(periodicSyncWorkRequest)
 
     viewModel.sortBy.value = DocumentSortEnum.UPLOAD_DATE
     viewModel.getLocalRecords(

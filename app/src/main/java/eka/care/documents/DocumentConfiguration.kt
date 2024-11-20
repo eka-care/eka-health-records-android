@@ -1,6 +1,6 @@
 package eka.care.documents
 
-import com.eka.network.IOkHttpSetup
+import eka.care.documents.network.IOkHttpSetup
 
 data class DocumentConfiguration(
     val okHttpSetup: IOkHttpSetup

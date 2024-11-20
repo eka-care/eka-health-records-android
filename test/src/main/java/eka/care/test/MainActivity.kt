@@ -18,6 +18,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.eka.network.IOkHttpSetup
 import eka.care.documents.Document
 import eka.care.documents.DocumentConfiguration
+import eka.care.documents.network.OkHttpSetup
 import eka.care.documents.ui.presentation.activity.DocumentActivity
 import eka.care.test.ui.theme.DocumentsTheme
 
@@ -27,20 +28,7 @@ class MainActivity : ComponentActivity() {
 
         Document.init(
             chatInitConfiguration = DocumentConfiguration(
-                okHttpSetup = object : IOkHttpSetup {
-                    override fun getDefaultHeaders(url: String): Map<String, String> {
-                        return emptyMap()
-                    }
-
-                    override fun onSessionExpire() {
-
-                    }
-
-                    override fun refreshAuthToken(url: String): Map<String, String>? {
-                        return emptyMap()
-                    }
-
-                }
+                okHttpSetup = OkHttpSetup()
             )
         )
         setContent {
