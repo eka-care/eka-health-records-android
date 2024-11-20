@@ -21,7 +21,8 @@ okhttp = "4.10.0"
 okhttp-urlconnection = "4.9.3"
 networkresponseadapter = "4.2.2"
 retrofit-version = "2.11.0"
-protobufJavaLite = "3.23.0"
+protobufJavalite = "3.23.0"
+protobufKotlinLite = "3.23.0"
 protobufGradlePlugin = "0.9.4"
 workRuntimeKtx = "2.8.1"
 
@@ -64,8 +65,8 @@ retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit
 retrofit-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "retrofit-version" }
 retrofit-scalars = { module = "com.squareup.retrofit2:converter-scalars", version.ref = "retrofit-version" }
 haroldadmin-networkresponseadapter = { module = "com.github.haroldadmin:NetworkResponseAdapter", version.ref = "networkresponseadapter" }
-protobuf-javalite = { module = "com.google.protobuf:protobuf-javalite", version.ref = "protobufJavaLite" }
-protobuf-kotlin-lite = { module = "com.google.protobuf:protobuf-kotlin-lite", version.ref = "protobufJavaLite" }
+protobuf-javalite = { module = "com.google.protobuf:protobuf-javalite", version.ref = "protobufJavalite" }
+protobuf-kotlin-lite = { module = "com.google.protobuf:protobuf-kotlin-lite", version.ref = "protobufKotlinLite" }
 
 
 ok2curl = { module = "com.github.mrmike:ok2curl", version.ref = "ok2curl" }

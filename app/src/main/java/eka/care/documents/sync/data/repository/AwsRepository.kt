@@ -1,8 +1,8 @@
 package eka.care.documents.sync.data.repository
 
 import android.webkit.MimeTypeMap
+import com.eka.network.Networking
 import com.haroldadmin.cnradapter.NetworkResponse
-import eka.care.documents.network.Networking
 import eka.care.documents.sync.data.remote.api.AwsService
 import eka.care.documents.sync.data.remote.dto.request.Batch
 import eka.care.documents.sync.data.remote.dto.request.FileType

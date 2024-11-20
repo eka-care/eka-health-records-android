@@ -21,12 +21,12 @@ class DocumentActivity : AppCompatActivity() {
         setContent {
             DocumentScreen(
                 params = RecordParamsModel(
-                    patientId = "173106247826612",
-                    doctorId = "166356870250527",
-                    name = "Manish Kumar",
-                    uuid = "274b6c26-fa2d-4bde-9cd3-0cdd7750edb2",
-                    age = 0,
-                    gender = "Male"
+                    patientId = intent.getStringExtra(MedicalRecordParams.PATIENT_ID.key) ?: "",
+                    doctorId = intent.getStringExtra(MedicalRecordParams.DOCTOR_ID.key) ?: "",
+                    name = intent.getStringExtra(MedicalRecordParams.PATIENT_NAME.key),
+                    uuid = intent.getStringExtra(MedicalRecordParams.PATIENT_UUID.key) ?: "",
+                    age = intent.getIntExtra(MedicalRecordParams.PATIENT_AGE.key, -1),
+                    gender = intent.getStringExtra(MedicalRecordParams.PATIENT_GENDER.key)
                 )
             )
         }

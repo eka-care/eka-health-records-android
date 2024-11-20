@@ -48,7 +48,7 @@ publishing {
         create<MavenPublication>("release") {
             groupId = "com.eka.records"
             artifactId = "eka-records"
-            version = "1.2.4"
+            version = "1.2.5"
 
             artifact("../app/build/outputs/aar/app-release.aar")
         }
@@ -72,18 +72,22 @@ dependencies {
     implementation(libs.zelory.compressor)
     implementation(libs.google.gson)
     implementation("com.github.Saroj-EkaCare:Jet-Pdf-Reader:1.1.4")
-    implementation(libs.protobuf.kotlin.lite)
-    implementation("com.squareup.retrofit2:converter-protobuf:2.9.0") {
-        exclude(group = "com.google.protobuf")
+    implementation("com.github.eka-care:eka-network-android:1.0.1") {
+        exclude(group = "com.google.protobuf", module = "protobuf-java")
     }
-    implementation("com.google.protobuf:protobuf-javalite:3.23.0")
+    implementation(libs.protobuf.kotlin.lite)
+    implementation("com.google.protobuf:protobuf-javalite:4.26.1") {
+        exclude(module = "protobuf-java")
+    }
 //    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     implementation(libs.androidx.core.ktx)
     implementation(libs.google.gson)
     implementation(libs.okhttp)
     implementation(libs.okhttp.urlconnection)
     implementation(libs.okhttp.logging.interceptor)
-    implementation(libs.retrofit)
+    implementation(libs.retrofit) {
+        exclude(group = "com.google.protobuf", module = "protobuf-java")
+    }
     implementation(libs.retrofit.gson)
     implementation(libs.retrofit.scalars)
     implementation(libs.haroldadmin.networkresponseadapter)

@@ -15,22 +15,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import com.eka.network.IOkHttpSetup
-import eka.care.documents.Document
-import eka.care.documents.DocumentConfiguration
-import eka.care.documents.network.OkHttpSetup
 import eka.care.documents.ui.presentation.activity.DocumentActivity
 import eka.care.test.ui.theme.DocumentsTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        Document.init(
-            chatInitConfiguration = DocumentConfiguration(
-                okHttpSetup = OkHttpSetup()
-            )
-        )
         setContent {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Button(

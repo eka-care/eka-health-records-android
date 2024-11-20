@@ -7,11 +7,10 @@ import retrofit2.http.Query
 import vault.records.Records
 
 interface MyDocumentsProtoService {
-    @Headers("Content-Type: application/x-protobuf")
     @GET("api/d/v1/docs")
     suspend fun getFiles(
         @Query("u_at__gt") updatedAt: Int?,
         @Query("offset") offset: String?,
-        @Query("p_uuid") uuid: String
-    ): Response<ByteArray>
+        @Query("p_uuid") uuid : String
+    ): Response<Records.RecordsAPIResponse>
 }

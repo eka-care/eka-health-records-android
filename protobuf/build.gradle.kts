@@ -28,6 +28,6 @@ protobuf {
 }
 
 dependencies {
-    implementation(libs.protobuf.kotlin.lite)
-    implementation(libs.protobuf.javalite)
+    api(libs.protobuf.kotlin.lite)
+    api(libs.protobuf.javalite)
 }

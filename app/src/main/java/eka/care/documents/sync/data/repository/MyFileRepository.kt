@@ -1,7 +1,7 @@
 package eka.care.documents.sync.data.repository
 
+import com.eka.network.Networking
 import com.haroldadmin.cnradapter.NetworkResponse
-import eka.care.documents.network.Networking
 import eka.care.documents.sync.data.remote.api.MyFileService
 import eka.care.documents.sync.data.remote.dto.request.UpdateFileDetailsRequest
 import eka.care.documents.sync.data.remote.dto.response.Document
@@ -10,9 +10,13 @@ import kotlinx.coroutines.withContext
 import okhttp3.ResponseBody
 
 class MyFileRepository {
+    companion object {
+        private const val BASE_URL = "https://vault.eka.care/"
+    }
 
-    private val myFileService: MyFileService =
-        Networking.create(MyFileService::class.java, "https://vault.eka.care/")
+    private val myFileService: MyFileService by lazy {
+        Networking.create(MyFileService::class.java, BASE_URL)
+    }
 
     suspend fun updateFileDetails(
         docId: String,
