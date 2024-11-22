@@ -3,6 +3,7 @@ package eka.care.documents.ui.presentation.components
 import android.app.Activity
 import android.content.Context
 import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.IntentSenderRequest
@@ -68,6 +69,14 @@ fun DocumentBottomSheetContent(
                     RecordsAction.ACTION_EDIT_DOCUMENT -> {
                         openSheet()
                         viewModel.documentBottomSheetType = DocumentBottomSheetType.EnterFileDetails
+                    }
+
+                    RecordsAction.ACTION_SHARE_DOCUMENT -> {
+                        if(viewModel.cardClickData.value?.filePath?.isEmpty() == true){
+                            Toast.makeText(context, "Syncing data, please wait!", Toast.LENGTH_SHORT).show()
+                        }else{
+                            FileSharing().shareFile(context, viewModel.cardClickData.value?.filePath?.firstOrNull() ?: "")
+                        }
                     }
 
                     RecordsAction.ACTION_DELETE_RECORD -> {

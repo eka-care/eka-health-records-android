@@ -92,4 +92,7 @@ interface VaultDao {
 
     @Query("DELETE FROM vault_table WHERE oid=:oid AND local_id=:localId")
     suspend fun removeDocument(localId: String, oid: String?)
+
+    @Query("SELECT * FROM vault_table WHERE doctor_id = :doctorId")
+    fun fetchDocumentsWithoutFilePath(doctorId: String): Flow<List<VaultEntity>>
 }

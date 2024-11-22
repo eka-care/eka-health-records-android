@@ -12,6 +12,7 @@
     <string name="recommended">Recommended</string>
     <string name="choose_an_option">Choose an option</string>
     <string name="edit_doc_details">Edit document details</string>
+    <string name="share_document">Share document</string>
     <string name="delete_record">Delete record</string>
     <string name="sort_by">Sort by</string>
     <string name="upload_date">Upload Date</string>

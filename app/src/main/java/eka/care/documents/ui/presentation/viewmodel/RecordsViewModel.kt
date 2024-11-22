@@ -63,9 +63,6 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
     private val _compressedFiles = MutableStateFlow<List<File>>(emptyList())
     val compressedFiles: StateFlow<List<File>> = _compressedFiles
 
-    private val _updateFileDetailsResp = MutableLiveData<Boolean>()
-    var updateFileDetailsResp = _updateFileDetailsResp
-
     var pdfSource by mutableStateOf<PdfSource?>(null)
 
     var documentBottomSheetType by mutableStateOf<DocumentBottomSheetType?>(null)

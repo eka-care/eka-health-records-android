@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <external-files-path
+        name="my_images"
+        path="/" />
+    <root-path
+        name="root"
+        path="/data/data/eka.care.doctor/app_cache/" />
+</paths>

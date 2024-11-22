@@ -57,10 +57,48 @@ class SyncFileWorker(
                 oid = oid,
                 doctorId = doctorId
             )
+            updateFilePath(doctorId, oid)
             Result.success()
         } catch (e: Exception) {
             Result.failure()
         }
+    }
+
+    private suspend fun updateFilePath(doctorId: String, oid : String){
+        try {
+            vaultRepository.getDocumentsWithoutFilePath(doctorId).collect { documents ->
+                documents.forEach { document ->
+                    if (document.filePath.isEmpty()) {
+                        val response = myFileRepository.getDocument(docId = document.documentId ?: "", userId = oid)
+                        response?.let {
+                            val filePaths = it.files.map { file ->
+                                downloadFile(file.assetUrl, file.fileType)
+                            }
+                            val fileType = it.files.firstOrNull()?.fileType ?: ""
+                            val updatedDocument = document.copy(
+                                filePath = filePaths,
+                                fileType = fileType
+                            )
+                            vaultRepository.updateDocuments(listOf(updatedDocument))
+                        }
+                    }
+                }
+            }
+        }catch (e : Exception){
+            Log.d("TEST", e.message.toString())
+        }
+    }
+
+    private suspend fun downloadFile(assetUrl: String?, type: String): String {
+        val directory = ContextWrapper(applicationContext).getDir("cache", Context.MODE_PRIVATE)
+        val ext = if(type.trim().lowercase() == "pdf") "pdf" else "jpg"
+        val childPath = "${UUID.randomUUID()}.$ext"
+        withContext(Dispatchers.IO) {
+            val resp = myFileRepository.downloadFile(assetUrl)
+            resp?.saveFile(File(directory, childPath))
+        }
+
+        return "${directory.path}/$childPath"
     }
 
     private suspend fun syncDocuments(oid: String, uuid: String, doctorId: String) {

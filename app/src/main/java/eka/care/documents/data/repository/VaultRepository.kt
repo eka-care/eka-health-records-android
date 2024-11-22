@@ -39,4 +39,5 @@ interface VaultRepository {
     suspend fun getLocalId(docId: String): String?
     suspend fun getDocumentByDocId(docId: String) : VaultEntity?
     suspend fun removeDocument(localId: String, oid: String)
+    suspend fun getDocumentsWithoutFilePath(doctorId: String) : Flow<List<VaultEntity>>
 }

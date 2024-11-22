@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -32,6 +33,15 @@ fun DocumentOptionsViewComponent(onClick: (CTA) -> Unit) {
             isRecommended = false,
             itemType = CTA(action = RecordsAction.ACTION_EDIT_DOCUMENT),
             leadingIcon = rememberVectorPainter(image = Icons.Outlined.Edit),
+            leadingIconTint = MaterialTheme.colorScheme.onSurfaceVariant,
+            trailingIcon = rememberVectorPainter(image = Icons.Filled.PlayArrow)
+        ),
+        DocumentBottomSheetItemModel(
+            itemName = stringResource(id = R.string.share_document),
+            itemNameColor = MaterialTheme.colorScheme.onSurface,
+            isRecommended = false,
+            itemType = CTA(action = RecordsAction.ACTION_SHARE_DOCUMENT),
+            leadingIcon = rememberVectorPainter(image = Icons.Outlined.Share),
             leadingIconTint = MaterialTheme.colorScheme.onSurfaceVariant,
             trailingIcon = rememberVectorPainter(image = Icons.Filled.PlayArrow)
         ),

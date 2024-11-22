@@ -133,4 +133,8 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
         database.vaultDao().removeDocument(localId = localId, oid = oid)
         return
     }
+
+    override suspend fun getDocumentsWithoutFilePath(doctorId: String): Flow<List<VaultEntity>> {
+        return database.vaultDao().fetchDocumentsWithoutFilePath(doctorId)
+    }
 }
