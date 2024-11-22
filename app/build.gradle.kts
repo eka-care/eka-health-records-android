@@ -15,10 +15,24 @@ android {
         targetSdk = 34
         multiDexEnabled = true
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        signingConfig = signingConfigs.getByName("debug")
+//        signingConfig = signingConfigs.getByName("debug")
+    }
+
+    sourceSets {
+        getByName("main") {
+            java.srcDir("${project(":protobuf").buildDir}/generated/source/proto/main/java")
+            java.srcDir("${project(":protobuf").buildDir}/generated/source/proto/main/kotlin")
+        }
     }
 
     buildTypes {
+        debug {
+            isMinifyEnabled = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
@@ -43,17 +57,58 @@ android {
     }
 }
 
-publishing {
-    publications {
-        create<MavenPublication>("release") {
-            groupId = "com.eka.records"
-            artifactId = "eka-records"
-            version = "1.2.5"
+//publishing {
+//    publications {
+//        create<MavenPublication>("release") {
+//            from(components["release"])
+////            from(components["library"])
+//            artifact(tasks.named("bundleProtobufOutputs").get()) {
+//                classifier = "protobuf"
+//            }
+//            groupId = "com.eka.records"
+//            artifactId = "eka-records"
+//            version = "1.2.5"
+//
+//            // Include the Protobuf module as part of the AAR
+////            artifact(tasks.named("bundleReleaseAar").get())
+//        }
+//    }
+//}
 
-            artifact("../app/build/outputs/aar/app-release.aar")
+
+afterEvaluate {
+    publishing {
+        publications {
+            create<MavenPublication>("release") {
+                from(components["release"])
+                artifact(tasks.named("bundleProtobufOutputs").get()) {
+                    classifier = "protobuf"
+                }
+
+                groupId = "com.eka.records"
+                artifactId = "eka-records"
+                version = "2.0.0"
+            }
         }
     }
 }
+
+tasks.register<Jar>("bundleProtobufOutputs") {
+    from("${project(":protobuf").buildDir}/generated/source/proto/main/java")
+    from("${project(":protobuf").buildDir}/generated/source/proto/main/kotlin")
+    archiveClassifier.set("protobuf")
+}
+//publishing {
+//    publications {
+//        create<MavenPublication>("release") {
+//            groupId = "com.eka.records"
+//            artifactId = "eka-records"
+//            version = "1.2.5"
+//
+//            artifact("../app/build/outputs/aar/app-release.aar")
+//        }
+//    }
+//}
 
 dependencies {
     implementation(project(":protobuf"))
@@ -72,7 +127,7 @@ dependencies {
     implementation(libs.zelory.compressor)
     implementation(libs.google.gson)
     implementation("com.github.Saroj-EkaCare:Jet-Pdf-Reader:1.1.4")
-    implementation("com.github.eka-care:eka-network-android:1.0.1") {
+    implementation("com.github.eka-care:eka-network-android:1.0.3") {
         exclude(group = "com.google.protobuf", module = "protobuf-java")
     }
     implementation(libs.protobuf.kotlin.lite)
@@ -96,7 +151,4 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     implementation(libs.google.accompanist.pager)
     implementation(libs.google.accompanist.pager.indicators)
-
-    // remove
-    implementation(libs.ok2curl)
 }

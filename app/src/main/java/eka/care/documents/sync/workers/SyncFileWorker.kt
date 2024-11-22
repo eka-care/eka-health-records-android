@@ -37,11 +37,11 @@ class SyncFileWorker(
     params: WorkerParameters
 ) : CoroutineWorker(appContext, params) {
 
-    private val db by lazy { DocumentDatabase.getInstance(applicationContext) }
-    private val vaultRepository: VaultRepository by lazy { VaultRepositoryImpl(db) }
-    private val awsRepository by lazy { AwsRepository() }
-    private val myFileRepository by lazy { MyFileRepository() }
-    private val recordsRepository by lazy { SyncRecordsRepository(applicationContext as Application) }
+    private val db = DocumentDatabase.getInstance(applicationContext)
+    private val vaultRepository: VaultRepository = VaultRepositoryImpl(db)
+    private val awsRepository = AwsRepository()
+    private val myFileRepository = MyFileRepository()
+    private val recordsRepository = SyncRecordsRepository(appContext as Application)
 
     override suspend fun doWork(): Result = coroutineScope {
         try {
@@ -103,7 +103,7 @@ class SyncFileWorker(
                                 }
 
                                 val tagList = vaultEntity.tags?.split(",") ?: emptyList()
-                               // val tagNames = Tags().getTagNamesByIds(tagList)
+                        //        val tagNames = Tags().getTagNamesByIds(tagList)
                                 val updateFileDetailsRequest = UpdateFileDetailsRequest(
                                     oid = vaultEntity.oid,
                                     documentType = docTypes.firstOrNull { it.idNew == vaultEntity.documentType }?.id,
@@ -128,6 +128,7 @@ class SyncFileWorker(
             Log.d("TEST", e.message.toString())
         }
     }
+
 
     private suspend fun fetchRecords(
         offset: String?,

@@ -1,5 +1,6 @@
 package eka.care.documents.sync.data.repository
 
+import com.eka.network.ConverterFactoryType
 import com.eka.network.Networking
 import com.haroldadmin.cnradapter.NetworkResponse
 import eka.care.documents.sync.data.remote.api.MyFileService
@@ -15,7 +16,7 @@ class MyFileRepository {
     }
 
     private val myFileService: MyFileService by lazy {
-        Networking.create(MyFileService::class.java, BASE_URL)
+        Networking.create(MyFileService::class.java, BASE_URL, ConverterFactoryType.GSON)
     }
 
     suspend fun updateFileDetails(

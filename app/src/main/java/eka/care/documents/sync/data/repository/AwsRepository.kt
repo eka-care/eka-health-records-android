@@ -1,6 +1,7 @@
 package eka.care.documents.sync.data.repository
 
 import android.webkit.MimeTypeMap
+import com.eka.network.ConverterFactoryType
 import com.eka.network.Networking
 import com.haroldadmin.cnradapter.NetworkResponse
 import eka.care.documents.sync.data.remote.api.AwsService
@@ -21,7 +22,7 @@ import java.util.Locale
 class AwsRepository {
 
     private val service: AwsService =
-        Networking.create(AwsService::class.java, "https://vault.eka.care/")
+        Networking.create(AwsService::class.java, "https://vault.eka.care/", converterFactoryType = ConverterFactoryType.GSON)
 
     suspend fun fileUploadInit(
         files: List<FileType>,

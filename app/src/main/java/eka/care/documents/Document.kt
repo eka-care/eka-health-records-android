@@ -1,5 +1,7 @@
 package eka.care.documents
 
+import com.eka.network.ConverterFactoryType
+import com.eka.network.IOkHttpSetup
 import com.eka.network.Networking
 
 object Document {
@@ -8,7 +10,7 @@ object Document {
     fun init(chatInitConfiguration: DocumentConfiguration) {
         configuration = chatInitConfiguration
         configuration?.okHttpSetup?.let {
-            Networking.init("https://vault.eka.care/", it)
+            Networking.init("https://vault.eka.care/", it, converterFactoryType = ConverterFactoryType.PROTO)
         }
     }
 }

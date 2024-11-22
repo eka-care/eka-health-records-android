@@ -25,7 +25,7 @@ class DocumentActivity : AppCompatActivity() {
                     doctorId = intent.getStringExtra(MedicalRecordParams.DOCTOR_ID.key) ?: "",
                     name = intent.getStringExtra(MedicalRecordParams.PATIENT_NAME.key),
                     uuid = intent.getStringExtra(MedicalRecordParams.PATIENT_UUID.key) ?: "",
-                    age = intent.getIntExtra(MedicalRecordParams.PATIENT_AGE.key, -1),
+                    age = intent.getIntExtra(MedicalRecordParams.PATIENT_AGE.key,0),
                     gender = intent.getStringExtra(MedicalRecordParams.PATIENT_GENDER.key)
                 )
             )

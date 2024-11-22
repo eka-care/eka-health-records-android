@@ -2,11 +2,19 @@ plugins {
     id("java-library")
     id("org.jetbrains.kotlin.jvm")
     id("com.google.protobuf")
+//    id("maven-publish")
 }
 
 java {
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17
+}
+
+java {
+    withSourcesJar() // Optional: Include only the source JAR if needed
+}
+tasks.withType<Jar> {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
 protobuf {
@@ -25,6 +33,24 @@ protobuf {
             }
         }
     }
+}
+//publishing {
+//    publications {
+//        create<MavenPublication>("release") {
+//            from(components["release"])
+//            groupId = "com.eka.records"
+//            artifactId = "eka-records"
+//            version = "1.2.5"
+//
+//            // Include the Protobuf module as part of the AAR
+//            artifact(tasks.named("bundleReleaseAar").get().archiveFile)
+//        }
+//    }
+//}
+
+tasks.withType<Jar> {
+    from("${buildDir}/generated/source/proto/main/java")
+    from("${buildDir}/generated/source/proto/main/kotlin")
 }
 
 dependencies {

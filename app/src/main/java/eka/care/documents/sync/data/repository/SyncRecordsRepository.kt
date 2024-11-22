@@ -1,6 +1,7 @@
 package eka.care.documents.sync.data.repository
 
 import android.app.Application
+import android.util.Log
 import com.eka.network.ConverterFactoryType
 import com.eka.network.Networking
 import eka.care.documents.sync.data.remote.api.MyDocumentsProtoService
@@ -8,18 +9,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import vault.records.Records
 
-class SyncRecordsRepository(private val app: Application) {
+class SyncRecordsRepository(val app: Application) {
 
     private val recordsProtoService: MyDocumentsProtoService = Networking.create(
         MyDocumentsProtoService::class.java,
         "https://vault.eka.care/",
         ConverterFactoryType.PROTO
     )
-
-    sealed class RecordsResult {
-        data class Success(val records: Records.RecordsAPIResponse) : RecordsResult()
-        data class Error(val errorMessage: String, val code: Int? = null) : RecordsResult()
-    }
 
     suspend fun getRecords(
         updatedAt: Int?,
@@ -34,7 +30,7 @@ class SyncRecordsRepository(private val app: Application) {
                     uuid = uuid
                 )
                 if (response.isSuccessful) {
-//                    val ekaUat = response.headers().get("Eka-Uat")
+                    val ekaUat = response.headers().get("Eka-Uat")
 //                    ekaUat?.let {
 //                        (app as? IAmCommon)?.setValue(
 //                            FILES_DB_UPDATED_AT,
