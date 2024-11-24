@@ -97,7 +97,9 @@ tasks.register<Jar>("bundleProtobufOutputs") {
     from("${project(":protobuf").buildDir}/generated/source/proto/main/java")
     from("${project(":protobuf").buildDir}/generated/source/proto/main/kotlin")
     archiveClassifier.set("protobuf")
+    dependsOn(":protobuf:generateProto")
 }
+
 //publishing {
 //    publications {
 //        create<MavenPublication>("release") {

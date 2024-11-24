@@ -16,6 +16,11 @@ java {
 tasks.withType<Jar> {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
+tasks.register<Jar>("bundleProtobufOutputs") {
+    from("${project(":protobuf").buildDir}/generated/source/proto/main/java")
+    from("${project(":protobuf").buildDir}/generated/source/proto/main/kotlin")
+    archiveClassifier.set("protobuf")
+}
 
 protobuf {
     protoc {
