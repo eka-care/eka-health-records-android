@@ -15,7 +15,6 @@ android {
         targetSdk = 34
         multiDexEnabled = true
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-//        signingConfig = signingConfigs.getByName("debug")
     }
 
     sourceSets {
@@ -57,25 +56,6 @@ android {
     }
 }
 
-//publishing {
-//    publications {
-//        create<MavenPublication>("release") {
-//            from(components["release"])
-////            from(components["library"])
-//            artifact(tasks.named("bundleProtobufOutputs").get()) {
-//                classifier = "protobuf"
-//            }
-//            groupId = "com.eka.records"
-//            artifactId = "eka-records"
-//            version = "1.2.5"
-//
-//            // Include the Protobuf module as part of the AAR
-////            artifact(tasks.named("bundleReleaseAar").get())
-//        }
-//    }
-//}
-
-
 afterEvaluate {
     publishing {
         publications {
@@ -99,18 +79,6 @@ tasks.register<Jar>("bundleProtobufOutputs") {
     archiveClassifier.set("protobuf")
     dependsOn(":protobuf:generateProto")
 }
-
-//publishing {
-//    publications {
-//        create<MavenPublication>("release") {
-//            groupId = "com.eka.records"
-//            artifactId = "eka-records"
-//            version = "1.2.5"
-//
-//            artifact("../app/build/outputs/aar/app-release.aar")
-//        }
-//    }
-//}
 
 dependencies {
     implementation(project(":protobuf")) {
