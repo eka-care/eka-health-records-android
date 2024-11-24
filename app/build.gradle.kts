@@ -87,7 +87,7 @@ afterEvaluate {
 
                 groupId = "com.eka.records"
                 artifactId = "eka-records"
-                version = "2.0.0"
+                version = "3.0.0"
             }
         }
     }
@@ -111,7 +111,9 @@ tasks.register<Jar>("bundleProtobufOutputs") {
 //}
 
 dependencies {
-    implementation(project(":protobuf"))
+    implementation(project(":protobuf")) {
+        exclude(group = "com.google.protobuf", module = "protobuf-java")
+    }
     implementation(libs.androidx.work.runtime.ktx)
     implementation(platform(libs.androidx.compose.bom))
     kapt(libs.room.compiler)

@@ -64,7 +64,11 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
-    implementation(project(":app"))
+    implementation(project(":app")) {
+        exclude(group = "Documents", module = "protobuf")
+        exclude(group = "androidx.constraintlayout")
+        exclude(group = "androidx.appcompat", module = "appcompat")
+    }
     implementation(libs.google.gson)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
