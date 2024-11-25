@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package vault.records;
+
+enum DocumentType {
+  TYPE_UNSPECIFIED = 0; // Unspecified.
+  TYPE_LAB_REPORT = 1;
+  TYPE_PRESCRIPTION = 2;
+  TYPE_DISCHARGE_SUMMARY = 3;
+  TYPE_VACCINE_CERTIFICATE = 4;
+  TYPE_INSURANCE = 5;
+  TYPE_INVOICE = 6;
+  TYPE_SCAN = 7;
+  TYPE_OTHER = 8;
+}

@@ -1,9 +1,10 @@
 plugins {
+    id("com.google.protobuf")
     id("com.android.library")
     id("maven-publish")
     id("kotlin-kapt")
     id("kotlin-parcelize")
-    alias(libs.plugins.jetbrains.kotlin.android)
+    kotlin("android")
 }
 
 android {
@@ -19,8 +20,8 @@ android {
 
     sourceSets {
         getByName("main") {
-            java.srcDir("${project(":protobuf").buildDir}/generated/source/proto/main/java")
-            java.srcDir("${project(":protobuf").buildDir}/generated/source/proto/main/kotlin")
+            java.srcDir("${layout.buildDirectory}/generated/source/proto/main/java")
+            java.srcDir("${layout.buildDirectory}/generated/source/proto/main/kotlin")
         }
     }
 
@@ -74,16 +75,34 @@ afterEvaluate {
 }
 
 tasks.register<Jar>("bundleProtobufOutputs") {
-    from("${project(":protobuf").buildDir}/generated/source/proto/main/java")
-    from("${project(":protobuf").buildDir}/generated/source/proto/main/kotlin")
+    from("${layout.buildDirectory}/generated/source/proto/main/java")
+    from("${layout.buildDirectory}/generated/source/proto/main/kotlin")
     archiveClassifier.set("protobuf")
-    dependsOn(":protobuf:generateProto")
+}
+
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:3.20.1"
+    }
+
+    generateProtoTasks {
+        all().forEach { task ->
+            task.builtins {
+                create("kotlin") {
+                    option("lite")
+                }
+                create("java") {
+                    option("lite")
+                }
+            }
+        }
+    }
 }
 
 dependencies {
-    implementation(project(":protobuf")) {
-        exclude(group = "com.google.protobuf", module = "protobuf-java")
-    }
+//    implementation(project(":protobuf")) {
+//        exclude(group = "com.google.protobuf", module = "protobuf-java")
+//    }
     implementation(libs.androidx.work.runtime.ktx)
     implementation(platform(libs.androidx.compose.bom))
     kapt(libs.room.compiler)
@@ -123,4 +142,6 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     implementation(libs.google.accompanist.pager)
     implementation(libs.google.accompanist.pager.indicators)
+    implementation(libs.protobuf.kotlin.lite)
+    implementation(libs.protobuf.javalite)
 }

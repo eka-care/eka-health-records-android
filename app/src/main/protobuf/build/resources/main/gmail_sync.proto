@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package vault.gmail_sync;
+
+import "cta.proto";
+
+option go_package = "github.com/eka-care/proto-contracts/go/vault/gmailsync";
+
+/* State represents current gmail sync status. */
+enum State {
+  STATE_UNSPECIFIED = 0; // State -> Unspecified.
+  STATE_STARTED = 1;     // State -> Started.
+  STATE_PROCESSING = 2;  // State -> Processing.
+  STATE_SYNCED = 3;      // State -> Synced.
+  STATE_UNLINKED = 4;    // State -> Unlinked.
+  STATE_FAILED = 5;      // State -> Failed.
+  STATE_REVOKED = 6;     // State -> Revoked.
+}
+
+/* GmailSync represents sync status along with pop-up summary. */
+message GmailSync {
+  State status = 1;                   // Gmail sync status.
+  string sync_id = 2;                 // Gmail sync sync id.
+  repeated Categories categories = 3; // Gmail sync profile classification data.
+  optional uint32 total_count =
+      4; // Total count of docs (identified + needs review).
+  optional ProfileDocPopup profile_doc_popup = 5; // Gmail sync pop-up summary.
+  uint32 count = 6;                               // Gmail sync documents count.
+}
+
+/* Categories represent gmail sync profile classification screen. */
+message Categories {
+  string tab_title = 1;       // Identified or Needs review tab title.
+  uint32 tab_count = 2;       // Number of records found under each tab.
+  string description = 3;     // Description of the tab.
+  string bgcolor = 4;         // Background color for the tab.
+  string tab_count_color = 5; // Color for tab count.
+}
+
+/* ProfileDocPopup represents gmail sync pop-up summary. */
+message ProfileDocPopup {
+  vault.common.CTA cta = 1; // CTA configuration for button.
+  string title = 2;         // No. of records belonging to tab.
+}
