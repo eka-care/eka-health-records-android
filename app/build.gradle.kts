@@ -68,7 +68,7 @@ afterEvaluate {
 
                 groupId = "com.eka.records"
                 artifactId = "eka-records"
-                version = "3.0.0"
+                version = "3.0.1"
             }
         }
     }
@@ -100,9 +100,6 @@ protobuf {
 }
 
 dependencies {
-//    implementation(project(":protobuf")) {
-//        exclude(group = "com.google.protobuf", module = "protobuf-java")
-//    }
     implementation(libs.androidx.work.runtime.ktx)
     implementation(platform(libs.androidx.compose.bom))
     kapt(libs.room.compiler)
@@ -125,7 +122,6 @@ dependencies {
     implementation("com.google.protobuf:protobuf-javalite:4.26.1") {
         exclude(module = "protobuf-java")
     }
-//    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     implementation(libs.androidx.core.ktx)
     implementation(libs.google.gson)
     implementation(libs.okhttp)

@@ -17,6 +17,7 @@ class SmartReportActivity : ComponentActivity() {
                 docId = intent.getStringExtra("doc_id") ?: "",
                 userId = intent.getStringExtra("user_id") ?: "",
                 documentDate = intent.getStringExtra("doc_date") ?: "",
+                localId = intent.getStringExtra("local_id") ?: "",
                 onClick = {
                     if (it?.action == "on_back_click") {
                         finish()

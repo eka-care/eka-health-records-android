@@ -134,7 +134,7 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
         return
     }
 
-    override suspend fun getDocumentsWithoutFilePath(doctorId: String): Flow<List<VaultEntity>> {
-        return database.vaultDao().fetchDocumentsWithoutFilePath(doctorId)
+    override suspend fun getDocumentsWithoutFilePath(doctorId: String, patientOid : String): Flow<List<VaultEntity>> {
+        return database.vaultDao().fetchDocumentsWithoutFilePath( doctorId = doctorId, patientOid =  patientOid)
     }
 }
