@@ -106,7 +106,6 @@ dependencies {
     implementation("com.google.protobuf:protobuf-javalite:4.26.1") {
         exclude(module = "protobuf-java")
     }
-//    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     implementation(libs.androidx.core.ktx)
     implementation(libs.google.gson)
     implementation(libs.okhttp)
@@ -123,4 +122,10 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     implementation(libs.google.accompanist.pager)
     implementation(libs.google.accompanist.pager.indicators)
+
+    // for secret locker
+    implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.ui)
+    implementation(libs.androidx.media3.exoplayer.hls)
+    implementation(libs.androidx.constraintlayout)
 }
