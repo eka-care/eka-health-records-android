@@ -3,12 +3,13 @@ package eka.care.documents.ui.presentation.viewmodel
 import android.app.Application
 import android.content.Context
 import android.content.ContextWrapper
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import eka.care.documents.ui.presentation.components.Filter
 import eka.care.documents.ui.presentation.components.LabParamResult
 import eka.care.documents.ui.presentation.components.SmartViewTab
-import eka.care.doctor.features.documents.features.drive.presentation.state.DocumentPreviewState
+import eka.care.documents.ui.presentation.state.DocumentPreviewState
 import eka.care.documents.ui.presentation.state.DocumentSmartReportState
 import eka.care.documents.data.db.database.DocumentDatabase
 import eka.care.documents.data.repository.VaultRepository
@@ -16,6 +17,7 @@ import eka.care.documents.data.repository.VaultRepositoryImpl
 import eka.care.documents.sync.data.remote.dto.response.SmartReport
 import eka.care.documents.sync.data.remote.dto.response.SmartReportField
 import eka.care.documents.sync.data.repository.MyFileRepository
+import eka.care.documents.ui.presentation.state.DocumentState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -31,17 +33,14 @@ class DocumentPreviewViewModel(val app: Application): AndroidViewModel(app){
     private val vaultRepository: VaultRepository = VaultRepositoryImpl(DocumentDatabase.getInstance(app))
     private val myFileRepository = MyFileRepository()
 
-    private val _selectedTab = MutableStateFlow(SmartViewTab.SMARTREPORT)
-    val selectedTab = _selectedTab.asStateFlow()
-
     private val _selectedFilter = MutableStateFlow(Filter.ALL)
     val selectedFilter: StateFlow<Filter> = _selectedFilter
 
     private val _filteredSmartReport = MutableStateFlow<List<SmartReportField>>(emptyList())
     val filteredSmartReport: StateFlow<List<SmartReportField>> = _filteredSmartReport
 
-    private val _document = MutableStateFlow<DocumentPreviewState>(DocumentPreviewState.Loading)
-    val document: StateFlow<DocumentPreviewState> = _document
+    private val _documentState = MutableStateFlow<DocumentState>(DocumentState.Loading)
+    val documentState: StateFlow<DocumentState> = _documentState.asStateFlow()
 
     private val _documentSmart = MutableStateFlow<DocumentSmartReportState>(DocumentSmartReportState.Loading)
     val documentSmart: StateFlow<DocumentSmartReportState> = _documentSmart
@@ -64,53 +63,14 @@ class DocumentPreviewViewModel(val app: Application): AndroidViewModel(app){
         }
     }
 
-    fun updateSelectedTab(newTab: SmartViewTab) {
-        _selectedTab.value = newTab
-    }
-
-    fun getDocument(docId: String, userId: String) {
+    fun getDocument(oid: String, localId: String) {
         viewModelScope.launch {
+            _documentState.value = DocumentState.Loading
             try {
-                val recordEntity = vaultRepository.getDocumentByDocId(docId = docId)
-                if(!recordEntity?.filePath.isNullOrEmpty()) {
-                    _document.value = DocumentPreviewState.Success(
-                        Pair(
-                            first = recordEntity?.filePath ?: emptyList(),
-                            second = recordEntity?.fileType ?: ""
-                        )
-                    )
-                    return@launch
-                }
-                val response = myFileRepository.getDocument(docId = docId, userId = userId)
-                if(response == null) {
-                    _document.value = DocumentPreviewState.Error("Something went wrong!")
-                    return@launch
-                }
-                val files = mutableListOf<String>()
-                var fileType = ""
-                response.files.forEach {
-                    fileType = it.fileType
-                    val path = downloadFile(it.assetUrl, it.fileType)
-                    files.add(path)
-                }
-                val documentEntity = vaultRepository.getDocumentByDocId(docId)
-                if(documentEntity == null) {
-                    _document.value = DocumentPreviewState.Error("Something went wrong!")
-                    return@launch
-                }
-                val newDocumentEntity = documentEntity.copy(
-                    filePath = files,
-                    fileType = fileType
-                )
-                vaultRepository.updateDocuments(listOf(newDocumentEntity))
-                _document.value = DocumentPreviewState.Success(
-                    Pair(
-                        first = files,
-                        second = fileType
-                    )
-                )
-            } catch (ex: Exception) {
-                _document.value = DocumentPreviewState.Error(ex.localizedMessage ?: "Something went wrong!")
+                val data = vaultRepository.fetchDocumentData(oid, localId)
+                _documentState.value = DocumentState.Success(data.filePath, data.fileType)
+            } catch (e: Exception) {
+                _documentState.value = DocumentState.Error("Failed to fetch document: ${e.message}")
             }
         }
     }

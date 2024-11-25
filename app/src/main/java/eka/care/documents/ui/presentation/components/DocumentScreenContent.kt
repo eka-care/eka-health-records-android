@@ -220,7 +220,7 @@ private fun navigate(context: Context, model: RecordModel, oid: String, document
     if(isOnline(context)){
         if (model.tags?.split(",")?.contains("1") == false) {
             Intent(context, DocumentPreview::class.java).also {
-                it.putExtra("document_id", model.documentId)
+                it.putExtra("local_id", model.localId)
                 it.putExtra("user_id", oid)
                 context.startActivity(it)
             }
@@ -232,13 +232,14 @@ private fun navigate(context: Context, model: RecordModel, oid: String, document
                     it.putExtra("doc_id", documentId)
                     it.putExtra("user_id", oid)
                     it.putExtra("doc_date", date)
+                    it.putExtra("local_id", model.localId)
                     context.startActivity(it)
                 }
             return
         }
     }else{
         Intent(context, DocumentPreview::class.java).also {
-            it.putExtra("document_id", model.documentId)
+            it.putExtra("local_id", model.localId)
             it.putExtra("user_id", oid)
             context.startActivity(it)
         }

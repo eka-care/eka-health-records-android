@@ -3,6 +3,7 @@ package eka.care.documents.ui.presentation.components
 import android.app.Activity
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.result.ActivityResult
@@ -10,6 +11,7 @@ import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanner
 import eka.care.documents.ui.presentation.model.RecordParamsModel
 import eka.care.documents.ui.presentation.screens.DocumentOptionsBottomSheet
@@ -32,6 +34,11 @@ fun DocumentBottomSheetContent(
     viewModel: RecordsViewModel,
     params: RecordParamsModel
 ) {
+    val localId = viewModel.cardClickData.value?.localId
+    val filePathState = viewModel.documentData.collectAsState()
+    localId?.let { it1 ->
+        viewModel.getDocumentData(oid =  params.patientId, localId = it1)
+    }
     when (viewModel.documentBottomSheetType) {
         DocumentBottomSheetType.DocumentUpload -> {
             DocumentUploadBottomSheet(onClick = {
@@ -72,10 +79,11 @@ fun DocumentBottomSheetContent(
                     }
 
                     RecordsAction.ACTION_SHARE_DOCUMENT -> {
-                        if(viewModel.cardClickData.value?.filePath?.isEmpty() == true){
+                        Log.d("AYUSHI", filePathState.value.first.toString())
+                        if(filePathState.value.first?.isEmpty() == true){
                             Toast.makeText(context, "Syncing data, please wait!", Toast.LENGTH_SHORT).show()
                         }else{
-                            FileSharing().shareFile(context, viewModel.cardClickData.value?.filePath?.firstOrNull() ?: "")
+                            FileSharing().shareFile(context, filePathState.value.first?.firstOrNull() ?: "")
                         }
                     }
 

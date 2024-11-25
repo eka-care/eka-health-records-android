@@ -8,9 +8,6 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.reader.presentation.states.PdfSource
 import com.google.gson.Gson
@@ -41,7 +38,8 @@ import java.io.File
 class RecordsViewModel(app: Application) : AndroidViewModel(app) {
 
     private val myFileRepository = MyFileRepository()
-    private val vaultRepository: VaultRepository = VaultRepositoryImpl(DocumentDatabase.getInstance(app))
+    private val vaultRepository: VaultRepository =
+        VaultRepositoryImpl(DocumentDatabase.getInstance(app))
 
     val cardClickData = mutableStateOf<RecordModel?>(null)
 
@@ -63,6 +61,9 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
     private val _compressedFiles = MutableStateFlow<List<File>>(emptyList())
     val compressedFiles: StateFlow<List<File>> = _compressedFiles
 
+    private val _documentData = MutableStateFlow<Pair<List<String>?, String>>(Pair(emptyList(), ""))
+    val documentData: StateFlow<Pair<List<String>?, String>> = _documentData
+
     var pdfSource by mutableStateOf<PdfSource?>(null)
 
     var documentBottomSheetType by mutableStateOf<DocumentBottomSheetType?>(null)
@@ -73,7 +74,7 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             _selectedTags.value = emptyList()
             val response = myFileRepository.getDocument(docId = docId, userId = userId)?.tags
-         //   val apiTags = response?.let { Tags().getTagIdByNames(it) } ?: emptyList()
+            //   val apiTags = response?.let { Tags().getTagIdByNames(it) } ?: emptyList()
             val cardTags = cardClickData.value?.tags?.split(",")?.map { it.trim() } ?: emptyList()
             val allTags = (cardTags).distinct()
             _selectedTags.value = allTags
@@ -90,10 +91,6 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
                 _selectedTags.value = allTags
             }
         }
-    }
-
-    fun updateSelectedTags(newTags: List<String>) {
-        _selectedTags.value = newTags
     }
 
     fun compressFile(fileList: List<File>, context: Context) {
@@ -195,9 +192,9 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
     ) {
         try {
             viewModelScope.launch {
-                vaultRepository.editDocument(localId, docType,  docDate, tags, patientId = oid)
+                vaultRepository.editDocument(localId, docType, docDate, tags, patientId = oid)
                 val tagList = tags.split(",")
-              //  val tagNames = Tags().getTagNamesByIds(tagList)
+                //  val tagNames = Tags().getTagNamesByIds(tagList)
                 val updateFileDetailsRequest = UpdateFileDetailsRequest(
                     oid = oid,
                     documentType = docTypes.find { it.idNew == docType }?.id,
@@ -237,6 +234,20 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
         } catch (_: Exception) {
         }
     }
+
+    fun getDocumentData(oid: String, localId: String) {
+        viewModelScope.launch {
+            try {
+                val data = vaultRepository.fetchDocumentData(oid = oid, localId = localId)
+                val filePath = data.filePath
+                val fileType = data.fileType
+                _documentData.value = Pair(filePath, fileType)
+            } catch (e: Exception) {
+                e.printStackTrace() // Log the error or handle it appropriately
+            }
+        }
+    }
+
 
     fun syncDeletedDocuments(oid: String, doctorId: String) {
         try {

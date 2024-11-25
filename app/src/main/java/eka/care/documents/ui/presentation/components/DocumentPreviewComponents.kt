@@ -1,6 +1,8 @@
 package eka.care.documents.ui.presentation.components
 
 import android.net.Uri
+import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -39,7 +41,6 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.reader.PdfReaderManager
 import com.example.reader.presentation.states.PdfSource
-import eka.care.doctor.features.documents.features.drive.presentation.state.DocumentPreviewState
 import java.io.File
 
 @Composable
@@ -105,20 +106,20 @@ fun ImagePreview(uri: Uri, modifier: Modifier) {
 
 @Composable
 fun DocumentSuccessState(
-    state: DocumentPreviewState.Success?,
+    state: Pair<List<String>?, String>,
     paddingValues: PaddingValues,
     pdfManager: PdfReaderManager,
 ) {
-    when (state?.data?.second?.trim()?.lowercase()) {
+    when (state.second.trim().lowercase()) {
         "pdf" -> PdfPreview(
             paddingValues = paddingValues,
-            uri = Uri.fromFile(File(state.data.first.firstOrNull())),
+            uri = Uri.fromFile(File(state.first?.firstOrNull())),
             pdfManager = pdfManager
         )
 
         else -> {
-            state?.data?.first?.let {
-                DocumentImagePreview(it)
+            state.first?.let {
+               DocumentImagePreview(it)
             }
         }
     }
