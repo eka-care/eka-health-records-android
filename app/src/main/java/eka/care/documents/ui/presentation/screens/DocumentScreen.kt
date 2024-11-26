@@ -34,7 +34,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.work.Constraints
@@ -72,6 +71,14 @@ fun DocumentScreen(
         LocalContext.current as ViewModelStoreOwner,
         RecordsViewModelFactory(application)
     ).get(RecordsViewModel::class.java)
+
+    initData(
+        oid = params.patientId,
+        doctorId = params.doctorId,
+        viewModel = viewModel,
+        context = context,
+        patientUuid = params.uuid
+    )
 
     val options = GmsDocumentScannerOptions.Builder()
         .setGalleryImportAllowed(true)
@@ -187,16 +194,6 @@ fun DocumentScreen(
             )
         }
     )
-
-    LaunchedEffect(key1 = Unit) {
-        initData(
-            oid = params.patientId,
-            doctorId = params.doctorId,
-            viewModel = viewModel,
-            context = context,
-            patientUuid = params.uuid
-        )
-    }
 
     LaunchedEffect(viewModel.documentBottomSheetType) {
         viewModel.documentBottomSheetType?.let {

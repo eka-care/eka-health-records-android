@@ -44,7 +44,7 @@ interface VaultDao {
         oid: String?
     )
 
-    @Query("UPDATE vault_table SET  oid = :oid, doc_date = :documentDate ,tags = :tags, is_abha_linked = :isAbhaLinked, is_analyzing = :isAnalysing, hash_id = :hasId, cta = :cta WHERE local_id = :localId AND doc_id = :docId")
+    @Query("UPDATE vault_table SET  oid = :oid ,tags = :tags, is_abha_linked = :isAbhaLinked, is_analyzing = :isAnalysing, hash_id = :hasId, cta = :cta WHERE local_id = :localId AND doc_id = :docId")
     suspend fun storeDocument(
         localId: String,
         oid: String?,
@@ -53,8 +53,7 @@ interface VaultDao {
         isAnalysing: Boolean,
         hasId: String,
         cta: String?,
-        tags: String,
-        documentDate : Long
+        tags: String
     )
 
     @Query("UPDATE vault_table SET is_deleted=1 WHERE oid=:oid AND local_id=:localId")
@@ -64,7 +63,7 @@ interface VaultDao {
     suspend fun getUnsyncedDocuments(oid: String?, doctorId: String): List<VaultEntity>
 
     @Query("SELECT * FROM vault_table WHERE oid=:oid AND local_id=:localId")
-    suspend fun getDocumentData(oid: String?, localId: String): VaultEntity
+    fun getDocumentData(oid: String?, localId: String): Flow<VaultEntity>
 
     @Query("SELECT doc_type as docType, count(*) as count FROM vault_table WHERE oid=:oid AND is_deleted=0 AND doctor_id = :doctorId GROUP BY doc_type")
     suspend fun getAvailableDocTypes(oid: String?, doctorId: String): List<AvailableDocTypes>

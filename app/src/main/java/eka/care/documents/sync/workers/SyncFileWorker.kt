@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.util.Log
 import android.webkit.MimeTypeMap
+import androidx.compose.runtime.mutableStateOf
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.google.gson.Gson
@@ -63,12 +64,12 @@ class SyncFileWorker(
         }
     }
 
-    private suspend fun updateFilePath(doctorId: String, oid : String){
+    private suspend fun updateFilePath(doctorId: String, oid: String) {
         try {
             vaultRepository.getDocumentsWithoutFilePath(doctorId, patientOid = oid)
                 .collect { documents ->
                     documents.forEach { document ->
-                        if(document.filePath?.isEmpty() == true){
+                        if (document.filePath?.isEmpty() == true) {
                             Log.d("AYUSHI", document.toString())
                             val response = myFileRepository.getDocument(
                                 docId = document.documentId ?: "",
@@ -111,6 +112,7 @@ class SyncFileWorker(
                 vaultRepository.getUnsyncedDocuments(oid = oid, doctorId = doctorId)
             val files = mutableListOf<FileType>()
             val tags = mutableListOf<String>()
+            var documentId = mutableStateOf("")
 
             vaultDocuments.forEach { vaultEntity ->
                 vaultEntity.filePath.let { path ->
@@ -119,7 +121,10 @@ class SyncFileWorker(
                         files.add(FileType(file.getMimeType().toString(), file.length()))
                     }
                 }
-                val tagList = vaultEntity.tags?.split(",") ?: emptyList()
+                val documentType = docTypes.find { it.idNew == vaultEntity.documentType }
+                documentId.value = documentType?.id ?: "ot"
+
+//               val tagList = vaultEntity.tags?.split(",") ?: emptyList()
 //                val tagNames = Tags().getTagNamesByIds(tagList)
 //                tags.addAll(tagNames)
             }
@@ -130,7 +135,8 @@ class SyncFileWorker(
                         files = files,
                         patientOid = oid,
                         patientUuid = uuid,
-                        tags = tags
+                        tags = tags,
+                        documentType = documentId.value
                     )
                 vaultDocuments.forEachIndexed { index, vaultEntity ->
                     val batchResponse =
@@ -237,7 +243,13 @@ class SyncFileWorker(
             }
             val localCta = CTA(action = recordCta.action, pageId = recordCta.pid, params = params)
             val localId = vaultRepository.getLocalId(recordItem.documentId)
+            val isTagContainsOne = recordItem.metadata.tagsValueList.map { it.toInt() }
+            val tagContainsOne = isTagContainsOne.contains(1)
             if (!localId.isNullOrEmpty()) {
+                val documentData = vaultRepository.fetchDocumentData(
+                    oid = recordItem.patientOid,
+                    localId = localId
+                )
                 vaultRepository.storeDocument(
                     localId = localId,
                     cta = if (localCta.pageId.isNullOrEmpty()) null
@@ -248,7 +260,6 @@ class SyncFileWorker(
                     isAbhaLinked = false,
                     oid = recordItem.patientOid,
                     tags = recordItem.metadata.tagsValueList.joinToString(","),
-                    documentDate = recordItem.metadata.documentDate.seconds,
                 )
             } else {
                 vaultList.add(

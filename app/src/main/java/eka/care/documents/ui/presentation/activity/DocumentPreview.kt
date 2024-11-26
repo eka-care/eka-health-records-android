@@ -2,7 +2,6 @@ package eka.care.documents.ui.presentation.activity
 
 import android.app.Activity
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -20,11 +19,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import com.example.reader.PdfReaderManager
-import eka.care.documents.ui.presentation.state.DocumentPreviewState
 import eka.care.documents.R
 import eka.care.documents.ui.presentation.components.DocumentSuccessState
-import eka.care.documents.ui.presentation.components.ErrorState
-import eka.care.documents.ui.presentation.components.LoadingState
 import eka.care.documents.ui.presentation.components.TopAppBarSmall
 import eka.care.documents.ui.presentation.state.DocumentState
 import eka.care.documents.ui.presentation.viewmodel.DocumentPreviewViewModel
@@ -52,7 +48,6 @@ class DocumentPreview : ComponentActivity() {
 
             when (documentState) {
                 is DocumentState.Loading -> {
-                    // Show loading indicator
                     CircularProgressIndicator()
                 }
                 is DocumentState.Success -> {

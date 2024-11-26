@@ -14,7 +14,7 @@ data class Batch(
     @SerializedName("files")
     val files: List<FileType>,
     @SerializedName("dt")
-    val documentType: String = "ot",
+    val documentType: String,
     @SerializedName("dd")
     val documentDate: String? = null,
     @SerializedName("sh")

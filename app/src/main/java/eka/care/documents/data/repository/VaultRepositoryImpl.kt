@@ -48,7 +48,6 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
         hasId: String,
         cta: String?,
         tags: String,
-        documentDate : Long
     ) {
         database.vaultDao().storeDocument(
             localId = localId,
@@ -59,7 +58,6 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
             hasId = hasId,
             cta = cta,
             tags = tags,
-            documentDate = documentDate
         )
     }
 
@@ -79,7 +77,7 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
         return database.vaultDao().getEditedDocuments(oid = oid, doctorId = doctorId)
     }
 
-    override suspend fun fetchDocumentData(oid: String, localId: String): VaultEntity {
+    override suspend fun fetchDocumentData(oid: String, localId: String): Flow<VaultEntity> {
         return database.vaultDao().getDocumentData(oid = oid, localId = localId)
     }
 
