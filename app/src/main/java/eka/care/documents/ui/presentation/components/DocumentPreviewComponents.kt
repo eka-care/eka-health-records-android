@@ -1,8 +1,6 @@
 package eka.care.documents.ui.presentation.components
 
 import android.net.Uri
-import android.util.Log
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -119,7 +117,7 @@ fun DocumentSuccessState(
 
         else -> {
             state.first?.let {
-               DocumentImagePreview(it)
+                DocumentImagePreview(it)
             }
         }
     }
@@ -127,14 +125,18 @@ fun DocumentSuccessState(
 
 @Composable
 fun DocumentImagePreview(filePaths: List<String>) {
-    var selectedUri by remember { mutableStateOf<Uri?>(Uri.parse(filePaths.firstOrNull())) }
+    val firstFilePath = filePaths.firstOrNull()
+    val selectedUri =
+        remember { mutableStateOf<Uri?>(firstFilePath?.let { Uri.parse(it) } ?: Uri.EMPTY) }
 
     Column(
-        modifier = Modifier.fillMaxSize().background(Color.White),
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White),
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        selectedUri?.let {
+        selectedUri.value?.let {
             ImagePreview(
                 uri = it, modifier = Modifier
                     .fillMaxWidth()
@@ -162,7 +164,7 @@ fun DocumentImagePreview(filePaths: List<String>) {
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             .clickable {
-                                selectedUri = uri
+                                selectedUri.value = uri
                             }
                     )
                 }

@@ -9,6 +9,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.work.Constraints
+import androidx.work.Data
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkInfo
+import androidx.work.WorkManager
+import androidx.work.WorkRequest
 import com.example.reader.presentation.states.PdfSource
 import com.google.gson.Gson
 import eka.care.documents.data.db.database.DocumentDatabase
@@ -18,6 +25,7 @@ import eka.care.documents.data.repository.VaultRepositoryImpl
 import eka.care.documents.data.utility.DocumentUtility.Companion.docTypes
 import eka.care.documents.sync.data.remote.dto.request.UpdateFileDetailsRequest
 import eka.care.documents.sync.data.repository.MyFileRepository
+import eka.care.documents.sync.workers.SyncFileWorker
 import eka.care.documents.ui.presentation.components.DocumentBottomSheetType
 import eka.care.documents.ui.presentation.components.DocumentViewType
 import eka.care.documents.ui.presentation.model.CTA
@@ -64,6 +72,14 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
     private val _documentData = MutableStateFlow<Pair<List<String>?, String>>(Pair(emptyList(), ""))
     val documentData: StateFlow<Pair<List<String>?, String>> = _documentData
 
+    private val _isThumbnailLoading = MutableStateFlow(false)
+    val isThumbnailLoading: StateFlow<Boolean> = _isThumbnailLoading
+
+    val thumbnailsMap = mutableStateOf<Map<String, String>>(emptyMap())
+
+    private val _thumbnail = MutableStateFlow<String?>(null)
+    val thumbnail: StateFlow<String?> = _thumbnail
+
     var pdfSource by mutableStateOf<PdfSource?>(null)
 
     var documentBottomSheetType by mutableStateOf<DocumentBottomSheetType?>(null)
@@ -89,6 +105,17 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
                     cardClickData.value?.tags?.split(",")?.map { it.trim() } ?: emptyList()
                 val allTags = (apiTags + cardTags).distinct()
                 _selectedTags.value = allTags
+            }
+        }
+    }
+    fun fetchThumbnailForRecord(oid: String, localId: String) {
+        viewModelScope.launch {
+            _isThumbnailLoading.value = true // Set to true when fetching starts
+            vaultRepository.fetchDocumentData(oid = oid, localId = localId).collect {
+                val newThumbnailMap = thumbnailsMap.value.toMutableMap()
+                newThumbnailMap[localId] = it.thumbnail ?: ""
+                thumbnailsMap.value = newThumbnailMap // Update the map with the new thumbnail
+                _isThumbnailLoading.value = false // Set to false once fetching is done
             }
         }
     }
@@ -161,7 +188,7 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
                             _getRecordsState.value = if (records.isEmpty()) {
                                 GetRecordsState.EmptyState
                             } else {
-                                dataEmitted = true // Set flag to prevent further emission
+                                dataEmitted = true
                                 GetRecordsState.Success(resp = records)
                             }
                         }
@@ -239,9 +266,11 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             try {
                 val data = vaultRepository.fetchDocumentData(oid = oid, localId = localId)
-                val filePath = data.filePath
-                val fileType = data.fileType
-                _documentData.value = Pair(filePath, fileType)
+                data.collect{data->
+                    val filePath = data.filePath
+                    val fileType = data.fileType
+                    _documentData.value = Pair(filePath, fileType)
+                }
             } catch (e: Exception) {
                 e.printStackTrace() // Log the error or handle it appropriately
             }

@@ -25,12 +25,11 @@ interface VaultRepository {
         hasId: String,
         cta: String?,
         tags: String,
-        documentDate : Long
     )
     suspend fun getUnsyncedDocuments(oid : String, doctorId: String): List<VaultEntity>
     suspend fun getDeletedDocuments(oid: String , doctorId: String): List<VaultEntity>
     suspend fun getEditedDocuments(oid: String, doctorId: String): List<VaultEntity>
-    suspend fun fetchDocumentData(oid: String, localId: String): VaultEntity
+    suspend fun fetchDocumentData(oid: String, localId: String): Flow<VaultEntity>
     suspend fun getAvailableDocTypes(oid: String, doctorId: String): List<AvailableDocTypes>
     fun fetchDocuments(oid: String, docType: Int, doctorId: String): Flow<List<VaultEntity>>
     fun fetchDocumentsByDocDate(oid: String, docType: Int, doctorId: String): Flow<List<VaultEntity>>

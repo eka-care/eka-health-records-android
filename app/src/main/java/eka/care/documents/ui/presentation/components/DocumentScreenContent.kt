@@ -123,6 +123,7 @@ fun DocumentScreenContent(
                         item {
                             DocumentGrid(
                                 records = resp,
+                                oid = paramsModel.patientId,
                                 viewModel = viewModel,
                                 onClick = { cta, model ->
                                     viewModel.cardClickData.value = model

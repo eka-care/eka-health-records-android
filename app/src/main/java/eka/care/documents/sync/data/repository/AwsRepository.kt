@@ -30,15 +30,16 @@ class AwsRepository {
         isEncrypted: Boolean = false,
         patientUuid: String,
         patientOid: String,
+        documentType : String,
         tags : List<String>
     ): FilesUploadInitResponse? {
         val batch = mutableListOf<Batch>()
 
         if (isMultiFile) {
-            batch.add(Batch(files = files, isEncrypted = isEncrypted, sharable = false, patientUuid = patientUuid, patientOid = patientOid, tags = tags))
+            batch.add(Batch(files = files, isEncrypted = isEncrypted, sharable = false, patientUuid = patientUuid, patientOid = patientOid, tags = tags, documentType = documentType))
         } else {
             files.forEach {
-                batch.add(Batch(files = listOf(it), isEncrypted = isEncrypted, sharable = false, patientUuid = patientUuid, patientOid = patientOid, tags = tags))
+                batch.add(Batch(files = listOf(it), isEncrypted = isEncrypted, sharable = false, patientUuid = patientUuid, patientOid = patientOid, tags = tags, documentType = documentType))
             }
         }
         val body = FilesUploadInitRequest(batchRequest = batch)

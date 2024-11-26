@@ -26,6 +26,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -55,6 +60,7 @@ import java.util.Locale
 fun DocumentGrid(
     records: List<RecordModel>,
     viewModel: RecordsViewModel,
+    oid : String,
     onClick: (CTA?, RecordModel) -> Unit
 ) {
     val screenHeight = LocalConfiguration.current.screenHeightDp
@@ -72,7 +78,7 @@ fun DocumentGrid(
     ) {
         items(records) { recordModel ->
             viewModel.localId.value = recordModel.localId ?: ""
-            DocumentGridItem(recordModel = recordModel, onClick = onClick, viewModel)
+            DocumentGridItem(recordModel = recordModel, onClick = onClick, viewModel, oid = oid)
         }
     }
 }
@@ -81,13 +87,25 @@ fun DocumentGrid(
 fun DocumentGridItem(
     recordModel: RecordModel,
     onClick: (CTA?, RecordModel) -> Unit,
-    viewModel: RecordsViewModel
+    viewModel: RecordsViewModel,
+    oid: String
 ) {
+    val localId = recordModel.localId ?: ""
+
+    val thumbnailState by remember { derivedStateOf { viewModel.thumbnailsMap.value[localId] } }
+
+    if (thumbnailState == null) {
+        viewModel.fetchThumbnailForRecord(oid = oid, localId = localId)
+    }
+
     val docType = docTypes.find { it.idNew == recordModel.documentType }
     val uploadTimestamp = recordModel.documentDate ?: recordModel.createdAt ?: 0L
     val uploadDate = Date(uploadTimestamp * 1000)
     val sdf = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
     val formattedDate = sdf.format(uploadDate)
+
+    val isThumbnailLoaded = thumbnailState != null
+
     Column(
         modifier = Modifier
             .clickable {
@@ -140,26 +158,36 @@ fun DocumentGridItem(
         }
         Spacer(modifier = Modifier.height(8.dp))
         Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.BottomEnd){
-            AsyncImage(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(color = DarwinTouchNeutral1000)
-                    .graphicsLayer(alpha = 0.4f)
-                ,
-                model = recordModel.thumbnail,
-                contentDescription = "",
-                contentScale = ContentScale.FillWidth,
-            )
+            if (!isThumbnailLoaded) {
+                CircularProgressIndicator(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(40.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(color = DarwinTouchNeutral1000)
+                        .padding(8.dp),
+                    color = MaterialTheme.colorScheme.primary,
+                    strokeWidth = 1.dp
+                )
+            } else {
+                AsyncImage(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(color = DarwinTouchNeutral1000)
+                        .graphicsLayer(alpha = 0.4f),
+                    model = thumbnailState,
+                    contentDescription = "",
+                    contentScale = ContentScale.FillWidth
+                )
+            }
             if(recordModel.tags?.split(",")?.contains("1") == true){
                 SmartChip()
             }
-//            if(recordModel.isAnalyzing){
-//                AnalysingChip()
-//            }
         }
     }
 }
+
 
 @Composable
 fun SmartChip() {

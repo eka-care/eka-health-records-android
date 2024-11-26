@@ -67,8 +67,9 @@ class DocumentPreviewViewModel(val app: Application): AndroidViewModel(app){
         viewModelScope.launch {
             _documentState.value = DocumentState.Loading
             try {
-                val data = vaultRepository.fetchDocumentData(oid, localId)
-                _documentState.value = DocumentState.Success(data.filePath, data.fileType)
+                vaultRepository.fetchDocumentData(oid, localId).collect { data ->
+                    _documentState.value = DocumentState.Success(data.filePath, data.fileType)
+                }
             } catch (e: Exception) {
                 _documentState.value = DocumentState.Error("Failed to fetch document: ${e.message}")
             }
