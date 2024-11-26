@@ -196,7 +196,6 @@ class SyncFileWorker(
                 uuid = uuid
             )
             if (records?.error?.message.isNullOrEmpty()) {
-                Log.d("AYUSHI", records?.response?.itemsList.toString())
                 if (!records?.response?.itemsList.isNullOrEmpty()) {
                     records?.response?.let {
                         storeRecords(
