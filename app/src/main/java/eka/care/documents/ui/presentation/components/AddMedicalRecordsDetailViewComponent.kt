@@ -131,7 +131,7 @@ fun AddMedicalRecordsDetailViewComponent(
             onClick(CTA(action = "onBackClick"))
         } else {
             if (selectedChipId != null) {
-                val sdf = SimpleDateFormat("EEE, dd MMM, yyyy", Locale.getDefault())
+                val sdf = SimpleDateFormat("dd-MMM-yyyy", Locale.getDefault())
                 val parsedDate = try {
                     sdf.parse(selectedDate.value)
                 } catch (e: Exception) {
