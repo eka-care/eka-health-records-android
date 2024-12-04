@@ -25,3 +25,8 @@ sqlite/build/*
 
 # Ignore class files
 **/*.class
+
+# Ignore Gradle build output
+.gradle/**/buildOutputCleanup
+.gradle/**/buildOutput
+.gradle/**/classes
