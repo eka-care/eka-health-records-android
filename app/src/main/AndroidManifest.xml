@@ -1,10 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <application>
+    <uses-permission android:name="android.permission.CAMERA" />
+    <application
+        android:networkSecurityConfig="@xml/network_security_config"
+        >
         <activity android:name=".ui.presentation.activity.DocumentActivity"
             android:theme="@style/Document.Theme.Drive"/>
-        <activity android:name=".ui.presentation.activity.DocumentViewerActivity" />
+        <activity android:name=".ui.presentation.activity.DocumentPreview"
+            android:theme="@style/Document.Theme.Drive"/>
+        <activity android:name=".ui.presentation.activity.DocumentViewerActivity"
+            android:theme="@style/Document.Theme.Drive"
+            />
+        <activity android:name=".ui.presentation.activity.SmartReportActivity"
+            android:theme="@style/Document.Theme.Drive"
+            />
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="com.eka.care.doctor.records.provider"
+            android:exported="false"
+            android:grantUriPermissions="true"
+            tools:replace="android:authorities">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
     </application>
 </manifest>

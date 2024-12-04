@@ -1,5 +1,6 @@
 package eka.care.documents.sync.data.repository
 
+import com.eka.network.ConverterFactoryType
 import com.eka.network.Networking
 import com.haroldadmin.cnradapter.NetworkResponse
 import eka.care.documents.sync.data.remote.api.MyFileService
@@ -11,17 +12,23 @@ import okhttp3.ResponseBody
 
 class MyFileRepository {
 
-    private val myFileService: MyFileService =
-        Networking.create(MyFileService::class.java, "https://vault.eka.care/")
+    private val myFileService: MyFileService by lazy {
+        Networking.create(MyFileService::class.java, eka.care.documents.Document.getConfiguration()?.host, ConverterFactoryType.GSON)
+    }
 
     suspend fun updateFileDetails(
         docId: String,
+        oid: String,
         updateFileDetailsRequest: UpdateFileDetailsRequest,
     ): Int? {
         return withContext(Dispatchers.IO) {
             val errorCode = when (
                 val response =
-                    myFileService.updateFileDetails(docId, updateFileDetailsRequest)) {
+                    myFileService.updateFileDetails(
+                        docId,
+                        updateFileDetailsRequest = updateFileDetailsRequest,
+                        oid = oid
+                    )) {
                 is NetworkResponse.Success -> response.code
                 is NetworkResponse.ServerError -> response.code // handleServerError(response.code)
                 is NetworkResponse.NetworkError -> null //handleNetworkError(response.error)
@@ -45,13 +52,27 @@ class MyFileRepository {
 
     suspend fun getDocument(docId: String, userId: String): Document? {
         return withContext(Dispatchers.IO) {
-            val myDocument = when (val response = myFileService.getDocument(docId = docId, oid = userId)) {
-                is NetworkResponse.Success -> response.body
-                is NetworkResponse.ServerError -> null // handleServerError(response.code)
-                is NetworkResponse.NetworkError -> null //handleNetworkError(response.error)
-                is NetworkResponse.UnknownError -> null //handleUnknownError(response.error)
-            }
+            val myDocument =
+                when (val response = myFileService.getDocument(docId = docId, oid = userId)) {
+                    is NetworkResponse.Success -> response.body
+                    is NetworkResponse.ServerError -> null // handleServerError(response.code)
+                    is NetworkResponse.NetworkError -> null //handleNetworkError(response.error)
+                    is NetworkResponse.UnknownError -> null //handleUnknownError(response.error)
+                }
             myDocument
+        }
+    }
+
+    suspend fun deleteDocument(docId: String, oid: String): Int? {
+        return withContext(Dispatchers.IO) {
+            val errorCode =
+                when (val response = myFileService.deleteDocument(docId = docId, oid = oid)) {
+                    is NetworkResponse.Success -> response.code
+                    is NetworkResponse.ServerError -> response.code // handleServerError(response.code)
+                    is NetworkResponse.NetworkError -> null //handleNetworkError(response.error)
+                    is NetworkResponse.UnknownError -> response.code //handleUnknownError(response.error)
+                }
+            errorCode
         }
     }
 }

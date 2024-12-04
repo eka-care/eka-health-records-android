@@ -6,7 +6,6 @@ import eka.care.documents.data.model.DocTypeModel
 class DocumentUtility {
     companion object{
         const val PARAM_RECORD_PARAMS_MODEL = "records_params"
-        const val FILES_DB_UPDATED_AT = "files_db_updated_at"
 
         val docTypes = listOf(
             DocTypeModel(

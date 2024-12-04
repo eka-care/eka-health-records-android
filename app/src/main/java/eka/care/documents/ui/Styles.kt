@@ -43,6 +43,7 @@ val touchBodyBold = DefaultTextStyle.copy(
     fontSize = 16.sp,
     lineHeight = 24.sp,
 )
+
 val touchLabelBold = DefaultTextStyle.copy(
     fontFamily = ekaFontFamily,
     fontWeight = FontWeight.Bold,
@@ -88,5 +89,13 @@ val touchFootnoteBold = DefaultTextStyle.copy(
     fontWeight = FontWeight.Bold,
     fontStyle = FontStyle.Normal,
     fontSize = 13.sp,
+    lineHeight = 20.sp,
+)
+
+val touchCalloutBold = DefaultTextStyle.copy(
+    fontFamily = ekaFontFamily,
+    fontWeight = FontWeight.Bold,
+    fontStyle = FontStyle.Normal,
+    fontSize = 14.sp,
     lineHeight = 20.sp,
 )

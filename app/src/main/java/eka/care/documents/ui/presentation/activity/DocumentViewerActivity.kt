@@ -1,12 +1,16 @@
 package eka.care.documents.ui.presentation.activity
 
 import android.app.Activity
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Matrix
+import android.media.ExifInterface
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -56,15 +60,15 @@ import kotlinx.coroutines.launch
 import java.io.File
 import java.io.IOException
 
-class DocumentViewerActivity : ComponentActivity() {
+class DocumentViewerActivity : AppCompatActivity() {
 
     private val pdfReaderManager: PdfReaderManager by lazy { PdfReaderManager(this) }
     private var fileToUpload: File? = null
-    private val recordsViewModel: RecordsViewModel by viewModels()
 
     @OptIn(ExperimentalMaterialApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val recordsViewModel: RecordsViewModel by viewModels()
 
         val paramsRecord = intent.getParcelableExtra<RecordParamsModel>(PARAM_RECORD_PARAMS_MODEL)
         if (paramsRecord == null) {
@@ -134,7 +138,7 @@ class DocumentViewerActivity : ComponentActivity() {
                 sheetElevation = 0.dp,
                 content = {
                     PreviewComponent(
-                        pdfReaderManager =  null,
+                        pdfReaderManager = if (pdfUriString != null) pdfReaderManager else null,
                         recordsViewModel = recordsViewModel,
                         onClick = {
                             (context as Activity).setResult(RESULT_OK, intent)
@@ -167,7 +171,6 @@ class DocumentViewerActivity : ComponentActivity() {
         }
     }
 
-
     private fun getFileFromUri(uri: Uri): File? {
         return try {
             val inputStream = contentResolver.openInputStream(uri)
@@ -199,6 +202,7 @@ fun PreviewComponent(
             LazyColumn(modifier = Modifier.fillMaxSize()) {
                 items(filePreviewList) { file ->
                     val bitmap = BitmapFactory.decodeFile(file.path)
+                        ?.let { fixImageOrientation(it, file.path) }
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -245,6 +249,30 @@ fun PreviewComponent(
         }
     }
 }
+
+fun fixImageOrientation(bitmap: Bitmap, filePath: String): Bitmap {
+    try {
+        val exif = ExifInterface(filePath)
+        val orientation =
+            exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_UNDEFINED)
+        val matrix = Matrix()
+
+        when (orientation) {
+            ExifInterface.ORIENTATION_ROTATE_90 -> matrix.postRotate(90f)
+            ExifInterface.ORIENTATION_ROTATE_180 -> matrix.postRotate(180f)
+            ExifInterface.ORIENTATION_ROTATE_270 -> matrix.postRotate(270f)
+            ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> matrix.postScale(-1f, 1f)
+            ExifInterface.ORIENTATION_FLIP_VERTICAL -> matrix.postScale(1f, -1f)
+            else -> return bitmap
+        }
+
+        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+    } catch (e: IOException) {
+        e.printStackTrace()
+    }
+    return bitmap
+}
+
 
 @Composable
 fun CircularImageComponent(image: Int, modifier: Modifier, onClick: () -> Unit, action: String) {

@@ -35,29 +35,3 @@ data class CTAData(
     @SerializedName("params")
     val params: @RawValue JsonElement?
 ) : Parcelable
-
-@Keep
-data class CTAInternal(
-    @SerializedName("action")
-    val action: String? = null,
-    @SerializedName("title")
-    val title: String? = null,
-    @SerializedName("pid")
-    val pageId: String?,
-    @SerializedName("params")
-    val params: MutableMap<String, Any?>? = null
-)
-
-@Keep
-data class EkaButtonModel(
-    val leftIcon: String? = null,
-    val rightIcon: String? = null,
-    val hide: Boolean? = null,
-    val cta: CTA? = null,
-    val style: EkaButtonStyle?
-) {
-    @Keep
-    data class EkaButtonStyle(
-        val type: String? = "primary"
-    )
-}

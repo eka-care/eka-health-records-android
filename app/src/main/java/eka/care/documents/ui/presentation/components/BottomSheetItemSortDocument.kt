@@ -19,7 +19,9 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.painter.ColorPainter
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import eka.care.documents.R
 import eka.care.documents.ui.presentation.model.BottomSheetItemSortDocumentModel
 
 @Composable
@@ -43,7 +45,7 @@ fun BottomSheetItemSortDocument(
             leadingContent = {
                 if(isSelected)
                     Image(
-                        imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                        painter = painterResource(id = R.drawable.ic_back_arrow),
                         contentDescription = "",
                         modifier = Modifier.rotate(90f),
                         colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurface)
