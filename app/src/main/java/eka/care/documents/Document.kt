@@ -7,10 +7,12 @@ import com.eka.network.Networking
 object Document {
     private var configuration: DocumentConfiguration? = null
 
-    fun init(chatInitConfiguration: DocumentConfiguration) {
-        configuration = chatInitConfiguration
-        configuration?.okHttpSetup?.let {
-            Networking.init("https://vault.eka.care/", it, converterFactoryType = ConverterFactoryType.PROTO)
+    fun init(documentConfiguration: DocumentConfiguration) {
+        configuration = documentConfiguration
+        configuration?.let {
+            Networking.init(it.host, it.okHttpSetup, converterFactoryType = ConverterFactoryType.PROTO)
         }
     }
+
+    fun getConfiguration() = configuration
 }

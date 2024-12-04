@@ -20,7 +20,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         Document.init(
-            chatInitConfiguration = DocumentConfiguration(
+            documentConfiguration = DocumentConfiguration(
                 okHttpSetup = object : IOkHttpSetup {
                     override fun getDefaultHeaders(url: String): Map<String, String> {
                         return emptyMap()
@@ -34,7 +34,8 @@ class MainActivity : ComponentActivity() {
                         return emptyMap()
                     }
 
-                }
+                },
+                host = "https://vault.eka.care/"
             )
         )
         setContent {

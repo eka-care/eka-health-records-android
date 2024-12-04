@@ -4,6 +4,7 @@ import android.app.Application
 import android.util.Log
 import com.eka.network.ConverterFactoryType
 import com.eka.network.Networking
+import eka.care.documents.Document
 import eka.care.documents.sync.data.remote.api.MyDocumentsProtoService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -13,7 +14,7 @@ class SyncRecordsRepository(val app: Application) {
 
     private val recordsProtoService: MyDocumentsProtoService = Networking.create(
         MyDocumentsProtoService::class.java,
-        "https://vault.eka.care/",
+        Document.getConfiguration()?.host,
         ConverterFactoryType.PROTO
     )
 
