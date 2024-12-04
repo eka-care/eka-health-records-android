@@ -340,7 +340,7 @@ fun DocumentScreen(
     ) {
         Scaffold(
             topBar = {
-                Column(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.fillMaxWidth().background(BgWhite)) {
                     TopAppBarSmall(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -374,7 +374,7 @@ fun DocumentScreen(
                             Text(text = "offline")
                         }
                     }
-                    if (resp.isNotEmpty()) {
+                    if(resp.isNotEmpty()){
                         DocumentFilter(
                             viewModel = viewModel,
                             onClick = {
