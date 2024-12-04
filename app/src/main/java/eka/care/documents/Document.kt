@@ -9,10 +9,10 @@ object Document {
 
     fun init(documentConfiguration: DocumentConfiguration) {
         configuration = documentConfiguration
-        val host = configuration?.host
-        if(host == null) throw Exception("")
-        configuration?.okHttpSetup?.let {
-            Networking.init(host, it, converterFactoryType = ConverterFactoryType.PROTO)
+        configuration?.let {
+            Networking.init(it.host, it.okHttpSetup, converterFactoryType = ConverterFactoryType.PROTO)
         }
     }
+
+    fun getConfiguration() = configuration
 }
