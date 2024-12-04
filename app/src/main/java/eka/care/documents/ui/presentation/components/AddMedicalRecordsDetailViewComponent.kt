@@ -131,7 +131,7 @@ fun AddMedicalRecordsDetailViewComponent(
             onClick(CTA(action = "onBackClick"))
         } else {
             if (selectedChipId != null) {
-                val sdf = SimpleDateFormat("dd-MMM-yyyy", Locale.getDefault())
+                val sdf = SimpleDateFormat("EEE, dd MMM, yyyy", Locale.getDefault())
                 val parsedDate = try {
                     sdf.parse(selectedDate.value)
                 } catch (e: Exception) {
@@ -359,7 +359,7 @@ fun AddMedicalRecordsDetailViewComponent(
                     containerColor = if (selectedChipId != null) DarwinTouchPrimary else DarwinTouchNeutral600
                 ),
                 onClick = {
-                    onAddMedicalRecord()
+                    if (selectedChipId != null) onAddMedicalRecord()
                 },
                 modifier = Modifier
                     .clip(RoundedCornerShape(50))

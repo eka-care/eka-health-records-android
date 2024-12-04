@@ -1,5 +1,6 @@
 package eka.care.documents.ui.presentation.components
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.ConnectivityManager
@@ -50,9 +51,10 @@ import eka.care.documents.ui.presentation.state.GetRecordsState
 import eka.care.documents.ui.presentation.viewmodel.RecordsViewModel
 import eka.care.documents.ui.utility.RecordsUtility.Companion.convertLongToDateString
 import kotlinx.coroutines.Job
+import org.json.JSONObject
 
 @Composable
-@OptIn(ExperimentalMaterialApi::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterialApi::class)
 fun DocumentScreenContent(
     paddingValues: PaddingValues,
     pullRefreshState: PullRefreshState,
@@ -98,32 +100,10 @@ fun DocumentScreenContent(
                         .background(DarwinTouchNeutral0),
                     state = listState
                 ) {
-                    stickyHeader {
-                        DocumentFilter(
-                            viewModel = viewModel,
-                            onClick = {
-                                viewModel.getLocalRecords(
-                                    oid = paramsModel.patientId,
-                                    doctorId = paramsModel.doctorId,
-                                    docType = it
-                                )
-                            }
-                        )
-                    }
-                    stickyHeader {
-                        DocumentsSort(
-                            viewModel = viewModel,
-                            onClickSort = {
-                                openSheet()
-                                viewModel.documentBottomSheetType =
-                                    DocumentBottomSheetType.DocumentSort
-                            })
-                    }
                     if (viewModel.documentViewType == DocumentViewType.GridView) {
                         item {
                             DocumentGrid(
                                 records = resp,
-                                oid = paramsModel.patientId,
                                 viewModel = viewModel,
                                 onClick = { cta, model ->
                                     viewModel.cardClickData.value = model
@@ -132,14 +112,14 @@ fun DocumentScreenContent(
                                             context = context,
                                             model = model,
                                             oid = paramsModel.patientId,
-                                            documentId = model.documentId
                                         )
                                     } else {
                                         openSheet()
                                         viewModel.documentBottomSheetType =
                                             DocumentBottomSheetType.DocumentOptions
                                     }
-                                })
+                                }
+                            )
                         }
                     } else {
                         items(resp) { model ->
@@ -152,7 +132,6 @@ fun DocumentScreenContent(
                                             context = context,
                                             model = model,
                                             oid = paramsModel.patientId,
-                                            documentId = model.documentId,
                                         )
                                     } else {
                                         viewModel.localId.value = model.localId ?: ""
@@ -217,8 +196,8 @@ fun DocumentScreenContent(
     }
 }
 
-private fun navigate(context: Context, model: RecordModel, oid: String, documentId: String?) {
-    if(isOnline(context)){
+private fun navigate(context: Context, model: RecordModel, oid: String) {
+    if (isOnline(context)) {
         if (model.tags?.split(",")?.contains("1") == false) {
             Intent(context, DocumentPreview::class.java).also {
                 it.putExtra("local_id", model.localId)
@@ -230,10 +209,9 @@ private fun navigate(context: Context, model: RecordModel, oid: String, document
             val date = convertLongToDateString(model.documentDate ?: model.createdAt)
             Intent(context, SmartReportActivity::class.java)
                 .also {
-                    it.putExtra("doc_id", documentId)
+                    it.putExtra("doc_id", model.documentId)
                     it.putExtra("user_id", oid)
                     it.putExtra("doc_date", date)
-                    it.putExtra("local_id", model.localId)
                     context.startActivity(it)
                 }
             return
@@ -264,8 +242,3 @@ fun isOnline(context: Context): Boolean {
     }
     return false
 }
-
-data class RequestParams(
-    @SerializedName("document_id") val documentId: String?,
-    @SerializedName("user_id") val userId: String?
-)

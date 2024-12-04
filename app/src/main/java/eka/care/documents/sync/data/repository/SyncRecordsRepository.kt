@@ -7,6 +7,7 @@ import com.eka.network.Networking
 import eka.care.documents.sync.data.remote.api.MyDocumentsProtoService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import retrofit2.Response
 import vault.records.Records
 
 class SyncRecordsRepository(val app: Application) {
@@ -18,10 +19,10 @@ class SyncRecordsRepository(val app: Application) {
     )
 
     suspend fun getRecords(
-        updatedAt: Int?,
+        updatedAt: String?,
         offset: String? = null,
         uuid : String
-    ): Records.RecordsAPIResponse? {
+    ):  Response<Records.RecordsAPIResponse>? {
         return withContext(Dispatchers.IO) {
             try {
                 val response = recordsProtoService.getFiles(
@@ -30,15 +31,7 @@ class SyncRecordsRepository(val app: Application) {
                     uuid = uuid
                 )
                 if (response.isSuccessful) {
-                    val ekaUat = response.headers().get("Eka-Uat")
-//                    ekaUat?.let {
-//                        (app as? IAmCommon)?.setValue(
-//                            FILES_DB_UPDATED_AT,
-//                            ekaUat.toLong()
-//                        )
-//                    }
-
-                    response.body()
+                    response
                 } else {
                     null
                 }

@@ -44,6 +44,15 @@ fun DocumentUploadBottomSheet(onClick: (CTA?) -> Unit) {
             trailingIcon = rememberVectorPainter(image = Icons.Filled.PlayArrow)
         ),
         DocumentBottomSheetItemModel(
+            itemName = stringResource(id = R.string.scan_a_document),
+            itemNameColor = MaterialTheme.colorScheme.onSurface,
+            isRecommended = false,
+            itemType = CTA(action = RecordsAction.ACTION_SCAN_A_DOCUMENT),
+            leadingIcon = painterResource(id = R.drawable.ic_camera_filled),
+            leadingIconTint = MaterialTheme.colorScheme.onSurfaceVariant,
+            trailingIcon = rememberVectorPainter(image = Icons.Filled.PlayArrow)
+        ),
+        DocumentBottomSheetItemModel(
             itemName = stringResource(id = R.string.choose_from_gallery),
             itemNameColor = MaterialTheme.colorScheme.onSurface,
             isRecommended = false,

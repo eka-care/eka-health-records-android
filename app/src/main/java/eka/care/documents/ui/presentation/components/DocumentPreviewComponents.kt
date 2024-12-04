@@ -39,6 +39,8 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.reader.PdfReaderManager
 import com.example.reader.presentation.states.PdfSource
+import eka.care.documents.ui.BgWhite
+import eka.care.documents.ui.presentation.state.DocumentPreviewState
 import java.io.File
 
 @Composable
@@ -104,19 +106,19 @@ fun ImagePreview(uri: Uri, modifier: Modifier) {
 
 @Composable
 fun DocumentSuccessState(
-    state: Pair<List<String>?, String>,
+    state: DocumentPreviewState.Success?,
     paddingValues: PaddingValues,
     pdfManager: PdfReaderManager,
 ) {
-    when (state.second.trim().lowercase()) {
+    when (state?.data?.second?.trim()?.lowercase()) {
         "pdf" -> PdfPreview(
             paddingValues = paddingValues,
-            uri = Uri.fromFile(File(state.first?.firstOrNull())),
+            uri = Uri.fromFile(File(state.data.first.firstOrNull())),
             pdfManager = pdfManager
         )
 
         else -> {
-            state.first?.let {
+            state?.data?.first?.let {
                 DocumentImagePreview(it)
             }
         }
@@ -125,18 +127,14 @@ fun DocumentSuccessState(
 
 @Composable
 fun DocumentImagePreview(filePaths: List<String>) {
-    val firstFilePath = filePaths.firstOrNull()
-    val selectedUri =
-        remember { mutableStateOf<Uri?>(firstFilePath?.let { Uri.parse(it) } ?: Uri.EMPTY) }
+    var selectedUri by remember { mutableStateOf<Uri?>(Uri.parse(filePaths.firstOrNull())) }
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.White),
+        modifier = Modifier.fillMaxSize().background(BgWhite),
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        selectedUri.value?.let {
+        selectedUri?.let {
             ImagePreview(
                 uri = it, modifier = Modifier
                     .fillMaxWidth()
@@ -148,7 +146,7 @@ fun DocumentImagePreview(filePaths: List<String>) {
         LazyRow(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color.White)
+                .background(BgWhite)
                 .padding(bottom = 48.dp, start = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             contentPadding = PaddingValues(horizontal = 16.dp)
@@ -164,7 +162,7 @@ fun DocumentImagePreview(filePaths: List<String>) {
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             .clickable {
-                                selectedUri.value = uri
+                                selectedUri = uri
                             }
                     )
                 }

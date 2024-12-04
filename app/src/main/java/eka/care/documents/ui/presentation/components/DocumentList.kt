@@ -41,14 +41,16 @@ fun DocumentList(
         contentAlignment = Alignment.CenterEnd
     ) {
         val docType = docTypes.find { it.idNew == recordModel.documentType }
-        val uploadDate = Date((recordModel.createdAt ?: 0L) * 1000)
+        val uploadTimestamp = recordModel.documentDate ?: recordModel.createdAt ?: 0L
+        val uploadDate = Date(uploadTimestamp * 1000)
         val sdf = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
         val formattedDate = sdf.format(uploadDate)
 
         Row(
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
                 .clickable {
-                           onClick(CTA(action = "open_deepThought"))
+                    onClick(CTA(action = "open_deepThought"))
                 },
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.CenterVertically,
@@ -77,12 +79,17 @@ fun DocumentList(
                 )
             }
         }
-        Icon(
-            modifier = Modifier.clickable {
-                onClick(CTA(action = "open_options"))
-            },
-            imageVector = Icons.Rounded.MoreVert,
-            contentDescription = ""
-        )
+        Row {
+            if(recordModel.tags?.split(",")?.contains("1") == true){
+                SmartChip()
+            }
+            Icon(
+                modifier = Modifier.clickable {
+                    onClick(CTA(action = "open_options"))
+                },
+                imageVector = Icons.Rounded.MoreVert,
+                contentDescription = ""
+            )
+        }
     }
 }

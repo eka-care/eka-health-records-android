@@ -17,13 +17,11 @@ import com.example.reader.PdfReaderManager
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.rememberPagerState
-import eka.care.doctor.features.documents.features.drive.presentation.components.SmartReportTabBar
 import eka.care.documents.data.db.model.CTA
 import eka.care.documents.ui.BorderBrand02
 import eka.care.documents.ui.DarwinTouchNeutral100
 import eka.care.documents.ui.presentation.state.DocumentPreviewState
 import eka.care.documents.ui.presentation.state.DocumentSmartReportState
-import eka.care.documents.ui.presentation.state.DocumentState
 import eka.care.documents.ui.presentation.viewmodel.DocumentPreviewViewModel
 import kotlinx.coroutines.launch
 
@@ -33,7 +31,6 @@ fun SmartReportViewComponent(
     viewModel: DocumentPreviewViewModel,
     docId: String,
     userId: String,
-    localId: String,
     documentDate: String,
     onClick: (CTA?) -> Unit
 ) {
@@ -41,10 +38,10 @@ fun SmartReportViewComponent(
     val scope = rememberCoroutineScope()
     val pdfManager = PdfReaderManager(context)
     val pagerState = rememberPagerState(initialPage = SmartViewTab.SMARTREPORT.ordinal)
-    initData(viewModel, docId, userId, localId = localId)
+    initData(viewModel, docId, userId)
 
     val state by viewModel.documentSmart.collectAsState()
-    val filePathState by viewModel.documentState.collectAsState()
+    val filePathState by viewModel.document.collectAsState()
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -58,6 +55,7 @@ fun SmartReportViewComponent(
         SmartReportTabBar(pagerState = pagerState, onTabSelect = {
             scope.launch {
                 pagerState.animateScrollToPage(it)
+                viewModel.updateSelectedTab(SmartViewTab.values()[it])
             }
         })
         HorizontalPager(
@@ -104,24 +102,32 @@ fun SmartReportViewComponent(
                 }
 
                 SmartViewTab.ORIGINALRECORD.ordinal -> {
-                    val fileType = (filePathState as? DocumentState.Success)?.fileType
-                    val filePath = (filePathState as? DocumentState.Success)?.filePath
-                    DocumentSuccessState(
-                        state = Pair(filePath, fileType ?: ""),
-                        pdfManager = pdfManager,
-                        paddingValues = PaddingValues()
-                    )
+                    when (filePathState) {
+                        is DocumentPreviewState.Error -> {
+                            val errorMessage = (filePathState as DocumentPreviewState.Error).message
+                            ErrorState(message = errorMessage)
+                        }
+
+                        DocumentPreviewState.Loading -> LoadingState()
+                        is DocumentPreviewState.Success -> {
+                            DocumentSuccessState(
+                                state = (filePathState as? DocumentPreviewState.Success),
+                                pdfManager = pdfManager,
+                                paddingValues = PaddingValues()
+                            )
+                        }
+                    }
                 }
             }
         }
     }
 }
 
-private fun initData(viewModel: DocumentPreviewViewModel, docId: String, userId: String, localId : String) {
+private fun initData(viewModel: DocumentPreviewViewModel, docId: String, userId: String) {
     viewModel.getSmartReport(docId = docId, userId = userId)
     viewModel.getDocument(
-        oid = userId ?: "",
-        localId = localId ?: ""
+        userId = userId ?: "",
+        docId = docId ?: ""
     )
 }
 

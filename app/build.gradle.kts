@@ -68,9 +68,12 @@ afterEvaluate {
 
                 groupId = "com.eka.records"
                 artifactId = "eka-records"
-                version = "3.0.2"
+                version = "3.0.3"
             }
         }
+    }
+    tasks.named("publishReleasePublicationToMavenLocal") {
+        dependsOn(tasks.named("bundleReleaseAar"))
     }
 }
 
@@ -140,4 +143,5 @@ dependencies {
     implementation(libs.google.accompanist.pager.indicators)
     implementation(libs.protobuf.kotlin.lite)
     implementation(libs.protobuf.javalite)
+    implementation(libs.accompanist.permissions)
 }

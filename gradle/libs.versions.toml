@@ -1,4 +1,5 @@
 [versions]
+accompanistPermissions = "0.25.1"
 agp = "8.4.0"
 kotlin = "1.8.10"
 coreKtx = "1.13.1"
@@ -29,6 +30,7 @@ workRuntimeKtx = "2.8.1"
 ok2curl = "0.8.0"
 
 [libraries]
+accompanist-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanistPermissions" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }

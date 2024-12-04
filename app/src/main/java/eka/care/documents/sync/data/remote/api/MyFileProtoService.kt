@@ -9,7 +9,7 @@ import vault.records.Records
 interface MyDocumentsProtoService {
     @GET("api/d/v1/docs")
     suspend fun getFiles(
-        @Query("u_at__gt") updatedAt: Int?,
+        @Query("u_at__gt") updatedAt: String?,
         @Query("offset") offset: String?,
         @Query("p_uuid") uuid : String
     ): Response<Records.RecordsAPIResponse>
