@@ -16,7 +16,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import eka.care.documents.data.utility.DocumentUtility.Companion.docTypes
-import eka.care.documents.ui.touchBodyRegular
 import eka.care.documents.ui.presentation.viewmodel.RecordsViewModel
 import eka.care.documents.ui.touchCalloutBold
 

@@ -1,11 +1,9 @@
 package eka.care.documents.ui.presentation.components
 
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -38,7 +36,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.google.gson.annotations.SerializedName
 import eka.care.documents.R
 import eka.care.documents.ui.DarwinTouchNeutral0
 import eka.care.documents.ui.DarwinTouchNeutral1000
@@ -51,7 +48,6 @@ import eka.care.documents.ui.presentation.state.GetRecordsState
 import eka.care.documents.ui.presentation.viewmodel.RecordsViewModel
 import eka.care.documents.ui.utility.RecordsUtility.Companion.convertLongToDateString
 import kotlinx.coroutines.Job
-import org.json.JSONObject
 
 @Composable
 @OptIn(ExperimentalMaterialApi::class)
