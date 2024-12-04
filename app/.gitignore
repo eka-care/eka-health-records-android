@@ -22,3 +22,6 @@
 
 # Ignore SQLite build folder
 sqlite/build/*
+
+# Ignore class files
+**/*.class
