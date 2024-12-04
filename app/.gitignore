@@ -1,20 +1,24 @@
+# Ignore IntelliJ/Android Studio files
 *.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
-local.properties
 .idea/*
-.idea/runConfigurations.xml
-.idea/compiler.xml
-.idea/misc.xml
+.idea/**/*
+/local.properties
+
+# Ignore Gradle files
+.gradle/
+.gradle/**
+
+# Ignore Build directories
+/build/
+**/build/
+
+# Ignore macOS system files
+.DS_Store
+
+# Ignore Native Build Files
+/captures
+.cxx
+.externalNativeBuild
+
+# Ignore SQLite build folder
 sqlite/build/*
