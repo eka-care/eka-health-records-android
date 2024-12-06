@@ -44,7 +44,7 @@ class RecordsUtility {
             return formatter.format(date)
         }
 
-        fun timestampToLong(timestamp: String, format: String = "dd-MM-yyyy"): Long {
+        fun timestampToLong(timestamp: String, format: String = "EEE, dd MMM, yyyy"): Long {
             val dateFormat = SimpleDateFormat(format, Locale.getDefault())
             val date = dateFormat.parse(timestamp) ?: throw IllegalArgumentException("Invalid date format")
             return date.time / 1000

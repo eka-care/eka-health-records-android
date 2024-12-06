@@ -112,7 +112,7 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
     }
 
 
-    override suspend fun updateDocumentId(documentId: String?, localId: String) {
+    override suspend fun updateDocumentId(documentId: String, localId: String) {
         database.vaultDao().updateDocumentId(documentId, localId)
     }
 

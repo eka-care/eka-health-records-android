@@ -70,7 +70,7 @@ interface VaultDao {
     suspend fun getAvailableDocTypes(oid: String?, doctorId: String): List<AvailableDocTypes>
 
     @Query("UPDATE vault_table SET doc_id=:docId WHERE local_id=:localId")
-    suspend fun updateDocumentId(docId: String?, localId: String)
+    suspend fun updateDocumentId(docId: String, localId: String)
 
     @Query("SELECT local_id FROM vault_table WHERE doc_id=:docId")
     suspend fun getLocalId(docId: String?): String?

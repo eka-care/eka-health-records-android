@@ -117,8 +117,7 @@ class SyncFileWorker(
 
     private suspend fun syncDocuments(oid: String, uuid: String, doctorId: String) {
         try {
-            val vaultDocuments =
-                vaultRepository.getUnsyncedDocuments(oid = oid, doctorId = doctorId)
+            val vaultDocuments = vaultRepository.getUnsyncedDocuments(oid = oid, doctorId = doctorId)
             if (vaultDocuments.isEmpty()) return
 
             val files = vaultDocuments.flatMap { vaultEntity ->
@@ -129,14 +128,14 @@ class SyncFileWorker(
                 FileType(contentType = file.getMimeType() ?: "", fileSize = file.length())
             }
 
-            val isMultiFile = files.size > 1
+            val isMultiFile = vaultDocuments.any { it.filePath.size > 1 }
 
             val tags = mutableListOf<String>()
 
             vaultDocuments.forEach { vaultEntity ->
                 val tagList = vaultEntity.tags?.split(",") ?: emptyList()
-              //  val tagNames = Tags().getTagNamesByIds(tagList)
-              // tags.addAll(tagNames)
+            //    val tagNames = Tags().getTagNamesByIds(tagList)
+            //    tags.addAll(tagNames)
             }
 
             val uploadInitResponse = awsRepository.fileUploadInit(
@@ -176,8 +175,7 @@ class SyncFileWorker(
                     if (batchResponse != null) {
                         vaultEntity.filePath.forEach { path ->
                             val file = File(path)
-                            val response =
-                                awsRepository.uploadFile(file = file, batch = batchResponse)
+                            val response = awsRepository.uploadFile(file = file, batch = batchResponse)
                             if (response?.error == false) {
                                 response.documentId?.let { docId ->
                                     updateDocumentDetails(
@@ -200,25 +198,32 @@ class SyncFileWorker(
         oid: String,
         vaultEntity: VaultEntity
     ) {
-        val documentDate = vaultEntity.documentDate?.let { timestamp ->
-            val date = Date(timestamp * 1000)
-            SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(date)
-        }
-
-        val updateFileDetailsRequest = UpdateFileDetailsRequest(
-            oid = vaultEntity.oid,
-            documentType = docTypes.find { it.idNew == vaultEntity.documentType }?.id,
-            documentDate = changeDateFormat(documentDate),
-            userTags = emptyList(),
-            linkAbha = vaultEntity.isABHALinked
-        )
-
-        myFileRepository.updateFileDetails(
-            docId = documentId,
-            oid = oid,
-            updateFileDetailsRequest = updateFileDetailsRequest
-        )
         vaultRepository.updateDocumentId(documentId, vaultEntity.localId)
+        try {
+            val documentDate = vaultEntity.documentDate?.let { timestamp ->
+                val date = Date(timestamp * 1000)
+                SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(date)
+            } ?: ""
+
+            val updateFileDetailsRequest = UpdateFileDetailsRequest(
+                oid = vaultEntity.oid,
+                documentType = docTypes.find { it.idNew == vaultEntity.documentType }?.id,
+                documentDate = if (documentDate.isNotEmpty()) changeDateFormat(documentDate) else null,
+                userTags = emptyList(),
+                linkAbha = vaultEntity.isABHALinked
+            )
+
+            myFileRepository.updateFileDetails(
+                docId = documentId,
+                oid = oid,
+                updateFileDetailsRequest = updateFileDetailsRequest
+            )
+        }catch (e : Exception){
+            Log.d(
+                "SYNC_DOCUMENTS",
+                "Update File Detail: ${e.message.toString()}"
+            )
+        }
     }
 
     private suspend fun fetchRecords(
@@ -237,7 +242,11 @@ class SyncFileWorker(
             // eka-uat of latest updated or inserted record
             val ekaUat = response?.headers()?.get("Eka-Uat")
             if (ekaUat != null) {
-                updatedAtRepository.updateUpdatedAtByOid(oid = oid, updatedAt = ekaUat, doctorId =  doctorId)
+                updatedAtRepository.updateUpdatedAtByOid(
+                    oid = oid,
+                    updatedAt = ekaUat,
+                    doctorId = doctorId
+                )
             }
 
             val records = response?.body()
@@ -285,7 +294,8 @@ class SyncFileWorker(
             }
             val localCta = CTA(action = recordCta.action, pageId = recordCta.pid, params = params)
             val localId = vaultRepository.getLocalId(recordItem.documentId)
-            val documentDate = if(recordItem.metadata.documentDate.seconds == 0L) null else recordItem.metadata.documentDate.seconds
+            val documentDate =
+                if (recordItem.metadata.documentDate.seconds == 0L) null else recordItem.metadata.documentDate.seconds
             if (!localId.isNullOrEmpty()) {
                 vaultRepository.storeDocument(
                     localId = localId,
@@ -299,7 +309,7 @@ class SyncFileWorker(
                     tags = recordItem.metadata.tagsValueList.joinToString(","),
                     documentDate = documentDate,
                 )
-            } else if (recordItem.availableDocumentCase != Records.Record.Item.AvailableDocumentCase.IN_TRANSIT) {
+            } else if (recordItem.availableDocumentCase != Records.Record.Item.AvailableDocumentCase.IN_TRANSIT && recordItem.documentId != null) {
                 vaultList.add(
                     VaultEntity(
                         localId = localId ?: UUID.randomUUID().toString(),

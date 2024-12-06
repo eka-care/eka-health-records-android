@@ -53,6 +53,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.work.Constraints
 import androidx.work.Data
+import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
@@ -244,7 +245,8 @@ fun DocumentScreen(
                 doctorId = params.doctorId,
                 viewModel = viewModel,
                 context = context,
-                patientUuid = params.uuid
+                patientUuid = params.uuid,
+                syncDoc = if(!isOnline) false else true
             )
         }
     )
@@ -255,10 +257,11 @@ fun DocumentScreen(
             doctorId = params.doctorId,
             viewModel = viewModel,
             context = context,
-            patientUuid = params.uuid
+            patientUuid = params.uuid,
+            syncDoc = if(!isOnline) false else true
         )
-        viewModel.getAvailableDocTypes(oid = params.patientId, doctorId = params.doctorId)
     }
+
     LaunchedEffect(viewModel.documentBottomSheetType) {
         viewModel.documentBottomSheetType?.let {
             scope.launch {
@@ -378,11 +381,13 @@ fun DocumentScreen(
                         DocumentFilter(
                             viewModel = viewModel,
                             onClick = {
-                                viewModel.getLocalRecords(
-                                    oid = params.patientId,
-                                    doctorId = params.doctorId,
-                                    docType = it
-                                )
+                                if (viewModel.documentType.intValue != it) {
+                                    viewModel.getLocalRecords(
+                                        oid = params.patientId,
+                                        doctorId = params.doctorId,
+                                        docType = it
+                                    )
+                                }
                             }
                         )
                         DocumentsSort(
@@ -430,14 +435,20 @@ private fun initData(
         .setRequiredNetworkType(NetworkType.CONNECTED)
         .build()
 
-    val periodicSyncWorkRequest =
+    val uniqueWorkName = "syncFileWorker_${patientUuid}_$oid$doctorId"
+
+    val uniqueSyncWorkRequest =
         OneTimeWorkRequestBuilder<SyncFileWorker>()
             .setInputData(inputData)
             .setConstraints(constraints)
             .build()
 
     WorkManager.getInstance(context)
-        .enqueue(periodicSyncWorkRequest)
+        .enqueueUniqueWork(
+            uniqueWorkName,
+            ExistingWorkPolicy.REPLACE,
+            uniqueSyncWorkRequest
+        )
 
     viewModel.sortBy.value = DocumentSortEnum.UPLOAD_DATE
     viewModel.getLocalRecords(
