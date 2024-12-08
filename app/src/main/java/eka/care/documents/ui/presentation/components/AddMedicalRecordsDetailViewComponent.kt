@@ -124,7 +124,7 @@ fun AddMedicalRecordsDetailViewComponent(
                 localId = viewModel.cardClickData.value?.localId ?: "",
                 docType = selectedChipId,
                 oid = paramsModel.patientId,
-                docDate = timestampToLong(date),
+                docDate = timestampToLong(date ?: System.currentTimeMillis().toString()),
                 tags = selectedTags.joinToString(separator = ","),
                 doctorId = paramsModel.doctorId
             )
@@ -374,6 +374,7 @@ fun AddMedicalRecordsDetailViewComponent(
         }
     )
 }
+
 private fun init(viewModel: RecordsViewModel, docId : String?, userId : String){
     if (docId != null) {
         viewModel.getTags(docId = docId, userId = userId)

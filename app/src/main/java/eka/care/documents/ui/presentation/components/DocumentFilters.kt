@@ -44,7 +44,7 @@ fun DocumentFilter(
                     modifier = Modifier
                         .clip(RoundedCornerShape(4.dp))
                         .clickable {
-                            if (documentType != -1) onClick(-1)
+                            onClick(-1)
                         },
                     textModifier = Modifier.padding(vertical = 4.dp),
                     text = "All ($totalCount)",

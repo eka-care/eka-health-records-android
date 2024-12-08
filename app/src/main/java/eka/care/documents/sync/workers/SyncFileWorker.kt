@@ -55,11 +55,18 @@ class SyncFileWorker(
             if (syncDoc) {
                 syncDocuments(oid = oid, uuid = uuid, doctorId = doctorId)
             } else {
-                val updatedAt = updatedAtRepository.getUpdatedAtByOid(oid = oid, doctorId = doctorId)
-                    ?: run {
-                        updatedAtRepository.insertUpdatedAtEntity(UpdatedAtEntity(oid = oid, updatedAt = "0", doctor_id =  doctorId))
-                        "0"
-                    }
+                val updatedAt =
+                    updatedAtRepository.getUpdatedAtByOid(oid = oid, doctorId = doctorId)
+                        ?: run {
+                            updatedAtRepository.insertUpdatedAtEntity(
+                                UpdatedAtEntity(
+                                    oid = oid,
+                                    updatedAt = "0",
+                                    doctor_id = doctorId
+                                )
+                            )
+                            "0"
+                        }
                 fetchRecords(
                     offset = null,
                     updatedAt = updatedAt,
@@ -120,78 +127,79 @@ class SyncFileWorker(
             val vaultDocuments = vaultRepository.getUnsyncedDocuments(oid = oid, doctorId = doctorId)
             if (vaultDocuments.isEmpty()) return
 
-            val files = vaultDocuments.flatMap { vaultEntity ->
-                vaultEntity.filePath.map { File(it) }
-            }
-
-            val fileContentList = files.map { file ->
-                FileType(contentType = file.getMimeType() ?: "", fileSize = file.length())
-            }
-
-            val isMultiFile = vaultDocuments.any { it.filePath.size > 1 }
-
             val tags = mutableListOf<String>()
 
             vaultDocuments.forEach { vaultEntity ->
                 val tagList = vaultEntity.tags?.split(",") ?: emptyList()
-            //    val tagNames = Tags().getTagNamesByIds(tagList)
-            //    tags.addAll(tagNames)
+                // Process tags if needed, e.g., using:
+                // val tagNames = Tags().getTagNamesByIds(tagList)
+                // tags.addAll(tagNames)
             }
 
-            val uploadInitResponse = awsRepository.fileUploadInit(
-                files = fileContentList,
-                patientOid = oid,
-                patientUuid = uuid,
-                isMultiFile = isMultiFile,
-                tags = tags,
-                documentType = vaultDocuments.firstOrNull()?.documentType?.let { docType ->
+            vaultDocuments.forEach { vaultEntity ->
+                // Prepare file list and metadata for the current document
+                val files = vaultEntity.filePath.map { File(it) }
+                val fileContentList = files.map { file ->
+                    FileType(contentType = file.getMimeType() ?: "", fileSize = file.length())
+                }
+                val isMultiFile = files.size > 1 // Determine if the document has multiple files
+                val documentType = vaultEntity.documentType?.let { docType ->
                     docTypes.find { it.idNew == docType }?.id ?: "ot"
                 } ?: "ot"
-            )
 
-            if (uploadInitResponse?.error == true) {
-                Log.d(
-                    "SYNC_DOCUMENTS",
-                    "Upload initialization error: ${uploadInitResponse.message}"
+                // Initialize the upload for the current document
+                val uploadInitResponse = awsRepository.fileUploadInit(
+                    files = fileContentList,
+                    patientOid = oid,
+                    patientUuid = uuid,
+                    isMultiFile = isMultiFile,
+                    tags = tags,
+                    documentType = documentType
                 )
-                return
-            }
 
-            val batchResponses = uploadInitResponse?.batchResponse ?: emptyList()
+                if (uploadInitResponse?.error == true) {
+                    Log.d(
+                        "SYNC_DOCUMENTS",
+                        "Upload initialization error: ${uploadInitResponse.message}"
+                    )
+                    return
+                }
 
-            if (isMultiFile) {
-                val batchResponse = batchResponses.firstOrNull()
-                if (batchResponse != null) {
-                    val response = awsRepository.uploadFile(batch = batchResponse, fileList = files)
-                    if (response?.error == false) {
-                        response.documentId?.let { docId ->
-                            vaultDocuments.forEach { updateDocumentDetails(docId, oid, it) }
+                val batchResponses = uploadInitResponse?.batchResponse ?: emptyList()
+
+                if (isMultiFile) {
+                    // Handle multi-file upload for the current document
+                    val batchResponse = batchResponses.firstOrNull()
+                    if (batchResponse != null) {
+                        val response = awsRepository.uploadFile(batch = batchResponse, fileList = files)
+                        if (response?.error == false) {
+                            response.documentId?.let { docId ->
+                                updateDocumentDetails(docId, oid, vaultEntity)
+                            }
                         }
                     }
-                }
-            } else {
-                vaultDocuments.forEachIndexed { index, vaultEntity ->
-                    val batchResponse = batchResponses.getOrNull(index)
-                    if (batchResponse != null) {
-                        vaultEntity.filePath.forEach { path ->
-                            val file = File(path)
-                            val response = awsRepository.uploadFile(file = file, batch = batchResponse)
+                } else {
+                    // Handle single-file upload for the current document
+                    vaultEntity.filePath.forEachIndexed { index, path ->
+                        val file = File(path)
+                        val batchResponse = batchResponses.getOrNull(index)
+                        if (batchResponse != null) {
+                            val response =
+                                awsRepository.uploadFile(file = file, batch = batchResponse)
                             if (response?.error == false) {
                                 response.documentId?.let { docId ->
-                                    updateDocumentDetails(
-                                        docId,
-                                        oid,
-                                        vaultEntity
-                                    )
+                                    updateDocumentDetails(docId, oid, vaultEntity)
                                 }
                             }
                         }
                     }
                 }
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Log.e("SYNC_DOCUMENTS", "Error syncing documents: ${e.message}", e)
         }
     }
+
 
     private suspend fun updateDocumentDetails(
         documentId: String,
@@ -218,7 +226,7 @@ class SyncFileWorker(
                 oid = oid,
                 updateFileDetailsRequest = updateFileDetailsRequest
             )
-        }catch (e : Exception){
+        } catch (e: Exception) {
             Log.d(
                 "SYNC_DOCUMENTS",
                 "Update File Detail: ${e.message.toString()}"
