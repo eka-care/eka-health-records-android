@@ -32,29 +32,21 @@ class RecordsUtility {
             }
             return bitmap
         }
-
         fun convertLongToFormattedDate(timestamp: Long): String {
             val date = Date(timestamp * 1000)
             val outputFormat = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
             return outputFormat.format(date)
         }
 
-        fun formatLocalDateToCustomFormat(date: Date): String? {
-            val formatter = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
-            return formatter.format(date)
-        }
-
-        fun timestampToLong(timestamp: String, format: String = "dd-MM-yyyy"): Long {
+        fun timestampToLong(timestamp: String, format: String = "EEE, dd MMM, yyyy"): Long {
             val dateFormat = SimpleDateFormat(format, Locale.getDefault())
             val date = dateFormat.parse(timestamp) ?: throw IllegalArgumentException("Invalid date format")
             return date.time / 1000
         }
 
-        fun convertLongToDateString(time: Long?): String {
-            if (time == null) return ""
-            val date = Date(time * 1000)
-            val format = SimpleDateFormat("dd EEE yyyy", Locale.getDefault())
-            return format.format(date)
+        fun formatLocalDateToCustomFormat(date: Date): String? {
+            val formatter = SimpleDateFormat("EEE, dd MMM, yyyy", Locale.getDefault())
+            return formatter.format(date)
         }
 
         fun changeDateFormat(inputDate: String?): String {
@@ -64,21 +56,11 @@ class RecordsUtility {
             return date?.let { outputFormat.format(it) } ?: ""
         }
 
-        fun isOnline(context: Context): Boolean {
-            val connectivityManager =
-                context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-            val capabilities =
-                connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)
-            if (capabilities != null) {
-                if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) {
-                    return true
-                } else if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
-                    return true
-                } else if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)) {
-                    return true
-                }
-            }
-            return false
+        fun convertLongToDateString(time: Long?): String {
+            if (time == null) return ""
+            val date = Date(time * 1000)
+            val format = SimpleDateFormat("dd EEE yyyy", Locale.getDefault())
+            return format.format(date)
         }
     }
 }

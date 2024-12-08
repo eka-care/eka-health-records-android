@@ -41,7 +41,11 @@ fun DocumentFilter(
             val totalCount = getAvailableDocTypes.resp?.sumOf { it.count } ?: 0
             item {
                 ChipMedium(
-                    modifier = Modifier.clip(RoundedCornerShape(4.dp)).clickable { onClick(-1) },
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .clickable {
+                            onClick(-1)
+                        },
                     textModifier = Modifier.padding(vertical = 4.dp),
                     text = "All ($totalCount)",
                     border = if (documentType == -1) MaterialTheme.colorScheme.inversePrimary else MaterialTheme.colorScheme.outlineVariant,
@@ -55,9 +59,13 @@ fun DocumentFilter(
                 if (docTypeModel != null) {
                     item {
                         ChipMedium(
-                            modifier = Modifier.clip(RoundedCornerShape(4.dp)).clickable {
-                                onClick(availableDocType.docType)
-                            },
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(4.dp))
+                                .clickable {
+                                    if (documentType != availableDocType.docType) {
+                                        onClick(availableDocType.docType)
+                                    }
+                                },
                             textModifier = Modifier.padding(vertical = 4.dp),
                             text = "${docTypeModel.documentType} (${availableDocType.count})", // Use documentType here
                             border = if (documentType == availableDocType.docType) MaterialTheme.colorScheme.inversePrimary else MaterialTheme.colorScheme.outlineVariant,

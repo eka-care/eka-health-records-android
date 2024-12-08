@@ -55,11 +55,18 @@ class SyncFileWorker(
             if (syncDoc) {
                 syncDocuments(oid = oid, uuid = uuid, doctorId = doctorId)
             } else {
-                val updatedAt = updatedAtRepository.getUpdatedAtByOid(oid = oid, doctorId = doctorId)
-                    ?: run {
-                        updatedAtRepository.insertUpdatedAtEntity(UpdatedAtEntity(oid = oid, updatedAt = "0", doctor_id =  doctorId))
-                        "0"
-                    }
+                val updatedAt =
+                    updatedAtRepository.getUpdatedAtByOid(oid = oid, doctorId = doctorId)
+                        ?: run {
+                            updatedAtRepository.insertUpdatedAtEntity(
+                                UpdatedAtEntity(
+                                    oid = oid,
+                                    updatedAt = "0",
+                                    doctor_id = doctorId
+                                )
+                            )
+                            "0"
+                        }
                 fetchRecords(
                     offset = null,
                     updatedAt = updatedAt,
@@ -117,108 +124,114 @@ class SyncFileWorker(
 
     private suspend fun syncDocuments(oid: String, uuid: String, doctorId: String) {
         try {
-            val vaultDocuments =
-                vaultRepository.getUnsyncedDocuments(oid = oid, doctorId = doctorId)
+            val vaultDocuments = vaultRepository.getUnsyncedDocuments(oid = oid, doctorId = doctorId)
             if (vaultDocuments.isEmpty()) return
-
-            val files = vaultDocuments.flatMap { vaultEntity ->
-                vaultEntity.filePath.map { File(it) }
-            }
-
-            val fileContentList = files.map { file ->
-                FileType(contentType = file.getMimeType() ?: "", fileSize = file.length())
-            }
-
-            val isMultiFile = files.size > 1
 
             val tags = mutableListOf<String>()
 
             vaultDocuments.forEach { vaultEntity ->
                 val tagList = vaultEntity.tags?.split(",") ?: emptyList()
-              //  val tagNames = Tags().getTagNamesByIds(tagList)
-              // tags.addAll(tagNames)
+                // Process tags if needed, e.g., using:
+                // val tagNames = Tags().getTagNamesByIds(tagList)
+                // tags.addAll(tagNames)
             }
 
-            val uploadInitResponse = awsRepository.fileUploadInit(
-                files = fileContentList,
-                patientOid = oid,
-                patientUuid = uuid,
-                isMultiFile = isMultiFile,
-                tags = tags,
-                documentType = vaultDocuments.firstOrNull()?.documentType?.let { docType ->
+            vaultDocuments.forEach { vaultEntity ->
+                // Prepare file list and metadata for the current document
+                val files = vaultEntity.filePath.map { File(it) }
+                val fileContentList = files.map { file ->
+                    FileType(contentType = file.getMimeType() ?: "", fileSize = file.length())
+                }
+                val isMultiFile = files.size > 1 // Determine if the document has multiple files
+                val documentType = vaultEntity.documentType?.let { docType ->
                     docTypes.find { it.idNew == docType }?.id ?: "ot"
                 } ?: "ot"
-            )
 
-            if (uploadInitResponse?.error == true) {
-                Log.d(
-                    "SYNC_DOCUMENTS",
-                    "Upload initialization error: ${uploadInitResponse.message}"
+                // Initialize the upload for the current document
+                val uploadInitResponse = awsRepository.fileUploadInit(
+                    files = fileContentList,
+                    patientOid = oid,
+                    patientUuid = uuid,
+                    isMultiFile = isMultiFile,
+                    tags = tags,
+                    documentType = documentType
                 )
-                return
-            }
 
-            val batchResponses = uploadInitResponse?.batchResponse ?: emptyList()
+                if (uploadInitResponse?.error == true) {
+                    Log.d(
+                        "SYNC_DOCUMENTS",
+                        "Upload initialization error: ${uploadInitResponse.message}"
+                    )
+                    return
+                }
 
-            if (isMultiFile) {
-                val batchResponse = batchResponses.firstOrNull()
-                if (batchResponse != null) {
-                    val response = awsRepository.uploadFile(batch = batchResponse, fileList = files)
-                    if (response?.error == false) {
-                        response.documentId?.let { docId ->
-                            vaultDocuments.forEach { updateDocumentDetails(docId, oid, it) }
+                val batchResponses = uploadInitResponse?.batchResponse ?: emptyList()
+
+                if (isMultiFile) {
+                    // Handle multi-file upload for the current document
+                    val batchResponse = batchResponses.firstOrNull()
+                    if (batchResponse != null) {
+                        val response = awsRepository.uploadFile(batch = batchResponse, fileList = files)
+                        if (response?.error == false) {
+                            response.documentId?.let { docId ->
+                                updateDocumentDetails(docId, oid, vaultEntity)
+                            }
                         }
                     }
-                }
-            } else {
-                vaultDocuments.forEachIndexed { index, vaultEntity ->
-                    val batchResponse = batchResponses.getOrNull(index)
-                    if (batchResponse != null) {
-                        vaultEntity.filePath.forEach { path ->
-                            val file = File(path)
+                } else {
+                    // Handle single-file upload for the current document
+                    vaultEntity.filePath.forEachIndexed { index, path ->
+                        val file = File(path)
+                        val batchResponse = batchResponses.getOrNull(index)
+                        if (batchResponse != null) {
                             val response =
                                 awsRepository.uploadFile(file = file, batch = batchResponse)
                             if (response?.error == false) {
                                 response.documentId?.let { docId ->
-                                    updateDocumentDetails(
-                                        docId,
-                                        oid,
-                                        vaultEntity
-                                    )
+                                    updateDocumentDetails(docId, oid, vaultEntity)
                                 }
                             }
                         }
                     }
                 }
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Log.e("SYNC_DOCUMENTS", "Error syncing documents: ${e.message}", e)
         }
     }
+
 
     private suspend fun updateDocumentDetails(
         documentId: String,
         oid: String,
         vaultEntity: VaultEntity
     ) {
-        val documentDate = vaultEntity.documentDate?.let { timestamp ->
-            val date = Date(timestamp * 1000)
-            SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(date)
-        }
-
-        val updateFileDetailsRequest = UpdateFileDetailsRequest(
-            oid = vaultEntity.oid,
-            documentType = docTypes.find { it.idNew == vaultEntity.documentType }?.id,
-            documentDate = changeDateFormat(documentDate),
-            userTags = emptyList(),
-            linkAbha = vaultEntity.isABHALinked
-        )
-
-        myFileRepository.updateFileDetails(
-            docId = documentId,
-            oid = oid,
-            updateFileDetailsRequest = updateFileDetailsRequest
-        )
         vaultRepository.updateDocumentId(documentId, vaultEntity.localId)
+        try {
+            val documentDate = vaultEntity.documentDate?.let { timestamp ->
+                val date = Date(timestamp * 1000)
+                SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(date)
+            } ?: ""
+
+            val updateFileDetailsRequest = UpdateFileDetailsRequest(
+                oid = vaultEntity.oid,
+                documentType = docTypes.find { it.idNew == vaultEntity.documentType }?.id,
+                documentDate = if (documentDate.isNotEmpty()) changeDateFormat(documentDate) else null,
+                userTags = emptyList(),
+                linkAbha = vaultEntity.isABHALinked
+            )
+
+            myFileRepository.updateFileDetails(
+                docId = documentId,
+                oid = oid,
+                updateFileDetailsRequest = updateFileDetailsRequest
+            )
+        } catch (e: Exception) {
+            Log.d(
+                "SYNC_DOCUMENTS",
+                "Update File Detail: ${e.message.toString()}"
+            )
+        }
     }
 
     private suspend fun fetchRecords(
@@ -237,7 +250,11 @@ class SyncFileWorker(
             // eka-uat of latest updated or inserted record
             val ekaUat = response?.headers()?.get("Eka-Uat")
             if (ekaUat != null) {
-                updatedAtRepository.updateUpdatedAtByOid(oid = oid, updatedAt = ekaUat, doctorId =  doctorId)
+                updatedAtRepository.updateUpdatedAtByOid(
+                    oid = oid,
+                    updatedAt = ekaUat,
+                    doctorId = doctorId
+                )
             }
 
             val records = response?.body()
@@ -285,7 +302,8 @@ class SyncFileWorker(
             }
             val localCta = CTA(action = recordCta.action, pageId = recordCta.pid, params = params)
             val localId = vaultRepository.getLocalId(recordItem.documentId)
-            val documentDate = if(recordItem.metadata.documentDate.seconds == 0L) null else recordItem.metadata.documentDate.seconds
+            val documentDate =
+                if (recordItem.metadata.documentDate.seconds == 0L) null else recordItem.metadata.documentDate.seconds
             if (!localId.isNullOrEmpty()) {
                 vaultRepository.storeDocument(
                     localId = localId,
@@ -299,7 +317,7 @@ class SyncFileWorker(
                     tags = recordItem.metadata.tagsValueList.joinToString(","),
                     documentDate = documentDate,
                 )
-            } else if (recordItem.availableDocumentCase != Records.Record.Item.AvailableDocumentCase.IN_TRANSIT) {
+            } else if (recordItem.availableDocumentCase != Records.Record.Item.AvailableDocumentCase.IN_TRANSIT && recordItem.documentId != null) {
                 vaultList.add(
                     VaultEntity(
                         localId = localId ?: UUID.randomUUID().toString(),

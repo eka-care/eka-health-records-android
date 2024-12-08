@@ -31,8 +31,10 @@ import eka.care.documents.ui.presentation.state.GetAvailableDocTypesState
 import eka.care.documents.ui.presentation.state.GetRecordsState
 import eka.care.documents.ui.utility.RecordsUtility.Companion.convertLongToFormattedDate
 import id.zelory.compressor.Compressor
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -212,9 +214,11 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
                             GetRecordsState.Success(resp = records)
                         }
                     }
-            } catch (ex: Exception) {
-                _getRecordsState.value =
-                    GetRecordsState.Error(ex.localizedMessage ?: "An error occurred")
+            }
+            catch (ex: Exception) {
+                // will fix later
+//                _getRecordsState.value =
+//                    GetRecordsState.Error(ex.localizedMessage ?: "An error occurred")
             }
         }
     }

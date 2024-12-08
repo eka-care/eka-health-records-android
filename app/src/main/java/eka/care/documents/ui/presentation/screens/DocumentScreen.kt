@@ -2,7 +2,6 @@ package eka.care.documents.ui.presentation.screens
 
 import android.Manifest
 import android.app.Activity
-import android.app.Application
 import android.content.Context
 import android.content.Intent
 import android.util.Log
@@ -49,10 +48,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.ViewModelStoreOwner
 import androidx.work.Constraints
 import androidx.work.Data
+import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
@@ -71,13 +69,13 @@ import eka.care.documents.sync.workers.SyncFileWorker
 import eka.care.documents.ui.BgWhite
 import eka.care.documents.ui.Gray200
 import eka.care.documents.ui.presentation.activity.DocumentViewerActivity
-import eka.care.documents.ui.presentation.activity.RecordsViewModelFactory
 import eka.care.documents.ui.presentation.components.DocumentBottomSheetContent
 import eka.care.documents.ui.presentation.components.DocumentBottomSheetType
 import eka.care.documents.ui.presentation.components.DocumentFilter
 import eka.care.documents.ui.presentation.components.DocumentScreenContent
 import eka.care.documents.ui.presentation.components.DocumentsSort
 import eka.care.documents.ui.presentation.components.TopAppBarSmall
+import eka.care.documents.ui.presentation.components.isOnline
 import eka.care.documents.ui.presentation.model.RecordParamsModel
 import eka.care.documents.ui.presentation.state.GetRecordsState
 import eka.care.documents.ui.presentation.viewmodel.RecordsViewModel
@@ -87,15 +85,10 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterialApi::class, ExperimentalPermissionsApi::class)
 @Composable
 fun DocumentScreen(
-    params: RecordParamsModel
+    params: RecordParamsModel,
+    viewModel: RecordsViewModel
 ) {
     val context = LocalContext.current
-
-    val application = context.applicationContext as Application
-    val viewModel: RecordsViewModel = ViewModelProvider(
-        LocalContext.current as ViewModelStoreOwner,
-        RecordsViewModelFactory(application)
-    ).get(RecordsViewModel::class.java)
 
     val cameraPermissionState = rememberPermissionState(permission = Manifest.permission.CAMERA)
 
@@ -239,26 +232,28 @@ fun DocumentScreen(
     val pullRefreshState = rememberPullRefreshState(
         refreshing = isRefreshing,
         onRefresh = {
-            initData(
-                oid = params.patientId,
-                doctorId = params.doctorId,
-                viewModel = viewModel,
-                context = context,
-                patientUuid = params.uuid
-            )
+            if (isOnline(context)) {
+                initData(
+                    oid = params.patientId,
+                    doctorId = params.doctorId,
+                    viewModel = viewModel,
+                    context = context,
+                    patientUuid = params.uuid,
+                    syncDoc = false
+                )
+            }
         }
     )
 
-    LaunchedEffect(key1 = Unit) {
-        initData(
+    LaunchedEffect(key1 = viewModel.documentType.intValue) {
+        viewModel.getAvailableDocTypes(oid = params.patientId, doctorId = params.doctorId)
+        viewModel.getLocalRecords(
             oid = params.patientId,
             doctorId = params.doctorId,
-            viewModel = viewModel,
-            context = context,
-            patientUuid = params.uuid
+            docType = viewModel.documentType.intValue
         )
-        viewModel.getAvailableDocTypes(oid = params.patientId, doctorId = params.doctorId)
     }
+
     LaunchedEffect(viewModel.documentBottomSheetType) {
         viewModel.documentBottomSheetType?.let {
             scope.launch {
@@ -304,7 +299,6 @@ fun DocumentScreen(
         )
     }
     val resp = (recordsState as? GetRecordsState.Success)?.resp ?: emptyList()
-
     ModalBottomSheetLayout(
         sheetState = modalBottomSheetState,
         sheetContent = {
@@ -340,7 +334,11 @@ fun DocumentScreen(
     ) {
         Scaffold(
             topBar = {
-                Column(modifier = Modifier.fillMaxWidth().background(BgWhite)) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(BgWhite)
+                ) {
                     TopAppBarSmall(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -374,15 +372,17 @@ fun DocumentScreen(
                             Text(text = "offline")
                         }
                     }
-                    if(resp.isNotEmpty()){
+                    if (resp.isNotEmpty()) {
                         DocumentFilter(
                             viewModel = viewModel,
                             onClick = {
+                                //    if (viewModel.documentType.intValue != it) {
                                 viewModel.getLocalRecords(
                                     oid = params.patientId,
                                     doctorId = params.doctorId,
                                     docType = it
                                 )
+                                //    }
                             }
                         )
                         DocumentsSort(
@@ -411,7 +411,7 @@ fun DocumentScreen(
     }
 }
 
-private fun initData(
+fun initData(
     patientUuid: String,
     oid: String,
     doctorId: String,
@@ -430,16 +430,21 @@ private fun initData(
         .setRequiredNetworkType(NetworkType.CONNECTED)
         .build()
 
-    val periodicSyncWorkRequest =
+    val uniqueWorkName = "syncFileWorker_${patientUuid}_$oid$doctorId"
+
+    val uniqueSyncWorkRequest =
         OneTimeWorkRequestBuilder<SyncFileWorker>()
             .setInputData(inputData)
             .setConstraints(constraints)
             .build()
 
     WorkManager.getInstance(context)
-        .enqueue(periodicSyncWorkRequest)
+        .enqueueUniqueWork(
+            uniqueWorkName,
+            ExistingWorkPolicy.REPLACE,
+            uniqueSyncWorkRequest
+        )
 
-    viewModel.sortBy.value = DocumentSortEnum.UPLOAD_DATE
     viewModel.getLocalRecords(
         oid = oid,
         doctorId = doctorId,
