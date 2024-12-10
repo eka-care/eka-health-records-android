@@ -19,25 +19,25 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        Document.init(
-            documentConfiguration = DocumentConfiguration(
-                host = "https://vault.eka.care/",
-                okHttpSetup = object : IOkHttpSetup {
-                    override fun getDefaultHeaders(url: String): Map<String, String> {
-                        return emptyMap()
-                    }
-
-                    override fun onSessionExpire() {
-
-                    }
-
-                    override fun refreshAuthToken(url: String): Map<String, String>? {
-                        return emptyMap()
-                    }
-
-                }
-            )
-        )
+//        Document.init(
+//            documentConfiguration = DocumentConfiguration(
+//                host = "https://vault.eka.care/",
+//                okHttpSetup = object : IOkHttpSetup {
+//                    override fun getDefaultHeaders(url: String): Map<String, String> {
+//                        return emptyMap()
+//                    }
+//
+//                    override fun onSessionExpire() {
+//
+//                    }
+//
+//                    override fun refreshAuthToken(url: String): Map<String, String>? {
+//                        return emptyMap()
+//                    }
+//
+//                }
+//            )
+//        )
         setContent {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Button(
