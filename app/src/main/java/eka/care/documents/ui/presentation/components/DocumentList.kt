@@ -1,6 +1,7 @@
 package eka.care.documents.ui.presentation.components
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,6 +23,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import eka.care.documents.R
 import eka.care.documents.data.utility.DocumentUtility.Companion.docTypes
+import eka.care.documents.ui.DarwinTouchNeutral200
+import eka.care.documents.ui.DarwinTouchNeutral50
+import eka.care.documents.ui.Gray200
+import eka.care.documents.ui.Gray400
 import eka.care.documents.ui.touchBodyRegular
 import eka.care.documents.ui.presentation.model.CTA
 import eka.care.documents.ui.presentation.model.RecordModel
@@ -37,6 +42,9 @@ fun DocumentList(
     Box(
         modifier = Modifier
             .fillMaxWidth()
+            .background(
+                if(recordModel.filePath?.isEmpty() == true) DarwinTouchNeutral200 else MaterialTheme.colorScheme.surface
+            )
             .padding(horizontal = 16.dp, vertical = 8.dp),
         contentAlignment = Alignment.CenterEnd
     ) {

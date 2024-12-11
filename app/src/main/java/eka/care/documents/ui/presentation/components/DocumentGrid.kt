@@ -46,7 +46,11 @@ import coil.compose.AsyncImage
 import eka.care.documents.R
 import eka.care.documents.data.utility.DocumentUtility.Companion.docTypes
 import eka.care.documents.ui.DarwinTouchNeutral1000
+import eka.care.documents.ui.DarwinTouchNeutral200
 import eka.care.documents.ui.DarwinTouchNeutral300
+import eka.care.documents.ui.DarwinTouchNeutral50
+import eka.care.documents.ui.Gray200
+import eka.care.documents.ui.Gray400
 import eka.care.documents.ui.presentation.model.CTA
 import eka.care.documents.ui.presentation.model.RecordModel
 import eka.care.documents.ui.presentation.viewmodel.RecordsViewModel
@@ -94,9 +98,13 @@ fun DocumentGridItem(
         .clickable {
             onClick(CTA(action = "open_deepThought"), recordModel)
         }
-        .background(MaterialTheme.colorScheme.surface, shape = MaterialTheme.shapes.medium)
         .height(120.dp)
-        .padding(8.dp)) {
+        .background(
+          if(recordModel.filePath?.isEmpty() == true) DarwinTouchNeutral200 else MaterialTheme.colorScheme.surface ,
+            shape = MaterialTheme.shapes.medium
+        )
+        .padding(8.dp)
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
