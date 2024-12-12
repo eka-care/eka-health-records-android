@@ -17,12 +17,11 @@ import com.example.reader.PdfReaderManager
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.rememberPagerState
-import eka.care.doctor.features.documents.features.drive.presentation.components.SmartReportTabBar
-import eka.care.doctor.features.documents.features.drive.presentation.state.DocumentPreviewState
-import eka.care.documents.ui.presentation.state.DocumentSmartReportState
 import eka.care.documents.data.db.model.CTA
 import eka.care.documents.ui.BorderBrand02
 import eka.care.documents.ui.DarwinTouchNeutral100
+import eka.care.documents.ui.presentation.state.DocumentPreviewState
+import eka.care.documents.ui.presentation.state.DocumentSmartReportState
 import eka.care.documents.ui.presentation.viewmodel.DocumentPreviewViewModel
 import kotlinx.coroutines.launch
 

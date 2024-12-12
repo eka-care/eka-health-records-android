@@ -1,4 +1,4 @@
-package eka.care.doctor.features.documents.features.drive.presentation.components
+package eka.care.documents.ui.presentation.components
 
 import android.annotation.SuppressLint
 import androidx.compose.animation.core.FastOutSlowInEasing

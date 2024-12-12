@@ -25,7 +25,7 @@ interface VaultRepository {
         hasId: String,
         cta: String?,
         tags: String,
-        documentDate : Long
+        documentDate : Long?
     )
     suspend fun getUnsyncedDocuments(oid : String, doctorId: String): List<VaultEntity>
     suspend fun getDeletedDocuments(oid: String , doctorId: String): List<VaultEntity>
@@ -34,10 +34,10 @@ interface VaultRepository {
     suspend fun getAvailableDocTypes(oid: String, doctorId: String): List<AvailableDocTypes>
     fun fetchDocuments(oid: String, docType: Int, doctorId: String): Flow<List<VaultEntity>>
     fun fetchDocumentsByDocDate(oid: String, docType: Int, doctorId: String): Flow<List<VaultEntity>>
-    suspend fun updateDocumentId(documentId: String?, localId: String)
+    suspend fun updateDocumentId(documentId: String, localId: String)
     suspend fun getLocalIdBySource(source: Int, oid: String): List<String>
     suspend fun getLocalId(docId: String): String?
     suspend fun getDocumentByDocId(docId: String) : VaultEntity?
     suspend fun removeDocument(localId: String, oid: String)
-    suspend fun getDocumentsWithoutFilePath(doctorId: String) : Flow<List<VaultEntity>>
+    suspend fun getDocumentsWithoutFilePath(doctorId: String, patientOid : String) : Flow<List<VaultEntity>>
 }

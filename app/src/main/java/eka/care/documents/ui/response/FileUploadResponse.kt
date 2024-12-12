@@ -18,21 +18,3 @@ data class MyFilePage(
     @SerializedName("share_text")
     val shareText: String? = null,
 ) : Parcelable
-
-@Keep
-data class FileUploadResponse(
-
-    @SerializedName("document_id")
-    val documentId: String? = null,
-
-    @SerializedName("result")
-    val result: String? = null,
-
-    @SerializedName("error_string")
-    val errorString: String? = null,
-
-    @SerializedName("files")
-    val files: List<MyFilePage>? = null,
-
-    var code: Int?,
-) : Serializable

@@ -3,12 +3,13 @@ package eka.care.documents.ui.presentation.viewmodel
 import android.app.Application
 import android.content.Context
 import android.content.ContextWrapper
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import eka.care.documents.ui.presentation.components.Filter
 import eka.care.documents.ui.presentation.components.LabParamResult
 import eka.care.documents.ui.presentation.components.SmartViewTab
-import eka.care.doctor.features.documents.features.drive.presentation.state.DocumentPreviewState
+import eka.care.documents.ui.presentation.state.DocumentPreviewState
 import eka.care.documents.ui.presentation.state.DocumentSmartReportState
 import eka.care.documents.data.db.database.DocumentDatabase
 import eka.care.documents.data.repository.VaultRepository

@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -37,7 +36,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.google.gson.annotations.SerializedName
 import eka.care.documents.R
 import eka.care.documents.ui.DarwinTouchNeutral0
 import eka.care.documents.ui.DarwinTouchNeutral1000
@@ -53,7 +51,7 @@ import eka.care.documents.ui.utility.RecordsUtility.Companion.convertLongToDateS
 import kotlinx.coroutines.Job
 
 @Composable
-@OptIn(ExperimentalMaterialApi::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterialApi::class)
 fun DocumentScreenContent(
     paddingValues: PaddingValues,
     pullRefreshState: PullRefreshState,
@@ -99,27 +97,6 @@ fun DocumentScreenContent(
                         .background(DarwinTouchNeutral0),
                     state = listState
                 ) {
-                    stickyHeader {
-                        DocumentFilter(
-                            viewModel = viewModel,
-                            onClick = {
-                                viewModel.getLocalRecords(
-                                    oid = paramsModel.patientId,
-                                    doctorId = paramsModel.doctorId,
-                                    docType = it
-                                )
-                            }
-                        )
-                    }
-                    stickyHeader {
-                        DocumentsSort(
-                            viewModel = viewModel,
-                            onClickSort = {
-                                openSheet()
-                                viewModel.documentBottomSheetType =
-                                    DocumentBottomSheetType.DocumentSort
-                            })
-                    }
                     if (viewModel.documentViewType == DocumentViewType.GridView) {
                         item {
                             DocumentGrid(
@@ -132,14 +109,14 @@ fun DocumentScreenContent(
                                             context = context,
                                             model = model,
                                             oid = paramsModel.patientId,
-                                            documentId = model.documentId
                                         )
                                     } else {
                                         openSheet()
                                         viewModel.documentBottomSheetType =
                                             DocumentBottomSheetType.DocumentOptions
                                     }
-                                })
+                                }
+                            )
                         }
                     } else {
                         items(resp) { model ->
@@ -152,7 +129,6 @@ fun DocumentScreenContent(
                                             context = context,
                                             model = model,
                                             oid = paramsModel.patientId,
-                                            documentId = model.documentId,
                                         )
                                     } else {
                                         viewModel.localId.value = model.localId ?: ""
@@ -233,11 +209,11 @@ fun DocumentScreenContent(
     }
 }
 
-private fun navigate(context: Context, model: RecordModel, oid: String, documentId: String?) {
-    if(isOnline(context)){
+private fun navigate(context: Context, model: RecordModel, oid: String) {
+    if (isOnline(context)) {
         if (model.tags?.split(",")?.contains("1") == false) {
             Intent(context, DocumentPreview::class.java).also {
-                it.putExtra("document_id", model.documentId)
+                it.putExtra("local_id", model.localId)
                 it.putExtra("user_id", oid)
                 context.startActivity(it)
             }
@@ -246,7 +222,7 @@ private fun navigate(context: Context, model: RecordModel, oid: String, document
             val date = convertLongToDateString(model.documentDate ?: model.createdAt)
             Intent(context, SmartReportActivity::class.java)
                 .also {
-                    it.putExtra("doc_id", documentId)
+                    it.putExtra("doc_id", model.documentId)
                     it.putExtra("user_id", oid)
                     it.putExtra("doc_date", date)
                     context.startActivity(it)
@@ -255,7 +231,7 @@ private fun navigate(context: Context, model: RecordModel, oid: String, document
         }
     }else{
         Intent(context, DocumentPreview::class.java).also {
-            it.putExtra("document_id", model.documentId)
+            it.putExtra("local_id", model.localId)
             it.putExtra("user_id", oid)
             context.startActivity(it)
         }
@@ -279,8 +255,3 @@ fun isOnline(context: Context): Boolean {
     }
     return false
 }
-
-data class RequestParams(
-    @SerializedName("document_id") val documentId: String?,
-    @SerializedName("user_id") val userId: String?
-)

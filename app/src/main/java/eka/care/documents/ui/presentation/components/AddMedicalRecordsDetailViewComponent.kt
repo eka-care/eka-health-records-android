@@ -109,10 +109,10 @@ fun AddMedicalRecordsDetailViewComponent(
     val unixTimestamp: Long? = viewModel.cardClickData.value?.documentDate
     val dateInMillis = unixTimestamp?.times(1000)
     val sdf = SimpleDateFormat("EEE, dd MMM, yyyy", Locale.getDefault())
-    val formattedDate = dateInMillis?.let { Date(it) }?.let { sdf.format(it) }
 
     val date = if (editDocument) {
-        if (selectedDate.value.length > 1) selectedDate.value else formattedDate
+        if (selectedDate.value.length > 1) selectedDate.value else dateInMillis?.let { Date(it) }
+            ?.let { sdf.format(it) } ?: "Add Date"
     } else {
         if (selectedDate.value.length > 1) selectedDate.value else "Add Date"
     }
@@ -137,8 +137,7 @@ fun AddMedicalRecordsDetailViewComponent(
                 } catch (e: Exception) {
                     null
                 }
-                val unixTimestamp =
-                    parsedDate?.time?.div(1000) ?: (System.currentTimeMillis() / 1000)
+                val unixTimestamp = parsedDate?.time?.div(1000)
                 val vaultEntity = VaultEntity(
                     localId = UUID.randomUUID().toString(),
                     documentId = null,
@@ -359,7 +358,7 @@ fun AddMedicalRecordsDetailViewComponent(
                     containerColor = if (selectedChipId != null) DarwinTouchPrimary else DarwinTouchNeutral600
                 ),
                 onClick = {
-                    onAddMedicalRecord()
+                    if (selectedChipId != null) onAddMedicalRecord()
                 },
                 modifier = Modifier
                     .clip(RoundedCornerShape(50))
@@ -375,6 +374,7 @@ fun AddMedicalRecordsDetailViewComponent(
         }
     )
 }
+
 private fun init(viewModel: RecordsViewModel, docId : String?, userId : String){
     if (docId != null) {
         viewModel.getTags(docId = docId, userId = userId)

@@ -4,6 +4,7 @@ import android.webkit.MimeTypeMap
 import com.eka.network.ConverterFactoryType
 import com.eka.network.Networking
 import com.haroldadmin.cnradapter.NetworkResponse
+import eka.care.documents.Document
 import eka.care.documents.sync.data.remote.api.AwsService
 import eka.care.documents.sync.data.remote.dto.request.Batch
 import eka.care.documents.sync.data.remote.dto.request.FileType
@@ -22,7 +23,7 @@ import java.util.Locale
 class AwsRepository {
 
     private val service: AwsService =
-        Networking.create(AwsService::class.java, "https://vault.eka.care/", converterFactoryType = ConverterFactoryType.GSON)
+        Networking.create(AwsService::class.java, Document.getConfiguration()?.host, converterFactoryType = ConverterFactoryType.GSON)
 
     suspend fun fileUploadInit(
         files: List<FileType>,
@@ -30,15 +31,16 @@ class AwsRepository {
         isEncrypted: Boolean = false,
         patientUuid: String,
         patientOid: String,
+        documentType : String,
         tags : List<String>
     ): FilesUploadInitResponse? {
         val batch = mutableListOf<Batch>()
 
         if (isMultiFile) {
-            batch.add(Batch(files = files, isEncrypted = isEncrypted, sharable = false, patientUuid = patientUuid, patientOid = patientOid, tags = tags))
+            batch.add(Batch(files = files, isEncrypted = isEncrypted, sharable = false, patientUuid = patientUuid, patientOid = patientOid, tags = tags, documentType = documentType))
         } else {
             files.forEach {
-                batch.add(Batch(files = listOf(it), isEncrypted = isEncrypted, sharable = false, patientUuid = patientUuid, patientOid = patientOid, tags = tags))
+                batch.add(Batch(files = listOf(it), isEncrypted = isEncrypted, sharable = false, patientUuid = patientUuid, patientOid = patientOid, tags = tags, documentType = documentType))
             }
         }
         val body = FilesUploadInitRequest(batchRequest = batch)

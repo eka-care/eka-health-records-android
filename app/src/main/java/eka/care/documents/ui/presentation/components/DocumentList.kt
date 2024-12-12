@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
@@ -25,6 +26,7 @@ import eka.care.documents.data.utility.DocumentUtility.Companion.docTypes
 import eka.care.documents.ui.touchBodyRegular
 import eka.care.documents.ui.presentation.model.CTA
 import eka.care.documents.ui.presentation.model.RecordModel
+import eka.care.documents.ui.touchLabelRegular
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -41,14 +43,16 @@ fun DocumentList(
         contentAlignment = Alignment.CenterEnd
     ) {
         val docType = docTypes.find { it.idNew == recordModel.documentType }
-        val uploadDate = Date((recordModel.createdAt ?: 0L) * 1000)
+        val uploadTimestamp = recordModel.documentDate
+        val uploadDate = uploadTimestamp?.times(1000)?.let { Date(it) }
         val sdf = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
-        val formattedDate = sdf.format(uploadDate)
+        val formattedDate = uploadDate?.let { sdf.format(it) }
 
         Row(
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
                 .clickable {
-                           onClick(CTA(action = "open_deepThought"))
+                    onClick(CTA(action = "open_deepThought"))
                 },
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.CenterVertically,
@@ -70,19 +74,28 @@ fun DocumentList(
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface
                 )
-                Text(
-                    text = formattedDate,
-                    style = touchBodyRegular,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                if (formattedDate != null) {
+                    Text(
+                        text = formattedDate,
+                        style = touchLabelRegular,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }else{
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
             }
         }
-        Icon(
-            modifier = Modifier.clickable {
-                onClick(CTA(action = "open_options"))
-            },
-            imageVector = Icons.Rounded.MoreVert,
-            contentDescription = ""
-        )
+        Row {
+            if(recordModel.tags?.split(",")?.contains("1") == true){
+                SmartChip()
+            }
+            Icon(
+                modifier = Modifier.clickable {
+                    onClick(CTA(action = "open_options"))
+                },
+                imageVector = Icons.Rounded.MoreVert,
+                contentDescription = ""
+            )
+        }
     }
 }

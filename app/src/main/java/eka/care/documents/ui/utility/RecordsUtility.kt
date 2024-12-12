@@ -3,6 +3,8 @@ package eka.care.documents.ui.utility
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
@@ -30,16 +32,10 @@ class RecordsUtility {
             }
             return bitmap
         }
-
         fun convertLongToFormattedDate(timestamp: Long): String {
             val date = Date(timestamp * 1000)
             val outputFormat = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
             return outputFormat.format(date)
-        }
-
-        fun formatLocalDateToCustomFormat(date: Date): String? {
-            val formatter = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
-            return formatter.format(date)
         }
 
         fun timestampToLong(timestamp: String, format: String = "EEE, dd MMM, yyyy"): Long {
@@ -48,11 +44,9 @@ class RecordsUtility {
             return date.time / 1000
         }
 
-        fun convertLongToDateString(time: Long?): String {
-            if (time == null) return ""
-            val date = Date(time * 1000)
-            val format = SimpleDateFormat("dd EEE yyyy", Locale.getDefault())
-            return format.format(date)
+        fun formatLocalDateToCustomFormat(date: Date): String? {
+            val formatter = SimpleDateFormat("EEE, dd MMM, yyyy", Locale.getDefault())
+            return formatter.format(date)
         }
 
         fun changeDateFormat(inputDate: String?): String {
@@ -60,6 +54,13 @@ class RecordsUtility {
             val outputFormat = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
             val date = inputFormat.parse(inputDate)
             return date?.let { outputFormat.format(it) } ?: ""
+        }
+
+        fun convertLongToDateString(time: Long?): String {
+            if (time == null) return ""
+            val date = Date(time * 1000)
+            val format = SimpleDateFormat("dd EEE yyyy", Locale.getDefault())
+            return format.format(date)
         }
     }
 }

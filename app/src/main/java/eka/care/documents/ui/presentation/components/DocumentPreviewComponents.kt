@@ -39,7 +39,8 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.reader.PdfReaderManager
 import com.example.reader.presentation.states.PdfSource
-import eka.care.doctor.features.documents.features.drive.presentation.state.DocumentPreviewState
+import eka.care.documents.ui.BgWhite
+import eka.care.documents.ui.presentation.state.DocumentPreviewState
 import java.io.File
 
 @Composable
@@ -129,7 +130,7 @@ fun DocumentImagePreview(filePaths: List<String>) {
     var selectedUri by remember { mutableStateOf<Uri?>(Uri.parse(filePaths.firstOrNull())) }
 
     Column(
-        modifier = Modifier.fillMaxSize().background(Color.White),
+        modifier = Modifier.fillMaxSize().background(BgWhite),
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -145,7 +146,7 @@ fun DocumentImagePreview(filePaths: List<String>) {
         LazyRow(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color.White)
+                .background(BgWhite)
                 .padding(bottom = 48.dp, start = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             contentPadding = PaddingValues(horizontal = 16.dp)

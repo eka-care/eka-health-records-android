@@ -1,4 +1,4 @@
-package eka.care.doctor.features.documents.features.drive.presentation.state
+package eka.care.documents.ui.presentation.state
 
 sealed class DocumentPreviewState {
     object Loading : DocumentPreviewState()

@@ -14,36 +14,36 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import com.example.reader.PdfReaderManager
-import eka.care.doctor.features.documents.features.drive.presentation.state.DocumentPreviewState
 import eka.care.documents.R
+import eka.care.documents.ui.BgWhite
 import eka.care.documents.ui.presentation.components.DocumentSuccessState
 import eka.care.documents.ui.presentation.components.ErrorState
 import eka.care.documents.ui.presentation.components.LoadingState
 import eka.care.documents.ui.presentation.components.TopAppBarSmall
+import eka.care.documents.ui.presentation.state.DocumentPreviewState
 import eka.care.documents.ui.presentation.viewmodel.DocumentPreviewViewModel
 
 class DocumentPreview : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         val viewModel: DocumentPreviewViewModel by viewModels()
-
         val pdfManager = PdfReaderManager(this)
 
         try {
-            val docId = intent.getStringExtra("document_id")
+            val localId = intent.getStringExtra("local_id")
             val userId = intent.getStringExtra("user_id")
             viewModel.getDocument(
                 userId = userId ?: "",
-                docId = docId ?: ""
+                docId = localId ?: ""
             )
-        } catch (_: Exception) { }
+        } catch (_: Exception) {
+        }
 
         setContent {
             val state by viewModel.document.collectAsState()
+
             Content(state, pdfManager)
         }
     }
@@ -61,7 +61,7 @@ class DocumentPreview : ComponentActivity() {
                     TopAppBarSmall(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(Color.White),
+                            .background(BgWhite),
                         title = "Document",
                         leading = R.drawable.ic_back_arrow,
                         onLeadingClick = { (context as? Activity)?.finish() }
@@ -83,5 +83,4 @@ class DocumentPreview : ComponentActivity() {
             )
         }
     }
-
 }

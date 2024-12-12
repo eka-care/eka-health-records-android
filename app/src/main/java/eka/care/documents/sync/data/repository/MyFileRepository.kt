@@ -11,12 +11,9 @@ import kotlinx.coroutines.withContext
 import okhttp3.ResponseBody
 
 class MyFileRepository {
-    companion object {
-        private const val BASE_URL = "https://vault.eka.care/"
-    }
 
     private val myFileService: MyFileService by lazy {
-        Networking.create(MyFileService::class.java, BASE_URL, ConverterFactoryType.GSON)
+        Networking.create(MyFileService::class.java, eka.care.documents.Document.getConfiguration()?.host, ConverterFactoryType.GSON)
     }
 
     suspend fun updateFileDetails(

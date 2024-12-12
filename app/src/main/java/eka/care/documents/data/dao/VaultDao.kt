@@ -54,7 +54,7 @@ interface VaultDao {
         hasId: String,
         cta: String?,
         tags: String,
-        documentDate : Long
+        documentDate : Long?
     )
 
     @Query("UPDATE vault_table SET is_deleted=1 WHERE oid=:oid AND local_id=:localId")
@@ -66,11 +66,11 @@ interface VaultDao {
     @Query("SELECT * FROM vault_table WHERE oid=:oid AND local_id=:localId")
     suspend fun getDocumentData(oid: String?, localId: String): VaultEntity
 
-    @Query("SELECT doc_type as docType, count(*) as count FROM vault_table WHERE oid=:oid AND is_deleted=0 AND doctor_id = :doctorId GROUP BY doc_type")
+    @Query("SELECT doc_type as docType, count(doc_type) as count FROM vault_table WHERE oid=:oid AND is_deleted=0 AND doctor_id = :doctorId GROUP BY doc_type")
     suspend fun getAvailableDocTypes(oid: String?, doctorId: String): List<AvailableDocTypes>
 
     @Query("UPDATE vault_table SET doc_id=:docId WHERE local_id=:localId")
-    suspend fun updateDocumentId(docId: String?, localId: String)
+    suspend fun updateDocumentId(docId: String, localId: String)
 
     @Query("SELECT local_id FROM vault_table WHERE doc_id=:docId")
     suspend fun getLocalId(docId: String?): String?
@@ -84,7 +84,7 @@ interface VaultDao {
     @Query("SELECT local_id FROM vault_table WHERE oid=:oid AND source=:source")
     suspend fun getLocalIdBySource(oid: String?, source: Int): List<String>
 
-    @Query("SELECT * FROM vault_table WHERE doc_id=:docId")
+    @Query("SELECT * FROM vault_table WHERE doc_id=:docId OR local_id=:docId")
     suspend fun getDocumentByDocId(docId: String): VaultEntity
 
     @Query("UPDATE vault_table SET file_path=:filePath WHERE doc_id=:docId")
@@ -93,6 +93,6 @@ interface VaultDao {
     @Query("DELETE FROM vault_table WHERE oid=:oid AND local_id=:localId")
     suspend fun removeDocument(localId: String, oid: String?)
 
-    @Query("SELECT * FROM vault_table WHERE doctor_id = :doctorId")
-    fun fetchDocumentsWithoutFilePath(doctorId: String): Flow<List<VaultEntity>>
+    @Query("SELECT * FROM vault_table WHERE doctor_id = :doctorId AND oid = :patientoid")
+    fun fetchDocumentsWithoutFilePath(doctorId: String, patientoid : String): Flow<List<VaultEntity>>
 }

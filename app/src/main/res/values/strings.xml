@@ -5,6 +5,7 @@
     <string name="file_not_found">File Not Found</string>
     <string name="choose_option">Choose an option</string>
     <string name="take_a_photo">Take a photo</string>
+    <string name="scan_a_document">Scan a document</string>
     <string name="scan_and_upload">Scan and Upload</string>
     <string name="choose_from_gallery">Choose from Gallery</string>
     <string name="upload_pdf_file">Upload PDF File</string>
@@ -63,4 +64,5 @@
     <string name="welcome_secret_locker_body">Health records saved here are private to you</string>
     <string name="encrypt_with_private_key">Encrypt with Private Key</string>
     <string name="records_accessible_only_to_you">Records accessible only to you</string>
+    <string name="are_you_sure_you_want_to_delete_this_record">"Are you sure you want to delete this record?"</string>
 </resources>

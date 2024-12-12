@@ -13,16 +13,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
@@ -56,7 +50,7 @@ fun DocumentsSort(
     onClickSort: () -> Unit, viewModel: RecordsViewModel
 ) {
     val sortBy = viewModel.sortBy.value
-    var documentViewType by remember { mutableStateOf(DocumentViewType.GridView) }
+    val documentViewType = viewModel.documentViewType
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -89,12 +83,11 @@ fun DocumentsSort(
         IconButton(
             modifier = Modifier.size(40.dp),
             onClick = {
-                documentViewType = if (documentViewType == DocumentViewType.GridView) {
+                viewModel.documentViewType = if (documentViewType == DocumentViewType.GridView) {
                     DocumentViewType.ListView
                 } else {
                     DocumentViewType.GridView
                 }
-                viewModel.documentViewType = documentViewType
             }
         ) {
             Image(

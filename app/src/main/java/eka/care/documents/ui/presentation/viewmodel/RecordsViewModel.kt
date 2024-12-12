@@ -2,15 +2,16 @@ package eka.care.documents.ui.presentation.viewmodel
 
 import android.app.Application
 import android.content.Context
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
+import android.net.Uri
 import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.reader.presentation.states.PdfSource
 import com.google.gson.Gson
@@ -30,9 +31,14 @@ import eka.care.documents.ui.presentation.state.GetAvailableDocTypesState
 import eka.care.documents.ui.presentation.state.GetRecordsState
 import eka.care.documents.ui.utility.RecordsUtility.Companion.convertLongToFormattedDate
 import id.zelory.compressor.Compressor
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.cancellable
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -41,7 +47,13 @@ import java.io.File
 class RecordsViewModel(app: Application) : AndroidViewModel(app) {
 
     private val myFileRepository = MyFileRepository()
-    private val vaultRepository: VaultRepository = VaultRepositoryImpl(DocumentDatabase.getInstance(app))
+    private val vaultRepository: VaultRepository =
+        VaultRepositoryImpl(DocumentDatabase.getInstance(app))
+
+    private lateinit var launch: Job
+
+    private val _isOnline = MutableStateFlow(true)
+    val isOnline = _isOnline.asStateFlow()
 
     val cardClickData = mutableStateOf<RecordModel?>(null)
 
@@ -69,11 +81,50 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
 
     var documentViewType by mutableStateOf(DocumentViewType.GridView)
 
+    private val _photoUri = MutableStateFlow<Uri?>(null)
+    val photoUri: StateFlow<Uri?> = _photoUri
+
+    fun updatePhotoUri(uri: Uri?) {
+        _photoUri.value = uri
+    }
+
+    fun observeNetworkStatus(context: Context) {
+        val connectivityManager =
+            context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+
+        val callback = object : ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: Network) {
+                _isOnline.value = true
+            }
+
+            override fun onLost(network: Network) {
+                _isOnline.value = false
+            }
+
+            override fun onCapabilitiesChanged(
+                network: Network,
+                capabilities: NetworkCapabilities
+            ) {
+                _isOnline.value =
+                    capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+            }
+        }
+
+        val networkRequest = android.net.NetworkRequest.Builder()
+            .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+            .build()
+
+        connectivityManager.registerNetworkCallback(networkRequest, callback)
+
+        val activeNetwork = connectivityManager.activeNetworkInfo
+        _isOnline.value = activeNetwork?.isConnected == true
+    }
+
     fun getTags(docId: String, userId: String) {
         viewModelScope.launch {
             _selectedTags.value = emptyList()
             val response = myFileRepository.getDocument(docId = docId, userId = userId)?.tags
-         //   val apiTags = response?.let { Tags().getTagIdByNames(it) } ?: emptyList()
+            //   val apiTags = response?.let { Tags().getTagIdByNames(it) } ?: emptyList()
             val cardTags = cardClickData.value?.tags?.split(",")?.map { it.trim() } ?: emptyList()
             val allTags = (cardTags).distinct()
             _selectedTags.value = allTags
@@ -117,9 +168,10 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
 
     fun getLocalRecords(oid: String, docType: Int = -1, doctorId: String) {
         documentType.intValue = docType
-
-        viewModelScope.launch {
-            var dataEmitted = false
+        if (::launch.isInitialized) {
+            launch.cancel()
+        }
+        launch = viewModelScope.launch {
             try {
                 val documentsFlowResp = if (sortBy.value == DocumentSortEnum.UPLOAD_DATE) {
                     vaultRepository.fetchDocuments(
@@ -136,42 +188,37 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
                 }
 
                 documentsFlowResp
-                    .onCompletion {
-                        if (!dataEmitted) {
-                            _getRecordsState.value = GetRecordsState.EmptyState
-                        }
-                    }
+                    .cancellable()
                     .collect { vaultEntities ->
-                        if (!dataEmitted) { // Check if data has already been emitted
-                            val records = vaultEntities.map { vaultEntity ->
-                                RecordModel(
-                                    localId = vaultEntity.localId,
-                                    documentId = vaultEntity.documentId,
-                                    doctorId = doctorId,
-                                    documentType = vaultEntity.documentType,
-                                    documentDate = vaultEntity.documentDate,
-                                    createdAt = vaultEntity.createdAt,
-                                    thumbnail = vaultEntity.thumbnail,
-                                    filePath = vaultEntity.filePath,
-                                    fileType = vaultEntity.fileType,
-                                    cta = Gson().fromJson(vaultEntity.cta, CTA::class.java),
-                                    tags = vaultEntity.tags,
-                                    source = vaultEntity.source,
-                                    isAnalyzing = vaultEntity.isAnalyzing
-                                )
-                            }
-                            getAvailableDocTypes(oid = oid, doctorId = doctorId)
-                            _getRecordsState.value = if (records.isEmpty()) {
-                                GetRecordsState.EmptyState
-                            } else {
-                                dataEmitted = true // Set flag to prevent further emission
-                                GetRecordsState.Success(resp = records)
-                            }
+                        val records = vaultEntities.map { vaultEntity ->
+                            RecordModel(
+                                localId = vaultEntity.localId,
+                                documentId = vaultEntity.documentId,
+                                doctorId = doctorId,
+                                documentType = vaultEntity.documentType,
+                                documentDate = vaultEntity.documentDate,
+                                createdAt = vaultEntity.createdAt,
+                                thumbnail = vaultEntity.thumbnail,
+                                filePath = vaultEntity.filePath,
+                                fileType = vaultEntity.fileType,
+                                cta = Gson().fromJson(vaultEntity.cta, CTA::class.java),
+                                tags = vaultEntity.tags,
+                                source = vaultEntity.source,
+                                isAnalyzing = vaultEntity.isAnalyzing
+                            )
+                        }
+                        getAvailableDocTypes(oid = oid, doctorId = doctorId)
+                        _getRecordsState.value = if (records.isEmpty()) {
+                            GetRecordsState.EmptyState
+                        } else {
+                            GetRecordsState.Success(resp = records)
                         }
                     }
-            } catch (ex: Exception) {
-                _getRecordsState.value =
-                    GetRecordsState.Error(ex.localizedMessage ?: "An error occurred")
+            }
+            catch (ex: Exception) {
+                // will fix later
+//                _getRecordsState.value =
+//                    GetRecordsState.Error(ex.localizedMessage ?: "An error occurred")
             }
         }
     }
@@ -184,7 +231,6 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
         } catch (_: Exception) {
         }
     }
-
     fun editDocument(
         localId: String,
         docType: Int?,
@@ -195,7 +241,7 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
     ) {
         try {
             viewModelScope.launch {
-                vaultRepository.editDocument(localId, docType,  docDate, tags, patientId = oid)
+                vaultRepository.editDocument(localId, docType, docDate, tags, patientId = oid)
                 val tagList = tags.split(",")
               //  val tagNames = Tags().getTagNamesByIds(tagList)
                 val updateFileDetailsRequest = UpdateFileDetailsRequest(
@@ -259,7 +305,7 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    private fun getAvailableDocTypes(oid: String, doctorId: String) {
+    fun getAvailableDocTypes(oid: String, doctorId: String) {
         try {
             viewModelScope.launch {
                 _getAvailableDocTypes.value =
