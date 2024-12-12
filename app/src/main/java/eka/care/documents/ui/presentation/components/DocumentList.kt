@@ -43,7 +43,7 @@ fun DocumentList(
         modifier = Modifier
             .fillMaxWidth()
             .background(
-                if(recordModel.filePath?.isEmpty() == true) DarwinTouchNeutral200 else MaterialTheme.colorScheme.surface
+                MaterialTheme.colorScheme.surface
             )
             .padding(horizontal = 16.dp, vertical = 8.dp),
         contentAlignment = Alignment.CenterEnd

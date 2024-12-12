@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
-import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -105,19 +104,11 @@ fun DocumentScreenContent(
                                 onClick = { cta, model ->
                                     viewModel.cardClickData.value = model
                                     if (cta?.action == "open_deepThought") {
-                                        if (model.filePath?.isEmpty() == false) {
-                                            navigate(
-                                                context = context,
-                                                model = model,
-                                                oid = paramsModel.patientId,
-                                            )
-                                        } else {
-                                            Toast.makeText(
-                                                context,
-                                                "Syncing data, please wait...",
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                        }
+                                        navigate(
+                                            context = context,
+                                            model = model,
+                                            oid = paramsModel.patientId,
+                                        )
                                     } else {
                                         openSheet()
                                         viewModel.documentBottomSheetType =
@@ -133,19 +124,11 @@ fun DocumentScreenContent(
                                 onClick = { cta ->
                                     viewModel.cardClickData.value = model
                                     if (cta?.action == "open_deepThought") {
-                                        if (model.filePath?.isEmpty() == false) {
-                                            navigate(
-                                                context = context,
-                                                model = model,
-                                                oid = paramsModel.patientId,
-                                            )
-                                        } else {
-                                            Toast.makeText(
-                                                context,
-                                                "Syncing data, please wait...",
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                        }
+                                        navigate(
+                                            context = context,
+                                            model = model,
+                                            oid = paramsModel.patientId,
+                                        )
                                     } else {
                                         viewModel.localId.value = model.localId ?: ""
                                         openSheet()
@@ -213,7 +196,7 @@ private fun navigate(context: Context, model: RecordModel, oid: String) {
     if (isOnline(context)) {
         if (model.tags?.split(",")?.contains("1") == false) {
             Intent(context, DocumentPreview::class.java).also {
-                it.putExtra("local_id", model.localId)
+                it.putExtra("local_id", model.documentId)
                 it.putExtra("user_id", oid)
                 context.startActivity(it)
             }
@@ -231,7 +214,7 @@ private fun navigate(context: Context, model: RecordModel, oid: String) {
         }
     } else {
         Intent(context, DocumentPreview::class.java).also {
-            it.putExtra("local_id", model.localId)
+            it.putExtra("local_id", model.documentId)
             it.putExtra("user_id", oid)
             context.startActivity(it)
         }

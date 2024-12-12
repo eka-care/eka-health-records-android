@@ -26,11 +26,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,11 +41,6 @@ import coil.compose.AsyncImage
 import eka.care.documents.R
 import eka.care.documents.data.utility.DocumentUtility.Companion.docTypes
 import eka.care.documents.ui.DarwinTouchNeutral1000
-import eka.care.documents.ui.DarwinTouchNeutral200
-import eka.care.documents.ui.DarwinTouchNeutral300
-import eka.care.documents.ui.DarwinTouchNeutral50
-import eka.care.documents.ui.Gray200
-import eka.care.documents.ui.Gray400
 import eka.care.documents.ui.presentation.model.CTA
 import eka.care.documents.ui.presentation.model.RecordModel
 import eka.care.documents.ui.presentation.viewmodel.RecordsViewModel
@@ -100,7 +90,7 @@ fun DocumentGridItem(
         }
         .height(120.dp)
         .background(
-          if(recordModel.filePath?.isEmpty() == true) DarwinTouchNeutral200 else MaterialTheme.colorScheme.surface ,
+            MaterialTheme.colorScheme.surface,
             shape = MaterialTheme.shapes.medium
         )
         .padding(8.dp)
