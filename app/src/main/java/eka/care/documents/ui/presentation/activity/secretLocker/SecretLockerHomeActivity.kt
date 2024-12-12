@@ -1,4 +1,4 @@
-package eka.care.doctor.features.documents.features.drive.presentation.activity.secretLocker
+package eka.care.documents.ui.presentation.activity.secretLocker
 
 import android.os.Bundle
 import androidx.activity.compose.setContent

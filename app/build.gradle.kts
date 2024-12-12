@@ -45,6 +45,7 @@ android {
     }
     buildFeatures {
         compose = true
+        viewBinding = true
         buildConfig = true
     }
     compileOptions {
@@ -67,7 +68,7 @@ afterEvaluate {
 
                 groupId = "com.eka.records"
                 artifactId = "eka-records"
-                version = "3.0.0"
+                version = "3.0.6"
             }
         }
     }
@@ -86,6 +87,7 @@ dependencies {
     }
     implementation(libs.androidx.work.runtime.ktx)
     implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.firebase.config.ktx)
     kapt(libs.room.compiler)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.material)

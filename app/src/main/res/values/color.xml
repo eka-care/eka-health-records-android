@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="background_dark_base_tertiary">#424453</color>
+    <color name="icons_primary">#2d3142</color>
+    <color name="text_disabled">#d6d9e0</color>
+    <color name="icons_tertiary">#9c9eb9</color>
+    <color name="background_action_states_highlight">#af8eff</color>
 </resources>

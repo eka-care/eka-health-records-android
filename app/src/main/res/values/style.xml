@@ -12,4 +12,16 @@
         <item name="lineHeight">24dp</item>
         <item name="android:lineSpacingExtra">3sp</item>
     </style>
+    <style name="TitlesTitle2">
+        <item name="android:fontFamily">@font/hk_grotesk_regular</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textSize">24sp</item>
+        <item name="android:lineSpacingExtra">6dp</item>
+    </style>
+    <style name="BodyCallout6spLineSpacing">
+        <item name="android:fontFamily">@font/inter_regular</item>
+        <item name="android:textSize">14sp</item>
+        <item name="lineHeight">20dp</item>
+        <item name="android:lineSpacingExtra">6sp</item>
+    </style>
 </resources>

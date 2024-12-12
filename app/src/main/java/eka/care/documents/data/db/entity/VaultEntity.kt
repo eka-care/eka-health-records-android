@@ -18,6 +18,7 @@ data class VaultEntity(
     @ColumnInfo(name = "source") var source: Int?,
     @ColumnInfo(name = "is_edited") var isEdited: Boolean = false,
     @ColumnInfo(name = "is_deleted") var isDeleted: Boolean = false,
+    @ColumnInfo(name = "is_encrypted") var isEncrypted: Boolean = false,
     @ColumnInfo(name = "doc_type") var documentType: Int?,
     @ColumnInfo(name = "doc_date") var documentDate: Long?,
     @ColumnInfo(name = "tags") var tags: String?,

@@ -7,7 +7,6 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
 import android.view.View
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
@@ -15,15 +14,9 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
-import com.orbi.eka.base.IAmCommon
-import com.orbi.eka.base.OrbiLogger
-import com.orbi.eka.base.utility.AnalyticsUtil
-import com.orbi.eka.base.utility.EkaViewDebounceClickListener
-import eka.care.doctor.features.documents.features.drive.databinding.ActivitySecretLockerWelcomeBinding
-import eka.care.doctor.features.documents.features.drive.presentation.activity.secretLocker.SecretLockerSavePrivateKeyActivity
-import eka.care.doctor.features.documents.features.drive.utility.WordsCollection
+import eka.care.documents.databinding.ActivitySecretLockerWelcomeBinding
+import eka.care.documents.ui.utility.EkaViewDebounceClickListener
 import org.json.JSONObject
-import kotlin.random.Random
 
 class SecretLockerActivity : AppCompatActivity(), Player.Listener {
     private lateinit var binding: ActivitySecretLockerWelcomeBinding
@@ -125,21 +118,13 @@ class SecretLockerActivity : AppCompatActivity(), Player.Listener {
 
     private fun initUI() {
         try {
-            val isIntroVideoShown =
-                (application as IAmCommon).getValue("show_secret_locker_intro", false)
-                    ?: false
+            val isIntroVideoShown = false
             binding.apply {
                 if (isShowSecretLockerIntro && !isIntroVideoShown) {
-                    AnalyticsUtil.sendPageViewEvent(
-                        this@SecretLockerActivity, "secret_locker_video"
-                    )
-                    (application as IAmCommon).setValue("show_secret_locker_intro", true)
+//                    (application as IAmCommon).setValue("show_secret_locker_intro", true)
                     binding.buffering.visibility = View.VISIBLE
                     initializePlayer()
                 } else {
-                    AnalyticsUtil.sendPageViewEvent(
-                        this@SecretLockerActivity, "secret_locker_intro"
-                    )
                     introVideo.visibility = View.GONE
                     clLockerWelcomeRoot.visibility = View.VISIBLE
                     clLockerWelcomeRoot.alpha = 1f
@@ -152,73 +137,27 @@ class SecretLockerActivity : AppCompatActivity(), Player.Listener {
                 ivInfo.setOnClickListener(EkaViewDebounceClickListener({
                     val eventParams = JSONObject()
                     eventParams.put("type", "faq")
-                    AnalyticsUtil.sendEvent(
-                        this@SecretLockerActivity,
-                        "secret_locker_intro_page_clicks",
-                        eventParams
-                    )
                     val params = JSONObject()
                     params.put("url", "https://www.eka.care/secret-locker")
-                    (application as IAmCommon).navigateTo(
-                        this@SecretLockerActivity, "web_view",
-                                params
-                    )
                 }))
 
                 btnGenerateKey.setOnClickListener {
-                    val eventParams = JSONObject()
-                    eventParams.put("type", "generate_key")
-                    AnalyticsUtil.sendEvent(
-                        this@SecretLockerActivity,
-                        "secret_locker_intro_page_clicks",
-                        eventParams
-                    )
-                    val word1 = WordsCollection.words.random(Random(Random.nextLong()))
-                    val word2 = WordsCollection.words.random(Random(Random.nextLong()))
-                    val word3 = WordsCollection.words.random(Random(Random.nextLong()))
-                    val word4 = WordsCollection.words.random(Random(Random.nextLong()))
-                    val word5 = WordsCollection.words.random(Random(Random.nextLong()))
-                    val word6 = WordsCollection.words.random(Random(Random.nextLong()))
-                    val word7 = WordsCollection.words.random(Random(Random.nextLong()))
-                    val word8 = WordsCollection.words.random(Random(Random.nextLong()))
-                    val word9 = WordsCollection.words.random(Random(Random.nextLong()))
-                    val word10 = WordsCollection.words.random(Random(Random.nextLong()))
-                    val word11 = WordsCollection.words.random(Random(Random.nextLong()))
-                    val word12 = WordsCollection.words.random(Random(Random.nextLong()))
-                    val twelveWords =
-                        listOf(
-                            word1,
-                            word2,
-                            word3,
-                            word4,
-                            word5,
-                            word6,
-                            word7,
-                            word8,
-                            word9,
-                            word10,
-                            word11,
-                            word12
-                        )
-                    val randomTwelveWords = twelveWords.shuffled(Random(System.nanoTime()))
-                    Log.d("AYUSHI", randomTwelveWords.toString())
-
-                    val handler = Handler(Looper.getMainLooper())
-                    handler.postDelayed({
-                        val intent = Intent(
-                            this@SecretLockerActivity,
-                            SecretLockerSavePrivateKeyActivity::class.java
-                        )
-                        intent.putStringArrayListExtra(
-                            "secret_key_words",
-                            randomTwelveWords as ArrayList<String>
-                        )
-                        startActivity(intent)
-                    }, 1500)
+//                    val handler = Handler(Looper.getMainLooper())
+//                    handler.postDelayed({
+//                        val intent = Intent(
+//                            this@SecretLockerActivity,
+//                            SecretLockerSavePrivateKeyActivity::class.java
+//                        )
+//                        intent.putStringArrayListExtra(
+//                            "secret_key_words",
+//                            arrayListOf()
+//                        )
+//                        startActivity(intent)
+//                    }, 1500)
                 }
             }
         } catch (ex: Exception) {
-            OrbiLogger.e("log", "Exception in SecretLockerWelcomeActivity::initUI() = ", ex)
+
         }
     }
 }

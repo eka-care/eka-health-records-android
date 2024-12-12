@@ -59,4 +59,8 @@
     <string name="save_key_warning_text">Save Key carefully to avoid losing records permanently</string>
     <string name="gen_key_progress_txt">Scanning a zillion words to create the strongest Key…</string>
     <string name="leave_no_trace_on_our_servers">Leave no trace on our servers</string>
+    <string name="welcome_to_secret_locker_title">Welcome to <font color="#af8eff">Secret</font> Locker</string>
+    <string name="welcome_secret_locker_body">Health records saved here are private to you</string>
+    <string name="encrypt_with_private_key">Encrypt with Private Key</string>
+    <string name="records_accessible_only_to_you">Records accessible only to you</string>
 </resources>
