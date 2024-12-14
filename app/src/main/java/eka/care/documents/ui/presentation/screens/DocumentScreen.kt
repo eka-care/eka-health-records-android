@@ -63,6 +63,7 @@ import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.RESULT_
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.SCANNER_MODE_FULL
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanning
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
+import eka.care.documents.Document
 import eka.care.documents.R
 import eka.care.documents.data.utility.DocumentUtility.Companion.PARAM_RECORD_PARAMS_MODEL
 import eka.care.documents.sync.workers.SyncFileWorker
@@ -298,7 +299,12 @@ fun DocumentScreen(
             }
         )
     }
-    val resp = (recordsState as? GetRecordsState.Success)?.resp ?: emptyList()
+
+    val resp = if (params.isFromSecretLocker == true) {
+        emptyList()
+    } else {
+        (recordsState as? GetRecordsState.Success)?.resp ?: emptyList()
+    }
     ModalBottomSheetLayout(
         sheetState = modalBottomSheetState,
         sheetContent = {

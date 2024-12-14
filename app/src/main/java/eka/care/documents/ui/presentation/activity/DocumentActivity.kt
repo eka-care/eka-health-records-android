@@ -29,7 +29,9 @@ class DocumentActivity : AppCompatActivity() {
             name = intent.getStringExtra(MedicalRecordParams.PATIENT_NAME.key),
             uuid = intent.getStringExtra(MedicalRecordParams.PATIENT_UUID.key) ?: "",
             age = intent.getIntExtra(MedicalRecordParams.PATIENT_AGE.key, -1),
-            gender = intent.getStringExtra(MedicalRecordParams.PATIENT_GENDER.key)
+            gender = intent.getStringExtra(MedicalRecordParams.PATIENT_GENDER.key),
+            isFromSecretLocker = intent.getBooleanExtra(MedicalRecordParams.FROM_SECRET_LOCKER.key, false),
+            password = intent.getStringExtra(MedicalRecordParams.PASSWORD.key)
         )
 
         if (params.patientId.isEmpty()) {
@@ -75,5 +77,7 @@ enum class MedicalRecordParams(val key: String) {
     PATIENT_UUID("p_uuid"),
     PATIENT_NAME("name"),
     PATIENT_GENDER("gen"),
-    PATIENT_AGE("age")
+    PATIENT_AGE("age"),
+    FROM_SECRET_LOCKER("FROM_SECRET_LOCKER"),
+    PASSWORD("password")
 }

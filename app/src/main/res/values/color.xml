@@ -5,4 +5,8 @@
     <color name="text_disabled">#d6d9e0</color>
     <color name="icons_tertiary">#9c9eb9</color>
     <color name="background_action_states_highlight">#af8eff</color>
+    <color name="icons_highlight">#af8eff</color>
+    <color name="purple_200">#D6D1F6</color>
+    <color name="text_brand_dark">@color/purple_200</color>
+    <color name="text_highlight">@color/text_brand_dark</color>
 </resources>

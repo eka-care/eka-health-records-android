@@ -153,4 +153,5 @@ dependencies {
     implementation(libs.protobuf.kotlin.lite)
     implementation(libs.protobuf.javalite)
     implementation(libs.accompanist.permissions)
+    implementation(libs.androidx.security.crypto)
 }

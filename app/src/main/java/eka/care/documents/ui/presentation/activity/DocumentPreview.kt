@@ -24,16 +24,20 @@ import eka.care.documents.ui.presentation.components.LoadingState
 import eka.care.documents.ui.presentation.components.TopAppBarSmall
 import eka.care.documents.ui.presentation.state.DocumentPreviewState
 import eka.care.documents.ui.presentation.viewmodel.DocumentPreviewViewModel
+import eka.care.documents.ui.presentation.viewmodel.RecordsViewModel
 
 class DocumentPreview : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val viewModel: DocumentPreviewViewModel by viewModels()
+        val recordsViewModel = RecordsViewModel(application)
         val pdfManager = PdfReaderManager(this)
 
+        val localId = intent.getStringExtra("local_id")
+        val userId = intent.getStringExtra("user_id")
+        val password = intent.getStringExtra("password") ?: ""
+
         try {
-            val localId = intent.getStringExtra("local_id")
-            val userId = intent.getStringExtra("user_id")
             viewModel.getDocument(
                 userId = userId ?: "",
                 docId = localId ?: ""
@@ -43,8 +47,12 @@ class DocumentPreview : ComponentActivity() {
 
         setContent {
             val state by viewModel.document.collectAsState()
-
-            Content(state, pdfManager)
+            Content(
+                state = state,
+                pdfManager = pdfManager,
+                recordsViewModel = recordsViewModel,
+                password = password
+            )
         }
     }
 
@@ -52,7 +60,9 @@ class DocumentPreview : ComponentActivity() {
     @Composable
     private fun Content(
         state: DocumentPreviewState,
-        pdfManager: PdfReaderManager
+        pdfManager: PdfReaderManager,
+        recordsViewModel: RecordsViewModel,
+        password : String
     ) {
         val context = LocalContext.current
         ModalBottomSheetLayout(sheetContent = {}) {
@@ -76,6 +86,8 @@ class DocumentPreview : ComponentActivity() {
                                 state = state,
                                 paddingValues = it,
                                 pdfManager = pdfManager,
+                                recordsViewModel = recordsViewModel,
+                                password = password
                             )
                         }
                     }

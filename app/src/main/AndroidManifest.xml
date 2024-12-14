@@ -20,7 +20,7 @@
         <activity android:name=".ui.presentation.activity.secretLocker.SecretLockerActivity"
             android:theme="@style/Document.Theme.Drive"
             />
-        <activity android:name=".ui.presentation.activity.secretLocker.SecretLockerHomeActivity"
+        <activity android:name=".ui.presentation.activity.secretLocker.SecretLockerSavePrivateKeyActivity"
             android:theme="@style/Document.Theme.Drive"
             />
         <provider

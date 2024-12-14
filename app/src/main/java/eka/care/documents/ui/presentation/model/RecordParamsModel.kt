@@ -12,5 +12,7 @@ data class RecordParamsModel(
     val name : String?,
     val uuid : String,
     val gender : String?,
-    val age : Int?
+    val age : Int?,
+    val isFromSecretLocker : Boolean? = false,
+    val password : String? = ""
 ):Parcelable

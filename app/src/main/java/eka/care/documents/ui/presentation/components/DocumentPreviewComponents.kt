@@ -1,6 +1,7 @@
 package eka.care.documents.ui.presentation.components
 
 import android.net.Uri
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -29,7 +30,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -41,6 +41,7 @@ import com.example.reader.PdfReaderManager
 import com.example.reader.presentation.states.PdfSource
 import eka.care.documents.ui.BgWhite
 import eka.care.documents.ui.presentation.state.DocumentPreviewState
+import eka.care.documents.ui.presentation.viewmodel.RecordsViewModel
 import java.io.File
 
 @Composable
@@ -109,16 +110,35 @@ fun DocumentSuccessState(
     state: DocumentPreviewState.Success?,
     paddingValues: PaddingValues,
     pdfManager: PdfReaderManager,
+    recordsViewModel: RecordsViewModel,
+    password: String
 ) {
-    when (state?.data?.second?.trim()?.lowercase()) {
-        "pdf" -> PdfPreview(
-            paddingValues = paddingValues,
-            uri = Uri.fromFile(File(state.data.first.firstOrNull())),
-            pdfManager = pdfManager
-        )
+    when (state?.data?.fileType) {
+        "pdf" -> {
+            val filePath = state.data.filePath.firstOrNull()
+            if (filePath.isNullOrBlank()) {
+                Log.e("AYUSHI", "File path is null or empty")
+                return
+            }
+            val file = if (state.data.isEncryptedFile == true) {
+                val decryptedFilePath = recordsViewModel.decryptFile(
+                    file = File(filePath),
+                    password = "Unique.123"
+                )
+                Log.d("AYUSHI", "Decrypted file path: $decryptedFilePath")
+                File(decryptedFilePath)
+            } else {
+                File(filePath)
+            }
+            PdfPreview(
+                paddingValues = paddingValues,
+                uri = Uri.fromFile(file),
+                pdfManager = pdfManager
+            )
+        }
 
         else -> {
-            state?.data?.first?.let {
+            state?.data?.filePath?.let {
                 DocumentImagePreview(it)
             }
         }
@@ -130,7 +150,9 @@ fun DocumentImagePreview(filePaths: List<String>) {
     var selectedUri by remember { mutableStateOf<Uri?>(Uri.parse(filePaths.firstOrNull())) }
 
     Column(
-        modifier = Modifier.fillMaxSize().background(BgWhite),
+        modifier = Modifier
+            .fillMaxSize()
+            .background(BgWhite),
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {

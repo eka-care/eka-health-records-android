@@ -3,6 +3,7 @@ package eka.care.documents.ui.presentation.components
 import android.app.Activity
 import android.app.Application
 import android.content.Intent
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -124,7 +125,7 @@ fun AddMedicalRecordsDetailViewComponent(
                 localId = viewModel.cardClickData.value?.localId ?: "",
                 docType = selectedChipId,
                 oid = paramsModel.patientId,
-                docDate = timestampToLong(date ?: System.currentTimeMillis().toString()),
+                docDate = timestampToLong(date),
                 tags = selectedTags.joinToString(separator = ","),
                 doctorId = paramsModel.doctorId
             )
@@ -138,12 +139,25 @@ fun AddMedicalRecordsDetailViewComponent(
                     null
                 }
                 val unixTimestamp = parsedDate?.time?.div(1000)
+                val filePath = if (paramsModel.isFromSecretLocker == true) {
+                    fileList.mapNotNull { file ->
+                        paramsModel.password?.let { password ->
+                            viewModel.encryptFile(file, "Unique.123")
+                        }
+                    }
+                } else {
+                    if (fileType == FileType.IMAGE.ordinal) {
+                        compressedFiles.map { it.path }
+                    } else {
+                        fileList.map { it.path }
+                    }
+                }
                 val vaultEntity = VaultEntity(
                     localId = UUID.randomUUID().toString(),
                     documentId = null,
                     uuid = paramsModel.uuid,
                     oid = paramsModel.patientId,
-                    filePath = if (fileType == FileType.IMAGE.ordinal) compressedFiles.map { it.path } else fileList.map { it.path },
+                    filePath = filePath,
                     fileType = if (fileType == FileType.IMAGE.ordinal) "img" else "pdf",
                     thumbnail = if (fileType == FileType.IMAGE.ordinal) {
                         compressedFiles[0].path
@@ -160,6 +174,7 @@ fun AddMedicalRecordsDetailViewComponent(
                     tags = selectedTags.joinToString(",").trimStart(','),
                     isABHALinked = false,
                     hashId = null,
+                    isEncrypted = if(paramsModel.isFromSecretLocker == true) true else false,
                     cta = null,
                     doctorId = paramsModel.doctorId
                 )

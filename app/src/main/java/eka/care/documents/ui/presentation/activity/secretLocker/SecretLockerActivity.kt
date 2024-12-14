@@ -5,16 +5,18 @@ import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
 import android.content.Intent
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.view.View
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.ui.graphics.toArgb
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import eka.care.documents.databinding.ActivitySecretLockerWelcomeBinding
+import eka.care.documents.ui.bgSecretLocker
+import eka.care.documents.ui.presentation.activity.MedicalRecordParams
+import eka.care.documents.ui.presentation.model.RecordParamsModel
 import eka.care.documents.ui.utility.EkaViewDebounceClickListener
 import org.json.JSONObject
 
@@ -22,16 +24,26 @@ class SecretLockerActivity : AppCompatActivity(), Player.Listener {
     private lateinit var binding: ActivitySecretLockerWelcomeBinding
     private var isShowSecretLockerIntro = false
     private lateinit var exoPlayer: ExoPlayer
+    private lateinit var params: RecordParamsModel
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivitySecretLockerWelcomeBinding.inflate(layoutInflater)
         isShowSecretLockerIntro = intent.getBooleanExtra("show_secret_locker_intro", false)
         setContentView(binding.root)
+        params =  RecordParamsModel(
+            patientId = intent.getStringExtra(MedicalRecordParams.PATIENT_ID.key) ?: "",
+            doctorId = intent.getStringExtra(MedicalRecordParams.DOCTOR_ID.key) ?: "",
+            name = intent.getStringExtra(MedicalRecordParams.PATIENT_NAME.key),
+            uuid = intent.getStringExtra(MedicalRecordParams.PATIENT_UUID.key) ?: "",
+            age = intent.getIntExtra(MedicalRecordParams.PATIENT_AGE.key, -1),
+            gender = intent.getStringExtra(MedicalRecordParams.PATIENT_GENDER.key),
+        )
         initUI()
     }
 
     override fun onStart() {
         super.onStart()
+        window.statusBarColor = bgSecretLocker.toArgb()
         if (::exoPlayer.isInitialized) {
             window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             exoPlayer.play()
@@ -142,18 +154,18 @@ class SecretLockerActivity : AppCompatActivity(), Player.Listener {
                 }))
 
                 btnGenerateKey.setOnClickListener {
-//                    val handler = Handler(Looper.getMainLooper())
-//                    handler.postDelayed({
-//                        val intent = Intent(
-//                            this@SecretLockerActivity,
-//                            SecretLockerSavePrivateKeyActivity::class.java
-//                        )
-//                        intent.putStringArrayListExtra(
-//                            "secret_key_words",
-//                            arrayListOf()
-//                        )
-//                        startActivity(intent)
-//                    }, 1500)
+                    val intent = Intent(
+                        this@SecretLockerActivity,
+                        SecretLockerSavePrivateKeyActivity::class.java
+                    ).apply {
+                        putExtra(MedicalRecordParams.PATIENT_ID.key, params.patientId)
+                        putExtra(MedicalRecordParams.DOCTOR_ID.key, params.doctorId)
+                        putExtra(MedicalRecordParams.PATIENT_UUID.key, params.uuid)
+                        putExtra(MedicalRecordParams.PATIENT_NAME.key, params.name)
+                        putExtra(MedicalRecordParams.PATIENT_GENDER.key, params.gender)
+                        putExtra(MedicalRecordParams.PATIENT_AGE.key, params.age)
+                    }
+                    startActivity(intent)
                 }
             }
         } catch (ex: Exception) {

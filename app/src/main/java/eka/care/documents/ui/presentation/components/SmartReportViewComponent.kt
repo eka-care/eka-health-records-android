@@ -23,14 +23,17 @@ import eka.care.documents.ui.DarwinTouchNeutral100
 import eka.care.documents.ui.presentation.state.DocumentPreviewState
 import eka.care.documents.ui.presentation.state.DocumentSmartReportState
 import eka.care.documents.ui.presentation.viewmodel.DocumentPreviewViewModel
+import eka.care.documents.ui.presentation.viewmodel.RecordsViewModel
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalPagerApi::class)
 @Composable
 fun SmartReportViewComponent(
     viewModel: DocumentPreviewViewModel,
+    recordsViewModel: RecordsViewModel,
     docId: String,
     userId: String,
+    password : String,
     documentDate: String,
     onClick: (CTA?) -> Unit
 ) {
@@ -113,7 +116,9 @@ fun SmartReportViewComponent(
                             DocumentSuccessState(
                                 state = (filePathState as? DocumentPreviewState.Success),
                                 pdfManager = pdfManager,
-                                paddingValues = PaddingValues()
+                                paddingValues = PaddingValues(),
+                                recordsViewModel = recordsViewModel,
+                                password = password
                             )
                         }
                     }

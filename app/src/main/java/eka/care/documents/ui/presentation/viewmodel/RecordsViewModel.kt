@@ -7,6 +7,7 @@ import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.Uri
 import android.util.Log
+import android.util.Base64
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -43,8 +44,24 @@ import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
+import java.security.SecureRandom
+import javax.crypto.BadPaddingException
+import javax.crypto.Cipher
+import javax.crypto.SecretKey
+import javax.crypto.SecretKeyFactory
+import javax.crypto.spec.IvParameterSpec
+import javax.crypto.spec.PBEKeySpec
+import javax.crypto.spec.SecretKeySpec
 
 class RecordsViewModel(app: Application) : AndroidViewModel(app) {
+
+    private val ALGORITHM = "PBKDF2WithHmacSHA256"
+    private val CIPHER_ALGORITHM = "AES/CBC/PKCS5Padding"
+    private val KEY_LENGTH = 256
+    private val ITERATION_COUNT = 65536
+    private val SALT_LENGTH = 16
 
     private val myFileRepository = MyFileRepository()
     private val vaultRepository: VaultRepository =
@@ -143,8 +160,110 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun updateSelectedTags(newTags: List<String>) {
-        _selectedTags.value = newTags
+    fun encryptFile(file: File, password: String): String {
+        try {
+            // Generate a random salt for this encryption
+            val salt = generateSalt()
+
+            // Generate the secret key
+            val secretKey = generateAESKey(password, salt)
+
+            // Generate a random IV
+            val iv = generateIV()
+
+            // Initialize Cipher
+            val cipher = Cipher.getInstance(CIPHER_ALGORITHM)
+            cipher.init(Cipher.ENCRYPT_MODE, secretKey, IvParameterSpec(iv))
+
+            // Generate encrypted file path
+            val encryptedFilePath = "${file.parent}/encrypted_${file.name}.aes"
+
+            // Read file content
+            val fileContent = FileInputStream(file).use { it.readBytes() }
+
+            // Encrypt content
+            val encryptedContent = cipher.doFinal(fileContent)
+
+            // Combine salt, IV, and encrypted content
+            val combinedContent = salt + iv + encryptedContent
+
+            // Write encrypted content to output file
+            FileOutputStream(encryptedFilePath).use {
+                it.write(combinedContent)
+            }
+
+            return encryptedFilePath
+        } catch (e: Exception) {
+            Log.e("FileEncryption", "Encryption failed", e)
+            throw RuntimeException("Encryption failed", e)
+        }
+    }
+
+    fun decryptFile(file: File, password: String): String {
+        try {
+            // Read the encrypted file content
+            val encryptedFileContent = FileInputStream(file).use { it.readBytes() }
+
+            // Extract salt and IV
+            val salt = encryptedFileContent.copyOfRange(0, SALT_LENGTH)
+            val iv = encryptedFileContent.copyOfRange(SALT_LENGTH, SALT_LENGTH * 2)
+            val encryptedContent = encryptedFileContent.copyOfRange(SALT_LENGTH * 2, encryptedFileContent.size)
+
+            // Generate secret key
+            val secretKey = generateAESKey(password, salt)
+
+            // Initialize Cipher
+            val cipher = Cipher.getInstance(CIPHER_ALGORITHM)
+            cipher.init(Cipher.DECRYPT_MODE, secretKey, IvParameterSpec(iv))
+
+            // Decrypt content
+            val decryptedContent = cipher.doFinal(encryptedContent)
+
+            // Determine original file name
+            val originalFileName = file.name
+                .removeSuffix(".aes")
+                .removePrefix("encrypted_")
+
+            val decryptedFilePath = "${file.parent}/$originalFileName"
+
+            // Write decrypted content
+            FileOutputStream(decryptedFilePath).use { it.write(decryptedContent) }
+
+            return decryptedFilePath
+        } catch (e: Exception) {
+            Log.e("Decryption", "General decryption error", e)
+            throw RuntimeException("Decryption failed", e)
+        }
+    }
+
+
+    private fun generateSalt(): ByteArray {
+        val salt = ByteArray(SALT_LENGTH)
+        SecureRandom().nextBytes(salt)
+        return salt
+    }
+
+    private fun generateIV(): ByteArray {
+        val iv = ByteArray(16)
+        SecureRandom().nextBytes(iv)
+        return iv
+    }
+
+    private fun generateAESKey(password: String, salt: ByteArray): SecretKey? {
+        return try {
+            val factory = SecretKeyFactory.getInstance(ALGORITHM)
+            val spec = PBEKeySpec(
+                password.toCharArray(),
+                salt,
+                ITERATION_COUNT,
+                KEY_LENGTH
+            )
+            val secretKey = factory.generateSecret(spec)
+            SecretKeySpec(secretKey.encoded, "AES")
+        } catch (e: Exception) {
+            Log.e("generateAESKey", "Failed to generate secret key", e)
+            null
+        }
     }
 
     fun compressFile(fileList: List<File>, context: Context) {

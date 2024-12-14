@@ -31,6 +31,7 @@ val Gray200 = Color(0XFFE2E8F0)
 val Purple100 = Color(0XFFE4E1FA)
 val DarwinTouchNeutral100 = Color(0xFFE8E8E8)
 val Gray00 = Color(0XFFFFFFFF)
+val bgSecretLocker = Color(0XFF424453)
 
 val TextBrand = Purple500
 val Text03 = Gray600
