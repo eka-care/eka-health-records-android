@@ -39,7 +39,7 @@ class SecretLockerSavePrivateKeyActivity : AppCompatActivity() {
     private var isLoginScreen by mutableStateOf(false)
     private lateinit var sharedPreferences: SharedPreferences
     private val enteredPasswordState = mutableStateOf("")
-    private val passwordKey = "password_key"
+    private val passwordKey : String? = null
     private lateinit var params: RecordParamsModel
     override fun onStart() {
         super.onStart()
@@ -59,7 +59,7 @@ class SecretLockerSavePrivateKeyActivity : AppCompatActivity() {
             gender = intent.getStringExtra(MedicalRecordParams.PATIENT_GENDER.key)
         )
         sharedPreferences = getSharedPreferences("secret_locker", Context.MODE_PRIVATE)
-
+        isLoginScreen = sharedPreferences.contains(passwordKey)
         initUI()
     }
 
@@ -75,25 +75,20 @@ class SecretLockerSavePrivateKeyActivity : AppCompatActivity() {
                 }
 
                 btnProceed.setOnClickListener {
+                    val enteredPassword = enteredPasswordState.value
+                    if (enteredPassword.isBlank()) {
+                        Toast.makeText(
+                            this@SecretLockerSavePrivateKeyActivity,
+                            "Password cannot be empty!",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        return@setOnClickListener
+                    }
+
                     if (isLoginScreen) {
                         val storedPassword = sharedPreferences.getString(passwordKey, null)
-                        if (storedPassword == enteredPasswordState.value) {
-                            val intent = Intent(
-                                this@SecretLockerSavePrivateKeyActivity,
-                                DocumentActivity::class.java
-                            ).apply {
-                                flags =
-                                    Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                                putExtra(MedicalRecordParams.FROM_SECRET_LOCKER.key, true)
-                                putExtra(MedicalRecordParams.PASSWORD.key, passwordKey)
-                                putExtra(MedicalRecordParams.PATIENT_ID.key, params.patientId)
-                                putExtra(MedicalRecordParams.DOCTOR_ID.key, params.doctorId)
-                                putExtra(MedicalRecordParams.PATIENT_UUID.key, params.uuid)
-                                putExtra(MedicalRecordParams.PATIENT_NAME.key, params.name)
-                                putExtra(MedicalRecordParams.PATIENT_GENDER.key, params.gender)
-                                putExtra(MedicalRecordParams.PATIENT_AGE.key, params.age)
-                            }
-                            startActivity(intent)
+                        if (storedPassword == enteredPassword) {
+                            redirectToDocumentActivity()
                         } else {
                             Toast.makeText(
                                 this@SecretLockerSavePrivateKeyActivity,
@@ -102,17 +97,50 @@ class SecretLockerSavePrivateKeyActivity : AppCompatActivity() {
                             ).show()
                         }
                     } else {
-                        val editor = sharedPreferences.edit()
-                        editor.putString(passwordKey, enteredPasswordState.value)
-                        editor.apply()
+                        if (sharedPreferences.contains(passwordKey)) {
+                            Toast.makeText(
+                                this@SecretLockerSavePrivateKeyActivity,
+                                "Password already exists. Please login.",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            isLoginScreen = true
+                        } else {
+                            sharedPreferences.edit()
+                                .putString(passwordKey, enteredPassword)
+                                .apply()
 
-                        isLoginScreen = true
+                            Toast.makeText(
+                                this@SecretLockerSavePrivateKeyActivity,
+                                "Password created successfully!",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            redirectToDocumentActivity()
+                        }
                     }
                 }
             }
         } catch (ex: Exception) {
             Log.e("Error", "Exception in initUI: $ex")
         }
+    }
+
+    private fun redirectToDocumentActivity() {
+        val intent = Intent(
+            this@SecretLockerSavePrivateKeyActivity,
+            DocumentActivity::class.java
+        ).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra(MedicalRecordParams.FROM_SECRET_LOCKER.key, true)
+            putExtra(MedicalRecordParams.PASSWORD.key, passwordKey)
+            putExtra(MedicalRecordParams.PATIENT_ID.key, params.patientId)
+            putExtra(MedicalRecordParams.DOCTOR_ID.key, params.doctorId)
+            putExtra(MedicalRecordParams.PATIENT_UUID.key, params.uuid)
+            putExtra(MedicalRecordParams.PATIENT_NAME.key, params.name)
+            putExtra(MedicalRecordParams.PATIENT_GENDER.key, params.gender)
+            putExtra(MedicalRecordParams.PATIENT_AGE.key, params.age)
+        }
+        startActivity(intent)
+        finish()
     }
 
     @Composable

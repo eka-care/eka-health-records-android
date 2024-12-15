@@ -16,6 +16,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import eka.care.documents.data.utility.DocumentUtility.Companion.docTypes
+import eka.care.documents.ui.presentation.model.RecordParamsModel
+import eka.care.documents.ui.presentation.state.GetRecordsState
 import eka.care.documents.ui.presentation.viewmodel.RecordsViewModel
 import eka.care.documents.ui.touchCalloutBold
 
@@ -23,9 +25,14 @@ import eka.care.documents.ui.touchCalloutBold
 fun DocumentFilter(
     viewModel: RecordsViewModel,
     onClick: (Int) -> Unit,
+    params : RecordParamsModel
 ) {
     val documentType by viewModel.documentType
-    val getAvailableDocTypes by viewModel.getAvailableDocTypes.collectAsState()
+    val getAvailableDocTypes  = if(params.isFromSecretLocker == false){
+        viewModel.getAvailableDocTypes.collectAsState().value
+    }else{
+        viewModel.getAvailableDocTypesForEncryptedDoc.collectAsState().value
+    }
 
     Row(
         modifier = Modifier

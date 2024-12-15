@@ -66,8 +66,11 @@ interface VaultDao {
     @Query("SELECT * FROM vault_table WHERE oid=:oid AND local_id=:localId")
     suspend fun getDocumentData(oid: String?, localId: String): VaultEntity
 
-    @Query("SELECT doc_type as docType, count(doc_type) as count FROM vault_table WHERE oid=:oid AND is_deleted=0 AND doctor_id = :doctorId GROUP BY doc_type")
+    @Query("SELECT doc_type as docType, count(doc_type) as count FROM vault_table WHERE oid=:oid AND is_deleted=0 AND is_encrypted = 0 AND doctor_id = :doctorId GROUP BY doc_type")
     suspend fun getAvailableDocTypes(oid: String?, doctorId: String): List<AvailableDocTypes>
+
+    @Query("SELECT doc_type as docType, count(doc_type) as count FROM vault_table WHERE oid=:oid AND is_deleted=0 AND is_encrypted = 1 AND doctor_id = :doctorId GROUP BY doc_type")
+    suspend fun getAvailableDocTypesForEncryptedDoc(oid: String?, doctorId: String): List<AvailableDocTypes>
 
     @Query("UPDATE vault_table SET doc_id=:docId WHERE local_id=:localId")
     suspend fun updateDocumentId(docId: String, localId: String)

@@ -1,7 +1,6 @@
 package eka.care.documents.ui.presentation.components
 
 import android.net.Uri
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -116,16 +115,13 @@ fun DocumentSuccessState(
     when (state?.data?.fileType) {
         "pdf" -> {
             val filePath = state.data.filePath.firstOrNull()
-            if (filePath.isNullOrBlank()) {
-                Log.e("AYUSHI", "File path is null or empty")
-                return
-            }
+            if (filePath.isNullOrBlank()) return
+
             val file = if (state.data.isEncryptedFile == true) {
                 val decryptedFilePath = recordsViewModel.decryptFile(
                     file = File(filePath),
                     password = "Unique.123"
                 )
-                Log.d("AYUSHI", "Decrypted file path: $decryptedFilePath")
                 File(decryptedFilePath)
             } else {
                 File(filePath)
@@ -138,16 +134,41 @@ fun DocumentSuccessState(
         }
 
         else -> {
-            state?.data?.filePath?.let {
-                DocumentImagePreview(it)
+            state?.data?.filePath?.let { filePaths ->
+                DocumentImagePreview(
+                    filePaths = filePaths,
+                    isEncrypted = state.data.isEncryptedFile,
+                    recordsViewModel = recordsViewModel
+                )
             }
         }
     }
 }
 
 @Composable
-fun DocumentImagePreview(filePaths: List<String>) {
-    var selectedUri by remember { mutableStateOf<Uri?>(Uri.parse(filePaths.firstOrNull())) }
+fun DocumentImagePreview(
+    filePaths: List<String>,
+    isEncrypted: Boolean?,
+    recordsViewModel: RecordsViewModel
+) {
+    var selectedUri by remember {
+        mutableStateOf<Uri?>(
+            Uri.parse(
+                filePaths.firstOrNull()?.let { filePath ->
+                    val file = if (isEncrypted == true) {
+                        val decryptedFilePath = recordsViewModel.decryptFile(
+                            file = File(filePath),
+                            password = "Unique.123"
+                        )
+                        File(decryptedFilePath)
+                    } else {
+                        File(filePath)
+                    }
+                    Uri.fromFile(file).toString()
+                }
+            )
+        )
+    }
 
     Column(
         modifier = Modifier
@@ -158,7 +179,8 @@ fun DocumentImagePreview(filePaths: List<String>) {
     ) {
         selectedUri?.let {
             ImagePreview(
-                uri = it, modifier = Modifier
+                uri = it,
+                modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
                     .padding(24.dp)
@@ -174,20 +196,28 @@ fun DocumentImagePreview(filePaths: List<String>) {
             contentPadding = PaddingValues(horizontal = 16.dp)
         ) {
             items(filePaths) { filePath ->
-                Uri.parse(filePath)?.let { uri ->
-                    ImagePreview(
-                        uri = uri,
-                        modifier = Modifier
-                            .size(48.dp)
-                            .border(
-                                width = 1.dp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            .clickable {
-                                selectedUri = uri
-                            }
+                val file = if (isEncrypted == true) {
+                    val decryptedFilePath = recordsViewModel.decryptFile(
+                        file = File(filePath),
+                        password = "Unique.123"
                     )
+                    File(decryptedFilePath)
+                } else {
+                    File(filePath)
                 }
+                val uri = Uri.fromFile(file)
+                ImagePreview(
+                    uri = uri,
+                    modifier = Modifier
+                        .size(48.dp)
+                        .border(
+                            width = 1.dp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        .clickable {
+                            selectedUri = uri
+                        }
+                )
             }
         }
     }

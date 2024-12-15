@@ -142,7 +142,9 @@ fun AddMedicalRecordsDetailViewComponent(
                 val filePath = if (paramsModel.isFromSecretLocker == true) {
                     fileList.mapNotNull { file ->
                         paramsModel.password?.let { password ->
-                            viewModel.encryptFile(file, "Unique.123")
+                            val encryptedPath = viewModel.encryptFile(file, password)
+                            Log.d("ENCRYPTION_DEBUG", "File: ${file.path}, Encrypted Path: $encryptedPath")
+                            encryptedPath
                         }
                     }
                 } else {
@@ -152,6 +154,7 @@ fun AddMedicalRecordsDetailViewComponent(
                         fileList.map { it.path }
                     }
                 }
+                Log.d("AYUSHI", filePath.toString())
                 val vaultEntity = VaultEntity(
                     localId = UUID.randomUUID().toString(),
                     documentId = null,
@@ -174,7 +177,7 @@ fun AddMedicalRecordsDetailViewComponent(
                     tags = selectedTags.joinToString(",").trimStart(','),
                     isABHALinked = false,
                     hashId = null,
-                    isEncrypted = if(paramsModel.isFromSecretLocker == true) true else false,
+                    isEncrypted = paramsModel.isFromSecretLocker == true,
                     cta = null,
                     doctorId = paramsModel.doctorId
                 )

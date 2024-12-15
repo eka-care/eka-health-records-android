@@ -87,6 +87,13 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
         return database.vaultDao().getAvailableDocTypes(oid = oid, doctorId = doctorId)
     }
 
+    override suspend fun getAvailableDocTypesForEncryptedDoc(
+        oid: String,
+        doctorId: String
+    ): List<AvailableDocTypes> {
+        return database.vaultDao().getAvailableDocTypesForEncryptedDoc(oid = oid, doctorId = doctorId)
+    }
+
     override fun fetchDocuments(
         oid: String,
         docType: Int,

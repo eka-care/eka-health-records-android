@@ -3,7 +3,9 @@ package eka.care.documents.ui.presentation.activity.secretLocker
 import android.animation.Animator
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
+import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.view.View
 import android.view.WindowManager
@@ -22,14 +24,19 @@ import org.json.JSONObject
 
 class SecretLockerActivity : AppCompatActivity(), Player.Listener {
     private lateinit var binding: ActivitySecretLockerWelcomeBinding
+    private lateinit var sharedPreferences: SharedPreferences
     private var isShowSecretLockerIntro = false
     private lateinit var exoPlayer: ExoPlayer
     private lateinit var params: RecordParamsModel
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivitySecretLockerWelcomeBinding.inflate(layoutInflater)
-        isShowSecretLockerIntro = intent.getBooleanExtra("show_secret_locker_intro", false)
         setContentView(binding.root)
+
+        isShowSecretLockerIntro = intent.getBooleanExtra("show_secret_locker_intro", false)
+        sharedPreferences = getSharedPreferences("secret_locker_prefs", Context.MODE_PRIVATE)
+        val isIntroShown = sharedPreferences.getBoolean("is_intro_shown", false)
+
         params =  RecordParamsModel(
             patientId = intent.getStringExtra(MedicalRecordParams.PATIENT_ID.key) ?: "",
             doctorId = intent.getStringExtra(MedicalRecordParams.DOCTOR_ID.key) ?: "",
@@ -38,7 +45,28 @@ class SecretLockerActivity : AppCompatActivity(), Player.Listener {
             age = intent.getIntExtra(MedicalRecordParams.PATIENT_AGE.key, -1),
             gender = intent.getStringExtra(MedicalRecordParams.PATIENT_GENDER.key),
         )
+        if (isIntroShown) {
+            navigateToNextScreen()
+            finish()
+            return
+        }
+
         initUI()
+    }
+
+    private fun navigateToNextScreen() {
+        val intent = Intent(
+            this@SecretLockerActivity,
+            SecretLockerSavePrivateKeyActivity::class.java
+        ).apply {
+            putExtra(MedicalRecordParams.PATIENT_ID.key, params.patientId)
+            putExtra(MedicalRecordParams.DOCTOR_ID.key, params.doctorId)
+            putExtra(MedicalRecordParams.PATIENT_UUID.key, params.uuid)
+            putExtra(MedicalRecordParams.PATIENT_NAME.key, params.name)
+            putExtra(MedicalRecordParams.PATIENT_GENDER.key, params.gender)
+            putExtra(MedicalRecordParams.PATIENT_AGE.key, params.age)
+        }
+        startActivity(intent)
     }
 
     override fun onStart() {
@@ -112,6 +140,7 @@ class SecretLockerActivity : AppCompatActivity(), Player.Listener {
             override fun onAnimationStart(p0: Animator) {}
             override fun onAnimationEnd(p0: Animator) {
                 binding.introVideo.visibility = View.GONE
+                sharedPreferences.edit().putBoolean("is_intro_shown", true).apply()
             }
 
             override fun onAnimationCancel(p0: Animator) {}
@@ -140,6 +169,8 @@ class SecretLockerActivity : AppCompatActivity(), Player.Listener {
                     introVideo.visibility = View.GONE
                     clLockerWelcomeRoot.visibility = View.VISIBLE
                     clLockerWelcomeRoot.alpha = 1f
+
+                    sharedPreferences.edit().putBoolean("is_intro_shown", true).apply()
                 }
 
                 ivBack.setOnClickListener {
@@ -154,18 +185,7 @@ class SecretLockerActivity : AppCompatActivity(), Player.Listener {
                 }))
 
                 btnGenerateKey.setOnClickListener {
-                    val intent = Intent(
-                        this@SecretLockerActivity,
-                        SecretLockerSavePrivateKeyActivity::class.java
-                    ).apply {
-                        putExtra(MedicalRecordParams.PATIENT_ID.key, params.patientId)
-                        putExtra(MedicalRecordParams.DOCTOR_ID.key, params.doctorId)
-                        putExtra(MedicalRecordParams.PATIENT_UUID.key, params.uuid)
-                        putExtra(MedicalRecordParams.PATIENT_NAME.key, params.name)
-                        putExtra(MedicalRecordParams.PATIENT_GENDER.key, params.gender)
-                        putExtra(MedicalRecordParams.PATIENT_AGE.key, params.age)
-                    }
-                    startActivity(intent)
+                    navigateToNextScreen()
                 }
             }
         } catch (ex: Exception) {

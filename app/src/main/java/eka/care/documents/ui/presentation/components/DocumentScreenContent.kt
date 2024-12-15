@@ -29,6 +29,8 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
@@ -36,7 +38,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import eka.care.documents.Document
 import eka.care.documents.R
 import eka.care.documents.ui.DarwinTouchNeutral0
 import eka.care.documents.ui.DarwinTouchNeutral1000
@@ -57,7 +58,6 @@ import kotlinx.coroutines.Job
 fun DocumentScreenContent(
     paddingValues: PaddingValues,
     pullRefreshState: PullRefreshState,
-    recordsState: GetRecordsState,
     openSheet: () -> Job,
     viewModel: RecordsViewModel,
     listState: LazyListState,
@@ -65,6 +65,11 @@ fun DocumentScreenContent(
     paramsModel: RecordParamsModel
 ) {
     val context = LocalContext.current
+    val recordsState = if (paramsModel.isFromSecretLocker == true) {
+        viewModel.getEncryptedRecordsState.collectAsState().value
+    } else {
+        viewModel.getRecordsState.collectAsState().value
+    }
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -93,8 +98,10 @@ fun DocumentScreenContent(
 
             is GetRecordsState.Success -> {
                 val resp = if (paramsModel.isFromSecretLocker == true) {
-                    emptyList()
+                    val encryptedRecordsState by viewModel.getEncryptedRecordsState.collectAsState()
+                    (encryptedRecordsState as? GetRecordsState.Success)?.resp ?: emptyList()
                 } else {
+                    val recordsState by viewModel.getRecordsState.collectAsState()
                     (recordsState as? GetRecordsState.Success)?.resp ?: emptyList()
                 }
                 LazyColumn(
@@ -153,10 +160,53 @@ fun DocumentScreenContent(
                     }
                 }
                 Box(modifier = Modifier.fillMaxSize()) {
+                    if (paramsModel.isFromSecretLocker == false) {
+                        FloatingActionButton(
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .padding(end = 20.dp, bottom = 100.dp),
+                            onClick = {
+                                Intent(context, SecretLockerActivity::class.java)
+                                    .apply {
+                                        putExtra(
+                                            MedicalRecordParams.PATIENT_ID.key,
+                                            paramsModel.patientId
+                                        )
+                                        putExtra(
+                                            MedicalRecordParams.DOCTOR_ID.key,
+                                            paramsModel.doctorId
+                                        )
+                                        putExtra(
+                                            MedicalRecordParams.PATIENT_UUID.key,
+                                            paramsModel.uuid
+                                        )
+                                        putExtra(
+                                            MedicalRecordParams.PATIENT_NAME.key,
+                                            paramsModel.name
+                                        )
+                                        putExtra(
+                                            MedicalRecordParams.PATIENT_GENDER.key,
+                                            paramsModel.gender
+                                        )
+                                        putExtra(
+                                            MedicalRecordParams.PATIENT_AGE.key,
+                                            paramsModel.age
+                                        )
+                                    }
+                                    .also {
+                                        context.startActivity(it)
+                                    }
+                            },
+                            shape = RoundedCornerShape(16.dp),
+                            containerColor = MaterialTheme.colorScheme.primary,
+                        ) {
+                            Text(text = "Secret Locker", modifier = Modifier.padding(16.dp))
+                        }
+                    }
                     FloatingActionButton(
                         modifier = Modifier
                             .align(Alignment.BottomEnd)
-                            .padding(end = 20.dp, bottom = 100.dp),
+                            .padding(end = 20.dp, bottom = 20.dp),
                         onClick = {
                             openSheet()
                             viewModel.documentBottomSheetType =
@@ -189,31 +239,6 @@ fun DocumentScreenContent(
                             )
                         }
                     }
-                    if(paramsModel.isFromSecretLocker == false){
-                        FloatingActionButton(
-                            modifier = Modifier
-                                .align(Alignment.BottomEnd)
-                                .padding(end = 20.dp, bottom = 20.dp),
-                            onClick = {
-                                Intent(context, SecretLockerActivity::class.java)
-                                    .apply {
-                                        putExtra(MedicalRecordParams.PATIENT_ID.key, paramsModel.patientId)
-                                        putExtra(MedicalRecordParams.DOCTOR_ID.key, paramsModel.doctorId)
-                                        putExtra(MedicalRecordParams.PATIENT_UUID.key, paramsModel.uuid)
-                                        putExtra(MedicalRecordParams.PATIENT_NAME.key, paramsModel.name)
-                                        putExtra(MedicalRecordParams.PATIENT_GENDER.key, paramsModel.gender)
-                                        putExtra(MedicalRecordParams.PATIENT_AGE.key, paramsModel.age)
-                                    }
-                                    .also {
-                                        context.startActivity(it)
-                                    }
-                            },
-                            shape = RoundedCornerShape(16.dp),
-                            containerColor = MaterialTheme.colorScheme.primary,
-                        ) {
-                            Text(text = "Secret Locker", modifier = Modifier.padding(16.dp))
-                        }
-                    }
                 }
             }
         }
@@ -228,7 +253,7 @@ fun DocumentScreenContent(
     }
 }
 
-private fun navigate(context: Context, model: RecordModel, oid: String,  password : String) {
+private fun navigate(context: Context, model: RecordModel, oid: String, password: String) {
     if (isOnline(context)) {
         if (model.tags?.split(",")?.contains("1") == false) {
             Intent(context, DocumentPreview::class.java).also {
@@ -250,7 +275,7 @@ private fun navigate(context: Context, model: RecordModel, oid: String,  passwor
                 }
             return
         }
-    }else{
+    } else {
         Intent(context, DocumentPreview::class.java).also {
             it.putExtra("local_id", model.localId)
             it.putExtra("password", password)

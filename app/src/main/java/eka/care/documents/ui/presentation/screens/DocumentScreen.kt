@@ -63,7 +63,6 @@ import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.RESULT_
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.SCANNER_MODE_FULL
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanning
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
-import eka.care.documents.Document
 import eka.care.documents.R
 import eka.care.documents.data.utility.DocumentUtility.Companion.PARAM_RECORD_PARAMS_MODEL
 import eka.care.documents.sync.workers.SyncFileWorker
@@ -227,7 +226,6 @@ fun DocumentScreen(
     }
 
     val isRefreshing by viewModel.isRefreshing
-    val recordsState by viewModel.getRecordsState.collectAsState()
     var firstVisibleItemIndex by remember { mutableIntStateOf(0) }
 
     val pullRefreshState = rememberPullRefreshState(
@@ -248,6 +246,7 @@ fun DocumentScreen(
 
     LaunchedEffect(key1 = viewModel.documentType.intValue) {
         viewModel.getAvailableDocTypes(oid = params.patientId, doctorId = params.doctorId)
+        viewModel.getAvailableDocTypesForEncryptedDoc(oid =  params.patientId, doctorId = params.doctorId)
         viewModel.getLocalRecords(
             oid = params.patientId,
             doctorId = params.doctorId,
@@ -301,8 +300,10 @@ fun DocumentScreen(
     }
 
     val resp = if (params.isFromSecretLocker == true) {
-        emptyList()
+        val encryptedRecordsState by viewModel.getEncryptedRecordsState.collectAsState()
+        (encryptedRecordsState as? GetRecordsState.Success)?.resp ?: emptyList()
     } else {
+        val recordsState by viewModel.getRecordsState.collectAsState()
         (recordsState as? GetRecordsState.Success)?.resp ?: emptyList()
     }
     ModalBottomSheetLayout(
@@ -381,14 +382,13 @@ fun DocumentScreen(
                     if (resp.isNotEmpty()) {
                         DocumentFilter(
                             viewModel = viewModel,
+                            params = params,
                             onClick = {
-                                //    if (viewModel.documentType.intValue != it) {
                                 viewModel.getLocalRecords(
                                     oid = params.patientId,
                                     doctorId = params.doctorId,
                                     docType = it
                                 )
-                                //    }
                             }
                         )
                         DocumentsSort(
@@ -405,7 +405,6 @@ fun DocumentScreen(
                 DocumentScreenContent(
                     paddingValues = it,
                     pullRefreshState = pullRefreshState,
-                    recordsState = recordsState,
                     openSheet = openSheet,
                     viewModel = viewModel,
                     listState = listState,
@@ -450,12 +449,6 @@ fun initData(
             ExistingWorkPolicy.REPLACE,
             uniqueSyncWorkRequest
         )
-
-    viewModel.getLocalRecords(
-        oid = oid,
-        doctorId = doctorId,
-        docType = viewModel.documentType.intValue
-    )
     viewModel.syncDeletedDocuments(oid = oid, doctorId = doctorId)
     viewModel.syncEditedDocuments(oid = oid, doctorId = doctorId)
 }

@@ -7,7 +7,6 @@ import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.Uri
 import android.util.Log
-import android.util.Base64
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -32,22 +31,18 @@ import eka.care.documents.ui.presentation.state.GetAvailableDocTypesState
 import eka.care.documents.ui.presentation.state.GetRecordsState
 import eka.care.documents.ui.utility.RecordsUtility.Companion.convertLongToFormattedDate
 import id.zelory.compressor.Compressor
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.cancellable
-import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.security.SecureRandom
-import javax.crypto.BadPaddingException
 import javax.crypto.Cipher
 import javax.crypto.SecretKey
 import javax.crypto.SecretKeyFactory
@@ -77,8 +72,16 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
     private val _getRecordsState = MutableStateFlow<GetRecordsState>(GetRecordsState.Loading)
     val getRecordsState: StateFlow<GetRecordsState> = _getRecordsState
 
+    private val _getEncryptedRecordsState =
+        MutableStateFlow<GetRecordsState>(GetRecordsState.Loading)
+    val getEncryptedRecordsState: StateFlow<GetRecordsState> = _getEncryptedRecordsState
+
     private val _getAvailableDocTypes = MutableStateFlow(GetAvailableDocTypesState())
     val getAvailableDocTypes: StateFlow<GetAvailableDocTypesState> = _getAvailableDocTypes
+
+    private val _getAvailableDocTypesForEncryptedDoc = MutableStateFlow(GetAvailableDocTypesState())
+    val getAvailableDocTypesForEncryptedDoc: StateFlow<GetAvailableDocTypesState> =
+        _getAvailableDocTypesForEncryptedDoc
 
     val sortBy = mutableStateOf(DocumentSortEnum.UPLOAD_DATE)
     val documentType = mutableIntStateOf(-1)
@@ -160,8 +163,8 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun encryptFile(file: File, password: String): String {
-        try {
+    fun encryptFile(file: File, password: String): String? {
+        return try {
             // Generate a random salt for this encryption
             val salt = generateSalt()
 
@@ -195,12 +198,12 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
             return encryptedFilePath
         } catch (e: Exception) {
             Log.e("FileEncryption", "Encryption failed", e)
-            throw RuntimeException("Encryption failed", e)
+            null // Return null if encryption fails
         }
     }
 
-    fun decryptFile(file: File, password: String): String {
-        try {
+    fun decryptFile(file: File, password: String): String? {
+        return try {
             // Read the encrypted file content
             val encryptedFileContent = FileInputStream(file).use { it.readBytes() }
 
@@ -231,11 +234,10 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
 
             return decryptedFilePath
         } catch (e: Exception) {
-            Log.e("Decryption", "General decryption error", e)
-            throw RuntimeException("Decryption failed", e)
+            Log.e("Decryption", "Error decrypting file: ${file.name}", e)
+            null
         }
     }
-
 
     private fun generateSalt(): ByteArray {
         val salt = ByteArray(SALT_LENGTH)
@@ -309,8 +311,11 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
                 documentsFlowResp
                     .cancellable()
                     .collect { vaultEntities ->
-                        val records = vaultEntities.map { vaultEntity ->
-                            RecordModel(
+                        val records = mutableListOf<RecordModel>()
+                        val encryptedRecords = mutableListOf<RecordModel>()
+
+                        vaultEntities.forEach { vaultEntity ->
+                            val record = RecordModel(
                                 localId = vaultEntity.localId,
                                 documentId = vaultEntity.documentId,
                                 doctorId = doctorId,
@@ -323,24 +328,37 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
                                 cta = Gson().fromJson(vaultEntity.cta, CTA::class.java),
                                 tags = vaultEntity.tags,
                                 source = vaultEntity.source,
+                                isEncrypted = vaultEntity.isEncrypted,
                                 isAnalyzing = vaultEntity.isAnalyzing
                             )
+
+                            if (vaultEntity.isEncrypted == true) {
+                                encryptedRecords.add(record)
+                            } else {
+                                records.add(record)
+                            }
                         }
-                        getAvailableDocTypes(oid = oid, doctorId = doctorId)
                         _getRecordsState.value = if (records.isEmpty()) {
                             GetRecordsState.EmptyState
                         } else {
                             GetRecordsState.Success(resp = records)
                         }
+
+                        _getEncryptedRecordsState.value = if (encryptedRecords.isEmpty()) {
+                            GetRecordsState.EmptyState
+                        } else {
+                            GetRecordsState.Success(resp = encryptedRecords)
+                        }
+
+                        getAvailableDocTypes(oid = oid, doctorId = doctorId)
+                        getAvailableDocTypesForEncryptedDoc(oid = oid, doctorId = doctorId)
                     }
-            }
-            catch (ex: Exception) {
-                // will fix later
-//                _getRecordsState.value =
-//                    GetRecordsState.Error(ex.localizedMessage ?: "An error occurred")
+            } catch (ex: Exception) {
+
             }
         }
     }
+
 
     fun createVaultRecord(vaultEntity: VaultEntity) {
         try {
@@ -350,6 +368,7 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
         } catch (_: Exception) {
         }
     }
+
     fun editDocument(
         localId: String,
         docType: Int?,
@@ -362,7 +381,7 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
             viewModelScope.launch {
                 vaultRepository.editDocument(localId, docType, docDate, tags, patientId = oid)
                 val tagList = tags.split(",")
-              //  val tagNames = Tags().getTagNamesByIds(tagList)
+                //  val tagNames = Tags().getTagNamesByIds(tagList)
                 val updateFileDetailsRequest = UpdateFileDetailsRequest(
                     oid = oid,
                     documentType = docTypes.find { it.idNew == docType }?.id,
@@ -424,6 +443,21 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    fun getAvailableDocTypesForEncryptedDoc(oid: String, doctorId: String) {
+        try {
+            viewModelScope.launch {
+                _getAvailableDocTypesForEncryptedDoc.value =
+                    GetAvailableDocTypesState(
+                        resp = vaultRepository.getAvailableDocTypesForEncryptedDoc(
+                            oid = oid,
+                            doctorId = doctorId
+                        )
+                    )
+            }
+        } catch (_: Exception) {
+        }
+    }
+
     fun getAvailableDocTypes(oid: String, doctorId: String) {
         try {
             viewModelScope.launch {
@@ -438,4 +472,5 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
         } catch (_: Exception) {
         }
     }
+
 }

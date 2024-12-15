@@ -3,6 +3,7 @@ package eka.care.documents.ui.presentation.viewmodel
 import android.app.Application
 import android.content.Context
 import android.content.ContextWrapper
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import eka.care.documents.data.db.database.DocumentDatabase
@@ -75,6 +76,7 @@ class DocumentPreviewViewModel(val app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             try {
                 val recordEntity = vaultRepository.getDocumentByDocId(docId = docId)
+                Log.d("AYUSHI", recordEntity.toString())
                 if (!recordEntity?.filePath.isNullOrEmpty()) {
                     _document.value = DocumentPreviewState.Success(
                         DocumentPreviewModel(

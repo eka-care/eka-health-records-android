@@ -20,5 +20,6 @@ data class RecordModel(
     val cta: CTA?,
     val tags: String?,
     val source: Int?,
+    val isEncrypted : Boolean = false,
     val isAnalyzing: Boolean = false,
 ): Parcelable
