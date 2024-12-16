@@ -94,7 +94,6 @@ fun DocumentScreen(
     viewModel: RecordsViewModel
 ) {
     val context = LocalContext.current
-
     val cameraPermissionState = rememberPermissionState(permission = Manifest.permission.CAMERA)
 
     LaunchedEffect(Unit) {

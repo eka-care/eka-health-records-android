@@ -50,7 +50,7 @@ class SecretLockerSavePrivateKeyActivity : AppCompatActivity() {
     private var isLoginScreen by mutableStateOf(false)
     private lateinit var sharedPreferences: SharedPreferences
     private val enteredPasswordState = mutableStateOf("")
-    private val passwordKey : String? = null
+    private val passwordKey: String = "secret_locker_password"
     private lateinit var params: RecordParamsModel
     override fun onStart() {
         super.onStart()
@@ -146,7 +146,7 @@ class SecretLockerSavePrivateKeyActivity : AppCompatActivity() {
         ).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             putExtra(MedicalRecordParams.FROM_SECRET_LOCKER.key, true)
-            putExtra(MedicalRecordParams.PASSWORD.key, passwordKey)
+            putExtra(MedicalRecordParams.PASSWORD.key, sharedPreferences.getString(passwordKey, null))
             putExtra(MedicalRecordParams.PATIENT_ID.key, params.patientId)
             putExtra(MedicalRecordParams.DOCTOR_ID.key, params.doctorId)
             putExtra(MedicalRecordParams.PATIENT_UUID.key, params.uuid)

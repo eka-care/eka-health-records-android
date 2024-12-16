@@ -76,7 +76,6 @@ class DocumentPreviewViewModel(val app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             try {
                 val recordEntity = vaultRepository.getDocumentByDocId(docId = docId)
-                Log.d("AYUSHI", recordEntity.toString())
                 if (!recordEntity?.filePath.isNullOrEmpty()) {
                     _document.value = DocumentPreviewState.Success(
                         DocumentPreviewModel(

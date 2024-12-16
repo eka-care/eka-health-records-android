@@ -125,6 +125,7 @@ class SyncFileWorker(
     private suspend fun syncDocuments(oid: String, uuid: String, doctorId: String) {
         try {
             val vaultDocuments = vaultRepository.getUnSyncedDocuments(oid = oid, doctorId = doctorId)
+            Log.d("SYNC_DOCUMENTS", vaultDocuments.toString())
             if (vaultDocuments.isEmpty()) return
 
             val tags = mutableListOf<String>()
