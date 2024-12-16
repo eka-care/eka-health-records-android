@@ -76,6 +76,7 @@ import eka.care.documents.ui.utility.RecordsUtility.Companion.formatLocalDateToC
 import eka.care.documents.ui.utility.RecordsUtility.Companion.timestampToLong
 import eka.care.documents.ui.utility.ThumbnailGenerator
 import java.io.File
+import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale

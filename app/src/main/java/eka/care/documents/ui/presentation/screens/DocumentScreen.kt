@@ -5,6 +5,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -48,6 +49,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat.startActivity
 import androidx.work.Constraints
 import androidx.work.Data
 import androidx.work.ExistingWorkPolicy
@@ -68,7 +70,10 @@ import eka.care.documents.data.utility.DocumentUtility.Companion.PARAM_RECORD_PA
 import eka.care.documents.sync.workers.SyncFileWorker
 import eka.care.documents.ui.BgWhite
 import eka.care.documents.ui.Gray200
+import eka.care.documents.ui.presentation.activity.DocumentActivity
 import eka.care.documents.ui.presentation.activity.DocumentViewerActivity
+import eka.care.documents.ui.presentation.activity.MedicalRecordParams
+import eka.care.documents.ui.presentation.activity.secretLocker.SecretLockerSavePrivateKeyActivity
 import eka.care.documents.ui.presentation.components.DocumentBottomSheetContent
 import eka.care.documents.ui.presentation.components.DocumentBottomSheetType
 import eka.care.documents.ui.presentation.components.DocumentFilter

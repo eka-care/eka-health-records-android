@@ -33,6 +33,7 @@ import eka.care.documents.ui.utility.RecordsUtility.Companion.convertLongToForma
 import id.zelory.compressor.Compressor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -72,8 +73,7 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
     private val _getRecordsState = MutableStateFlow<GetRecordsState>(GetRecordsState.Loading)
     val getRecordsState: StateFlow<GetRecordsState> = _getRecordsState
 
-    private val _getEncryptedRecordsState =
-        MutableStateFlow<GetRecordsState>(GetRecordsState.Loading)
+    private val _getEncryptedRecordsState = MutableStateFlow<GetRecordsState>(GetRecordsState.Loading)
     val getEncryptedRecordsState: StateFlow<GetRecordsState> = _getEncryptedRecordsState
 
     private val _getAvailableDocTypes = MutableStateFlow(GetAvailableDocTypesState())
@@ -100,6 +100,8 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
     var documentBottomSheetType by mutableStateOf<DocumentBottomSheetType?>(null)
 
     var documentViewType by mutableStateOf(DocumentViewType.GridView)
+
+    private var lastEvaluatedValue: String? = null
 
     private val _photoUri = MutableStateFlow<Uri?>(null)
     val photoUri: StateFlow<Uri?> = _photoUri
@@ -394,7 +396,7 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
         localId: String,
         docType: Int?,
         oid: String,
-        docDate: Long,
+        docDate: Long?,
         tags: String,
         doctorId: String,
         isFromSecretLocker: Boolean
@@ -496,6 +498,65 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
                     )
             }
         } catch (_: Exception) {
+        }
+    }
+
+    fun getMyFiles(
+        documentType: String = "", sort: String = "ut",
+        enc: Boolean? = null, ekaSecretLockerId: String? = null,
+        lastEvaluatedValue: String? = null
+    ) {
+        viewModelScope.launch {
+            try {
+                val docs = async {
+                    myFileRepository.getMyFiles(
+                        documentType = documentType,
+                        sort = sort,
+                        enc = enc,
+                        ekaSecretLockerId = ekaSecretLockerId,
+                        offset = lastEvaluatedValue
+                    )
+                }
+                val response = docs.await()
+                Log.d("log", "myFilesResponse = $response")
+
+                if (enc == true) {
+                    if (response != null) {
+                        val encryptedRecords = mutableListOf<RecordModel>()
+//                        response.secretVault?.encryptedDocsCount
+//                        _getEncryptedRecordsState.value = GetRecordsState.Success(response.secretVault.encryptedDocsProfileInfoList)
+                    } else {
+                        Log.d("log", "Something went wrong")
+                    }
+                    return@launch
+                }
+                when {
+                    response != null -> {
+//                        _myFiles.postValue(
+//                            RecordsState(
+//                                documents = withContext(Dispatchers.Default) {
+//                                    transform(
+//                                        myFileResponse = response,
+//                                        offset = lastEvaluatedValue.orEmpty(),
+//                                        documentType = documentType,
+//                                        sort = sort
+//                                    )
+//                                },
+//                                lastEvaluatedKey = response.lastEvaluatedKey,
+//                                requestId = response.requestId
+//                            )
+//
+//                        )
+                        this@RecordsViewModel.lastEvaluatedValue = lastEvaluatedValue
+                    }
+
+                    else -> {
+                        Log.d("log", "Something went wrong")
+                    }
+                }
+            } catch (ex: Exception) {
+
+            }
         }
     }
 

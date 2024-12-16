@@ -51,7 +51,7 @@ interface VaultDao {
     suspend fun editDocument(
         localId: String,
         docType: Int?,
-        docDate: Long,
+        docDate: Long?,
         tags: String,
         oid: String?
     )

@@ -7,32 +7,6 @@ import eka.care.documents.data.db.model.CTAData
 import kotlinx.android.parcel.Parcelize
 
 @Keep
-data class GmailSyncedAccountsResp(
-    @SerializedName("success")
-    var success: Boolean? = null,
-    @SerializedName("accounts")
-    var accounts: List<SyncedGmailAccount>? = null,
-    @SerializedName("csrf_token")
-    var csrfToken: String? = null,
-    @SerializedName("share")
-    val gmailShare: GmailShare? = null,
-    @SerializedName("cta")
-    val cta: CTAData? = null,
-    @SerializedName("categories")
-    val allGmailRecordsCategories: List<GmailRecordsCategories>? = null,
-    @SerializedName("completion_progress")
-    var syncProgressPercentage: Float = 0f,
-    @SerializedName("sticky_notification")
-    var stickyNotifyData: StickyNotifyData? = null,
-    @SerializedName("home_page_content")
-    var homePageContent: GmailHomeContent? = null,
-    @SerializedName("select_view")
-    var gmailAccountsList: List<GmailAccountInfo>? = null,
-    @SerializedName("all_accounts_sync_msg")
-    var allAccountsRecordsCount: String? = null
-)
-
-@Keep
 @Parcelize
 data class GmailAccountInfo(
     @SerializedName("tab_title")

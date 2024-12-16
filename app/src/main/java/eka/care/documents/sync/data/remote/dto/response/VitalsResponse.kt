@@ -4,12 +4,6 @@ import androidx.annotation.Keep
 import com.google.gson.annotations.SerializedName
 
 @Keep
-data class VitalsResponse(
-    @SerializedName("parameters")
-    val vitalParameters: List<VitalParamData>?,
-)
-
-@Keep
 data class VitalParamData(
     @SerializedName("name")
     val name: String?,

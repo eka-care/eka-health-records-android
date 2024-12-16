@@ -26,7 +26,7 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
     override suspend fun editDocument(
         localId: String,
         docType: Int?,
-        docDate: Long,
+        docDate: Long?,
         tags: String,
         patientId : String
     ) {
