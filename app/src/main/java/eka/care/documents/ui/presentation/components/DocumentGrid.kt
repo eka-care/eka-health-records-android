@@ -89,9 +89,13 @@ fun DocumentGridItem(
         .clickable {
             onClick(CTA(action = "open_deepThought"), recordModel)
         }
-        .background(MaterialTheme.colorScheme.surface, shape = MaterialTheme.shapes.medium)
         .height(120.dp)
-        .padding(8.dp)) {
+        .background(
+            MaterialTheme.colorScheme.surface,
+            shape = MaterialTheme.shapes.medium
+        )
+        .padding(8.dp)
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,

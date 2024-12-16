@@ -196,7 +196,7 @@ private fun navigate(context: Context, model: RecordModel, oid: String) {
     if (isOnline(context)) {
         if (model.tags?.split(",")?.contains("1") == false) {
             Intent(context, DocumentPreview::class.java).also {
-                it.putExtra("local_id", model.localId)
+                it.putExtra("local_id", model.documentId)
                 it.putExtra("user_id", oid)
                 context.startActivity(it)
             }
@@ -212,9 +212,9 @@ private fun navigate(context: Context, model: RecordModel, oid: String) {
                 }
             return
         }
-    }else{
+    } else {
         Intent(context, DocumentPreview::class.java).also {
-            it.putExtra("local_id", model.localId)
+            it.putExtra("local_id", model.documentId)
             it.putExtra("user_id", oid)
             context.startActivity(it)
         }
