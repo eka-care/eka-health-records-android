@@ -63,7 +63,7 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
         )
     }
 
-    override suspend fun getUnsyncedDocuments(oid: String, doctorId: String): List<VaultEntity> {
+    override suspend fun getUnSyncedDocuments(oid: String, doctorId: String): List<VaultEntity> {
         val resp = database.vaultDao().getUnsyncedDocuments(
             oid = oid,
             doctorId = doctorId
@@ -88,10 +88,9 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
     }
 
     override suspend fun getAvailableDocTypesForEncryptedDoc(
-        oid: String,
         doctorId: String
     ): List<AvailableDocTypes> {
-        return database.vaultDao().getAvailableDocTypesForEncryptedDoc(oid = oid, doctorId = doctorId)
+        return database.vaultDao().getAvailableDocTypesForEncryptedDoc(doctorId = doctorId)
     }
 
     override fun fetchDocuments(
@@ -106,15 +105,34 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
         }
     }
 
+    override fun fetchEncryptedDocuments(doctorId: String, docType: Int): Flow<List<VaultEntity>> {
+        return if (docType == -1) {
+            database.vaultDao().fetchEncryptedDocuments(doctorId = doctorId)
+        } else {
+            database.vaultDao().fetchEncryptedDocumentsByDocType(docType = docType, doctorId = doctorId)
+        }
+    }
+
     override fun fetchDocumentsByDocDate(
         oid: String,
         docType: Int,
         doctorId: String
     ): Flow<List<VaultEntity>> {
         return if (docType == -1) {
-            database.vaultDao().fetchDocumentsByDocDate(oid = oid)
+            database.vaultDao().fetchDocumentsByDocDate(oid = oid, doctorId = doctorId)
         } else {
             database.vaultDao().fetchDocumentsByDocType(oid = oid, docType = docType, doctorId = doctorId)
+        }
+    }
+
+    override fun fetchEncryptedDocumentsByDocDate(
+        doctorId: String,
+        docType: Int
+    ): Flow<List<VaultEntity>> {
+        return if (docType == -1) {
+            database.vaultDao().fetchEncryptedDocumentsByDocDate(doctorId = doctorId)
+        } else {
+            database.vaultDao().fetchEncryptedDocumentsByDocType(docType = docType, doctorId = doctorId)
         }
     }
 

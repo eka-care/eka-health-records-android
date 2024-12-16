@@ -246,11 +246,12 @@ fun DocumentScreen(
 
     LaunchedEffect(key1 = viewModel.documentType.intValue) {
         viewModel.getAvailableDocTypes(oid = params.patientId, doctorId = params.doctorId)
-        viewModel.getAvailableDocTypesForEncryptedDoc(oid =  params.patientId, doctorId = params.doctorId)
+        viewModel.getAvailableDocTypesForEncryptedDoc(doctorId = params.doctorId)
         viewModel.getLocalRecords(
             oid = params.patientId,
             doctorId = params.doctorId,
-            docType = viewModel.documentType.intValue
+            docType = viewModel.documentType.intValue,
+            isFromSecretLocker = params.isFromSecretLocker ?: false
         )
     }
 
@@ -284,7 +285,8 @@ fun DocumentScreen(
                         viewModel.deleteDocument(
                             localId = viewModel.cardClickData.value?.localId ?: "",
                             oid = params.patientId,
-                            doctorId = params.doctorId
+                            doctorId = params.doctorId,
+                            isFromSecretLocker = params.isFromSecretLocker ?: false
                         )
                         showDeleteDialog = false
                     }) {
@@ -387,7 +389,8 @@ fun DocumentScreen(
                                 viewModel.getLocalRecords(
                                     oid = params.patientId,
                                     doctorId = params.doctorId,
-                                    docType = it
+                                    docType = it,
+                                    isFromSecretLocker = params.isFromSecretLocker ?: false
                                 )
                             }
                         )

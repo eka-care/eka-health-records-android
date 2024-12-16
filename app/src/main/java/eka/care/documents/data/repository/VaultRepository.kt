@@ -27,14 +27,16 @@ interface VaultRepository {
         tags: String,
         documentDate : Long?
     )
-    suspend fun getUnsyncedDocuments(oid : String, doctorId: String): List<VaultEntity>
+    suspend fun getUnSyncedDocuments(oid : String, doctorId: String): List<VaultEntity>
     suspend fun getDeletedDocuments(oid: String , doctorId: String): List<VaultEntity>
     suspend fun getEditedDocuments(oid: String, doctorId: String): List<VaultEntity>
     suspend fun fetchDocumentData(oid: String, localId: String): VaultEntity
     suspend fun getAvailableDocTypes(oid: String, doctorId: String): List<AvailableDocTypes>
-    suspend fun getAvailableDocTypesForEncryptedDoc(oid: String, doctorId: String): List<AvailableDocTypes>
+    suspend fun getAvailableDocTypesForEncryptedDoc(doctorId: String): List<AvailableDocTypes>
     fun fetchDocuments(oid: String, docType: Int, doctorId: String): Flow<List<VaultEntity>>
+    fun fetchEncryptedDocuments(doctorId: String, docType: Int) : Flow<List<VaultEntity>>
     fun fetchDocumentsByDocDate(oid: String, docType: Int, doctorId: String): Flow<List<VaultEntity>>
+    fun fetchEncryptedDocumentsByDocDate(doctorId: String, docType: Int) : Flow<List<VaultEntity>>
     suspend fun updateDocumentId(documentId: String, localId: String)
     suspend fun getLocalIdBySource(source: Int, oid: String): List<String>
     suspend fun getLocalId(docId: String): String?

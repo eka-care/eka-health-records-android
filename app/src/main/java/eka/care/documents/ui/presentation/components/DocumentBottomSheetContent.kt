@@ -6,7 +6,6 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.provider.MediaStore
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.result.ActivityResult
@@ -14,7 +13,6 @@ import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.core.content.FileProvider
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
@@ -28,8 +26,6 @@ import eka.care.documents.ui.presentation.screens.DocumentUploadBottomSheet
 import eka.care.documents.ui.presentation.screens.EnterDetailsBottomSheet
 import eka.care.documents.ui.presentation.viewmodel.RecordsViewModel
 import eka.care.documents.ui.utility.RecordsAction
-import kotlinx.coroutines.Job
-import vault.common.Cta
 import java.io.File
 
 @OptIn(ExperimentalPermissionsApi::class)
@@ -51,9 +47,10 @@ fun DocumentBottomSheetContent(
             DocumentUploadBottomSheet(onClick = {
                 onClick(CTA(action = RecordsAction.ACTION_CLOSE_SHEET))
                 when (it?.action) {
-                    RecordsAction.ACTION_TAKE_PHOTO-> {
+                    RecordsAction.ACTION_TAKE_PHOTO -> {
                         if (cameraPermissionState.status.isGranted) {
-                            val imageFile = File(context.cacheDir, "photo_${System.currentTimeMillis()}.jpg")
+                            val imageFile =
+                                File(context.cacheDir, "photo_${System.currentTimeMillis()}.jpg")
                             val photoUri = FileProvider.getUriForFile(
                                 context,
                                 "com.eka.care.doctor.records.provider",
@@ -70,7 +67,8 @@ fun DocumentBottomSheetContent(
                             cameraPermissionState.launchPermissionRequest()
                         }
                     }
-                    RecordsAction.ACTION_SCAN_A_DOCUMENT-> {
+
+                    RecordsAction.ACTION_SCAN_A_DOCUMENT -> {
                         scanner.getStartScanIntent(context as Activity)
                             .addOnSuccessListener { intentSender ->
                                 scannerLauncher.launch(
@@ -106,9 +104,13 @@ fun DocumentBottomSheetContent(
 
                     RecordsAction.ACTION_SHARE_DOCUMENT -> {
                         val filePaths = viewModel.cardClickData.value?.filePath ?: emptyList()
-                        if(filePaths.isEmpty()){
-                            Toast.makeText(context, "Syncing data, please wait!", Toast.LENGTH_SHORT).show()
-                        }else{
+                        if (filePaths.isEmpty()) {
+                            Toast.makeText(
+                                context,
+                                "Syncing data, please wait!",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        } else {
                             FileSharing().shareFiles(context, filePaths)
                         }
                     }
@@ -131,7 +133,8 @@ fun DocumentBottomSheetContent(
                     viewModel.getLocalRecords(
                         oid = params.patientId,
                         viewModel.documentType.value,
-                        doctorId = params.doctorId
+                        doctorId = params.doctorId,
+                        isFromSecretLocker = params.isFromSecretLocker ?: false
                     )
                     onClick(CTA(action = RecordsAction.ACTION_CLOSE_SHEET))
                 },

@@ -124,7 +124,7 @@ class SyncFileWorker(
 
     private suspend fun syncDocuments(oid: String, uuid: String, doctorId: String) {
         try {
-            val vaultDocuments = vaultRepository.getUnsyncedDocuments(oid = oid, doctorId = doctorId)
+            val vaultDocuments = vaultRepository.getUnSyncedDocuments(oid = oid, doctorId = doctorId)
             if (vaultDocuments.isEmpty()) return
 
             val tags = mutableListOf<String>()
@@ -154,6 +154,7 @@ class SyncFileWorker(
                     patientUuid = uuid,
                     isMultiFile = isMultiFile,
                     tags = tags,
+                    isEncrypted = vaultEntity.isEncrypted,
                     documentType = documentType
                 )
 
@@ -199,7 +200,6 @@ class SyncFileWorker(
             Log.e("SYNC_DOCUMENTS", "Error syncing documents: ${e.message}", e)
         }
     }
-
 
     private suspend fun updateDocumentDetails(
         documentId: String,

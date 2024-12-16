@@ -210,7 +210,8 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
             // Extract salt and IV
             val salt = encryptedFileContent.copyOfRange(0, SALT_LENGTH)
             val iv = encryptedFileContent.copyOfRange(SALT_LENGTH, SALT_LENGTH * 2)
-            val encryptedContent = encryptedFileContent.copyOfRange(SALT_LENGTH * 2, encryptedFileContent.size)
+            val encryptedContent =
+                encryptedFileContent.copyOfRange(SALT_LENGTH * 2, encryptedFileContent.size)
 
             // Generate secret key
             val secretKey = generateAESKey(password, salt)
@@ -287,26 +288,47 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun getLocalRecords(oid: String, docType: Int = -1, doctorId: String) {
+    fun getLocalRecords(
+        oid: String,
+        docType: Int = -1,
+        doctorId: String,
+        isFromSecretLocker: Boolean
+    ) {
         documentType.intValue = docType
         if (::launch.isInitialized) {
             launch.cancel()
         }
         launch = viewModelScope.launch {
             try {
-                val documentsFlowResp = if (sortBy.value == DocumentSortEnum.UPLOAD_DATE) {
-                    vaultRepository.fetchDocuments(
-                        oid = oid,
-                        docType = documentType.intValue,
-                        doctorId = doctorId
-                    )
-                } else {
-                    vaultRepository.fetchDocumentsByDocDate(
-                        oid = oid,
-                        docType = documentType.intValue,
-                        doctorId = doctorId
-                    )
-                }
+                val documentsFlowResp =
+                    if (isFromSecretLocker) {
+                        if (sortBy.value == DocumentSortEnum.UPLOAD_DATE) {
+                            vaultRepository.fetchEncryptedDocuments(
+                                docType = documentType.intValue,
+                                doctorId = doctorId
+                            )
+                        } else {
+                            vaultRepository.fetchEncryptedDocumentsByDocDate(
+                                docType = documentType.intValue,
+                                doctorId = doctorId
+                            )
+                        }
+                    } else {
+                        if (sortBy.value == DocumentSortEnum.UPLOAD_DATE) {
+                            vaultRepository.fetchDocuments(
+                                oid = oid,
+                                docType = documentType.intValue,
+                                doctorId = doctorId
+                            )
+                        } else {
+                            vaultRepository.fetchDocumentsByDocDate(
+                                oid = oid,
+                                docType = documentType.intValue,
+                                doctorId = doctorId
+                            )
+                        }
+                    }
+
 
                 documentsFlowResp
                     .cancellable()
@@ -351,14 +373,13 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
                         }
 
                         getAvailableDocTypes(oid = oid, doctorId = doctorId)
-                        getAvailableDocTypesForEncryptedDoc(oid = oid, doctorId = doctorId)
+                        getAvailableDocTypesForEncryptedDoc(doctorId = doctorId)
                     }
             } catch (ex: Exception) {
 
             }
         }
     }
-
 
     fun createVaultRecord(vaultEntity: VaultEntity) {
         try {
@@ -375,7 +396,8 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
         oid: String,
         docDate: Long,
         tags: String,
-        doctorId: String
+        doctorId: String,
+        isFromSecretLocker: Boolean
     ) {
         try {
             viewModelScope.launch {
@@ -397,17 +419,22 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
                         updateFileDetailsRequest = updateFileDetailsRequest
                     )
                 }
-                getLocalRecords(oid, doctorId = doctorId)
+                getLocalRecords(oid, doctorId = doctorId, isFromSecretLocker = isFromSecretLocker)
             }
         } catch (_: Exception) {
         }
     }
 
-    fun deleteDocument(localId: String, oid: String, doctorId: String) {
+    fun deleteDocument(
+        localId: String,
+        oid: String,
+        doctorId: String,
+        isFromSecretLocker: Boolean
+    ) {
         try {
             viewModelScope.launch {
                 vaultRepository.deleteDocument(oid = oid, localId = localId)
-                getLocalRecords(oid, doctorId = doctorId)
+                getLocalRecords(oid, doctorId = doctorId, isFromSecretLocker = isFromSecretLocker)
             }
         } catch (_: Exception) {
         }
@@ -443,13 +470,12 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun getAvailableDocTypesForEncryptedDoc(oid: String, doctorId: String) {
+    fun getAvailableDocTypesForEncryptedDoc(doctorId: String) {
         try {
             viewModelScope.launch {
                 _getAvailableDocTypesForEncryptedDoc.value =
                     GetAvailableDocTypesState(
                         resp = vaultRepository.getAvailableDocTypesForEncryptedDoc(
-                            oid = oid,
                             doctorId = doctorId
                         )
                     )

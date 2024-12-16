@@ -91,7 +91,11 @@ fun AddMedicalRecordsDetailViewComponent(
     paramsModel: RecordParamsModel,
     editDocument: Boolean
 ) {
-    init(viewModel = viewModel, userId =  paramsModel.patientId, docId = viewModel.cardClickData.value?.documentId)
+    init(
+        viewModel = viewModel,
+        userId = paramsModel.patientId,
+        docId = viewModel.cardClickData.value?.documentId
+    )
     val context = LocalContext.current
     val compressedFiles by viewModel.compressedFiles.collectAsState(initial = emptyList())
     val initialSelectedDocType = viewModel.cardClickData.value?.documentType
@@ -127,7 +131,8 @@ fun AddMedicalRecordsDetailViewComponent(
                 oid = paramsModel.patientId,
                 docDate = timestampToLong(date),
                 tags = selectedTags.joinToString(separator = ","),
-                doctorId = paramsModel.doctorId
+                doctorId = paramsModel.doctorId,
+                isFromSecretLocker = paramsModel.isFromSecretLocker ?: false
             )
             onClick(CTA(action = "onBackClick"))
         } else {
@@ -141,11 +146,8 @@ fun AddMedicalRecordsDetailViewComponent(
                 val unixTimestamp = parsedDate?.time?.div(1000)
                 val filePath = if (paramsModel.isFromSecretLocker == true) {
                     fileList.mapNotNull { file ->
-                        paramsModel.password?.let { password ->
-                            val encryptedPath = viewModel.encryptFile(file, password)
-                            Log.d("ENCRYPTION_DEBUG", "File: ${file.path}, Encrypted Path: $encryptedPath")
-                            encryptedPath
-                        }
+                        val encryptedPath = viewModel.encryptFile(file, "Unique.123")
+                        encryptedPath
                     }
                 } else {
                     if (fileType == FileType.IMAGE.ordinal) {
@@ -154,7 +156,6 @@ fun AddMedicalRecordsDetailViewComponent(
                         fileList.map { it.path }
                     }
                 }
-                Log.d("AYUSHI", filePath.toString())
                 val vaultEntity = VaultEntity(
                     localId = UUID.randomUUID().toString(),
                     documentId = null,
@@ -393,7 +394,7 @@ fun AddMedicalRecordsDetailViewComponent(
     )
 }
 
-private fun init(viewModel: RecordsViewModel, docId : String?, userId : String){
+private fun init(viewModel: RecordsViewModel, docId: String?, userId: String) {
     if (docId != null) {
         viewModel.getTags(docId = docId, userId = userId)
     }

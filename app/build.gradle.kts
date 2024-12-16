@@ -154,4 +154,5 @@ dependencies {
     implementation(libs.protobuf.javalite)
     implementation(libs.accompanist.permissions)
     implementation(libs.androidx.security.crypto)
+    implementation("androidx.compose.material:material-icons-extended:1.5.3")
 }
