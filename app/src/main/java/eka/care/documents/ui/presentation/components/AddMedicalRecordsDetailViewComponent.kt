@@ -147,7 +147,7 @@ fun AddMedicalRecordsDetailViewComponent(
                 val unixTimestamp = parsedDate?.time?.div(1000)
                 val filePath = if (paramsModel.isFromSecretLocker == true) {
                     fileList.mapNotNull { file ->
-                        val encryptedPath = viewModel.encryptFile(file, "Unique.123")
+                        val encryptedPath = viewModel.encryptFile(file, password = paramsModel.password ?: "")
                         encryptedPath
                     }
                 } else {

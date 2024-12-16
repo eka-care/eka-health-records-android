@@ -120,7 +120,7 @@ fun DocumentSuccessState(
             val file = if (state.data.isEncryptedFile == true) {
                 val decryptedFilePath = recordsViewModel.decryptFile(
                     file = File(filePath),
-                    password = "Unique.123"
+                    password = password
                 )
                 File(decryptedFilePath)
             } else {
@@ -138,7 +138,8 @@ fun DocumentSuccessState(
                 DocumentImagePreview(
                     filePaths = filePaths,
                     isEncrypted = state.data.isEncryptedFile,
-                    recordsViewModel = recordsViewModel
+                    recordsViewModel = recordsViewModel,
+                    password = password
                 )
             }
         }
@@ -149,7 +150,8 @@ fun DocumentSuccessState(
 fun DocumentImagePreview(
     filePaths: List<String>,
     isEncrypted: Boolean?,
-    recordsViewModel: RecordsViewModel
+    recordsViewModel: RecordsViewModel,
+    password: String
 ) {
     var selectedUri by remember {
         mutableStateOf<Uri?>(
@@ -158,7 +160,7 @@ fun DocumentImagePreview(
                     val file = if (isEncrypted == true) {
                         val decryptedFilePath = recordsViewModel.decryptFile(
                             file = File(filePath),
-                            password = "Unique.123"
+                            password = password
                         )
                         File(decryptedFilePath)
                     } else {
@@ -199,7 +201,7 @@ fun DocumentImagePreview(
                 val file = if (isEncrypted == true) {
                     val decryptedFilePath = recordsViewModel.decryptFile(
                         file = File(filePath),
-                        password = "Unique.123"
+                        password = password
                     )
                     File(decryptedFilePath)
                 } else {
