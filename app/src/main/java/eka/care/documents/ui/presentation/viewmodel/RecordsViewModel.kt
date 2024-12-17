@@ -21,6 +21,7 @@ import eka.care.documents.data.repository.VaultRepository
 import eka.care.documents.data.repository.VaultRepositoryImpl
 import eka.care.documents.data.utility.DocumentUtility.Companion.docTypes
 import eka.care.documents.sync.data.remote.dto.request.UpdateFileDetailsRequest
+import eka.care.documents.sync.data.remote.dto.response.SecretLockerResp
 import eka.care.documents.sync.data.repository.MyFileRepository
 import eka.care.documents.ui.presentation.components.DocumentBottomSheetType
 import eka.care.documents.ui.presentation.components.DocumentViewType
@@ -33,7 +34,6 @@ import eka.care.documents.ui.utility.RecordsUtility.Companion.convertLongToForma
 import id.zelory.compressor.Compressor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -73,8 +73,12 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
     private val _getRecordsState = MutableStateFlow<GetRecordsState>(GetRecordsState.Loading)
     val getRecordsState: StateFlow<GetRecordsState> = _getRecordsState
 
-    private val _getEncryptedRecordsState = MutableStateFlow<GetRecordsState>(GetRecordsState.Loading)
+    private val _getEncryptedRecordsState =
+        MutableStateFlow<GetRecordsState>(GetRecordsState.Loading)
     val getEncryptedRecordsState: StateFlow<GetRecordsState> = _getEncryptedRecordsState
+
+    private val _secretLockerRespState = MutableStateFlow<SecretLockerResp?>(null)
+    val secretLockerRespState: StateFlow<SecretLockerResp?> = _secretLockerRespState
 
     private val _getAvailableDocTypes = MutableStateFlow(GetAvailableDocTypesState())
     val getAvailableDocTypes: StateFlow<GetAvailableDocTypesState> = _getAvailableDocTypes
@@ -181,7 +185,7 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
             cipher.init(Cipher.ENCRYPT_MODE, secretKey, IvParameterSpec(iv))
 
             // Generate encrypted file path
-            val encryptedFilePath = "${file.parent}/encrypted_${file.name}.aes"
+            val encryptedFilePath = "${file.parent}/encrypted_${file.name}"
 
             // Read file content
             val fileContent = FileInputStream(file).use { it.readBytes() }
@@ -227,7 +231,6 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
 
             // Determine original file name
             val originalFileName = file.name
-                .removeSuffix(".aes")
                 .removePrefix("encrypted_")
 
             val decryptedFilePath = "${file.parent}/$originalFileName"
@@ -307,12 +310,14 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
                         if (sortBy.value == DocumentSortEnum.UPLOAD_DATE) {
                             vaultRepository.fetchEncryptedDocuments(
                                 docType = documentType.intValue,
-                                doctorId = doctorId
+                                doctorId = doctorId,
+                                oid = oid
                             )
                         } else {
                             vaultRepository.fetchEncryptedDocumentsByDocDate(
                                 docType = documentType.intValue,
-                                doctorId = doctorId
+                                doctorId = doctorId,
+                                oid =  oid
                             )
                         }
                     } else {
@@ -375,7 +380,7 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
                         }
 
                         getAvailableDocTypes(oid = oid, doctorId = doctorId)
-                        getAvailableDocTypesForEncryptedDoc(doctorId = doctorId)
+                        getAvailableDocTypesForEncryptedDoc(oid = oid, doctorId = doctorId)
                     }
             } catch (ex: Exception) {
 
@@ -472,13 +477,14 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun getAvailableDocTypesForEncryptedDoc(doctorId: String) {
+    fun getAvailableDocTypesForEncryptedDoc(doctorId: String, oid: String) {
         try {
             viewModelScope.launch {
                 _getAvailableDocTypesForEncryptedDoc.value =
                     GetAvailableDocTypesState(
                         resp = vaultRepository.getAvailableDocTypesForEncryptedDoc(
-                            doctorId = doctorId
+                            doctorId = doctorId,
+                            oid = oid
                         )
                     )
             }
@@ -498,65 +504,6 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
                     )
             }
         } catch (_: Exception) {
-        }
-    }
-
-    fun getMyFiles(
-        documentType: String = "", sort: String = "ut",
-        enc: Boolean? = null, ekaSecretLockerId: String? = null,
-        lastEvaluatedValue: String? = null
-    ) {
-        viewModelScope.launch {
-            try {
-                val docs = async {
-                    myFileRepository.getMyFiles(
-                        documentType = documentType,
-                        sort = sort,
-                        enc = enc,
-                        ekaSecretLockerId = ekaSecretLockerId,
-                        offset = lastEvaluatedValue
-                    )
-                }
-                val response = docs.await()
-                Log.d("log", "myFilesResponse = $response")
-
-                if (enc == true) {
-                    if (response != null) {
-                        val encryptedRecords = mutableListOf<RecordModel>()
-//                        response.secretVault?.encryptedDocsCount
-//                        _getEncryptedRecordsState.value = GetRecordsState.Success(response.secretVault.encryptedDocsProfileInfoList)
-                    } else {
-                        Log.d("log", "Something went wrong")
-                    }
-                    return@launch
-                }
-                when {
-                    response != null -> {
-//                        _myFiles.postValue(
-//                            RecordsState(
-//                                documents = withContext(Dispatchers.Default) {
-//                                    transform(
-//                                        myFileResponse = response,
-//                                        offset = lastEvaluatedValue.orEmpty(),
-//                                        documentType = documentType,
-//                                        sort = sort
-//                                    )
-//                                },
-//                                lastEvaluatedKey = response.lastEvaluatedKey,
-//                                requestId = response.requestId
-//                            )
-//
-//                        )
-                        this@RecordsViewModel.lastEvaluatedValue = lastEvaluatedValue
-                    }
-
-                    else -> {
-                        Log.d("log", "Something went wrong")
-                    }
-                }
-            } catch (ex: Exception) {
-
-            }
         }
     }
 

@@ -6,7 +6,6 @@ import com.haroldadmin.cnradapter.NetworkResponse
 import eka.care.documents.sync.data.remote.api.MyFileService
 import eka.care.documents.sync.data.remote.dto.request.UpdateFileDetailsRequest
 import eka.care.documents.sync.data.remote.dto.response.Document
-import eka.care.documents.sync.data.remote.dto.response.MyFileResponse
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.ResponseBody
@@ -74,32 +73,6 @@ class MyFileRepository {
                     is NetworkResponse.UnknownError -> response.code //handleUnknownError(response.error)
                 }
             errorCode
-        }
-    }
-
-    // for secret Locker
-    suspend fun getMyFiles(
-        documentType: String = "",
-        sort: String = "",
-        enc: Boolean? = null,
-        ekaSecretLockerId: String? = null,
-        offset: String? = null,
-    ): MyFileResponse? {
-        return withContext(Dispatchers.IO) {
-            val myFiles =
-                when (val response = myFileService.getMyFiles(
-                    documentType = documentType,
-                    sort = sort,
-                    enc = enc,
-                    ekaKeyId = ekaSecretLockerId,
-                    offset = offset
-                )) {
-                    is NetworkResponse.Success -> response.body
-                    is NetworkResponse.ServerError -> null // handleServerError(response.code)
-                    is NetworkResponse.NetworkError -> null //handleNetworkError(response.error)
-                    is NetworkResponse.UnknownError -> null //handleUnknownError(response.error)
-                }
-            myFiles
         }
     }
 }

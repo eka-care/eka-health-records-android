@@ -1,5 +1,6 @@
 package eka.care.documents.ui.presentation.activity.secretLocker
 
+import android.app.Application
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
@@ -38,19 +39,27 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModelProvider
 import eka.care.documents.databinding.ActivitySecretLockerSavePrivateKeyBinding
 import eka.care.documents.ui.Gray200
 import eka.care.documents.ui.bgSecretLocker
 import eka.care.documents.ui.presentation.activity.DocumentActivity
 import eka.care.documents.ui.presentation.activity.MedicalRecordParams
+import eka.care.documents.ui.presentation.activity.RecordsViewModelFactory
 import eka.care.documents.ui.presentation.model.RecordParamsModel
+import eka.care.documents.ui.presentation.viewmodel.RecordsViewModel
 
 class SecretLockerSavePrivateKeyActivity : AppCompatActivity() {
     private lateinit var binding: ActivitySecretLockerSavePrivateKeyBinding
+    private lateinit var viewModel: RecordsViewModel
     private var isLoginScreen by mutableStateOf(false)
     private lateinit var sharedPreferences: SharedPreferences
+    // to check if the user is logged in or not
     private val enteredPasswordState = mutableStateOf("")
+    // password generated
     private val passwordKey: String = "secret_locker_password"
+    // to store ekaSecretLockerId
+
     private lateinit var params: RecordParamsModel
     override fun onStart() {
         super.onStart()
@@ -69,6 +78,13 @@ class SecretLockerSavePrivateKeyActivity : AppCompatActivity() {
             age = intent.getIntExtra(MedicalRecordParams.PATIENT_AGE.key, -1),
             gender = intent.getStringExtra(MedicalRecordParams.PATIENT_GENDER.key)
         )
+
+        val application = applicationContext as Application
+        viewModel = ViewModelProvider(
+            this,
+            RecordsViewModelFactory(application)
+        ).get(RecordsViewModel::class.java)
+
         sharedPreferences = getSharedPreferences("secret_locker", Context.MODE_PRIVATE)
         isLoginScreen = sharedPreferences.contains(passwordKey)
         initUI()
@@ -128,10 +144,9 @@ class SecretLockerSavePrivateKeyActivity : AppCompatActivity() {
                 sharedPreferences.edit()
                     .putString(passwordKey, enteredPassword)
                     .apply()
-
                 Toast.makeText(
                     this@SecretLockerSavePrivateKeyActivity,
-                    "Password created successfully!",
+                    "Creating your Secret Locker…!",
                     Toast.LENGTH_SHORT
                 ).show()
                 redirectToDocumentActivity()
@@ -146,13 +161,13 @@ class SecretLockerSavePrivateKeyActivity : AppCompatActivity() {
         ).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             putExtra(MedicalRecordParams.FROM_SECRET_LOCKER.key, true)
-            putExtra(MedicalRecordParams.PASSWORD.key, sharedPreferences.getString(passwordKey, null))
             putExtra(MedicalRecordParams.PATIENT_ID.key, params.patientId)
             putExtra(MedicalRecordParams.DOCTOR_ID.key, params.doctorId)
             putExtra(MedicalRecordParams.PATIENT_UUID.key, params.uuid)
             putExtra(MedicalRecordParams.PATIENT_NAME.key, params.name)
             putExtra(MedicalRecordParams.PATIENT_GENDER.key, params.gender)
             putExtra(MedicalRecordParams.PATIENT_AGE.key, params.age)
+            putExtra(MedicalRecordParams.PASSWORD.key, enteredPasswordState.value)
         }
         startActivity(intent)
         finish()

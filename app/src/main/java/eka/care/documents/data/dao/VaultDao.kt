@@ -22,8 +22,8 @@ interface VaultDao {
     @Query("SELECT * FROM vault_table WHERE oid=:oid AND is_deleted=0 AND doctor_id= :doctorId ORDER BY created_at DESC")
     fun fetchDocuments(oid: String?, doctorId: String): Flow<List<VaultEntity>>
 
-    @Query("SELECT * FROM vault_table WHERE is_encrypted = 1 AND is_deleted=0 AND doctor_id= :doctorId ORDER BY created_at DESC")
-    fun fetchEncryptedDocuments(doctorId: String): Flow<List<VaultEntity>>
+    @Query("SELECT * FROM vault_table WHERE oid=:oid AND is_encrypted = 1 AND is_deleted=0 AND doctor_id= :doctorId ORDER BY created_at DESC")
+    fun fetchEncryptedDocuments(oid: String?, doctorId: String): Flow<List<VaultEntity>>
 
     @Query("SELECT * FROM vault_table WHERE oid=:oid AND doc_type =:docType AND is_deleted=0 AND doctor_id =:doctorId ORDER BY created_at DESC")
     fun fetchDocumentsByDocType(
@@ -32,8 +32,9 @@ interface VaultDao {
         doctorId: String
     ): Flow<List<VaultEntity>>
 
-    @Query("SELECT * FROM vault_table WHERE is_encrypted = 1 AND doc_type =:docType AND is_deleted=0 AND doctor_id =:doctorId ORDER BY created_at DESC")
+    @Query("SELECT * FROM vault_table WHERE oid=:oid AND is_encrypted = 1 AND doc_type =:docType AND is_deleted=0 AND doctor_id =:doctorId ORDER BY created_at DESC")
     fun fetchEncryptedDocumentsByDocType(
+        oid: String?,
         docType: Int,
         doctorId: String
     ): Flow<List<VaultEntity>>
@@ -41,8 +42,8 @@ interface VaultDao {
     @Query("SELECT * FROM vault_table WHERE doctor_id =:doctorId AND oid=:oid AND is_deleted=0 ORDER BY doc_date DESC")
     fun fetchDocumentsByDocDate(oid: String?, doctorId: String): Flow<List<VaultEntity>>
 
-    @Query("SELECT * FROM vault_table WHERE doctor_id =:doctorId AND is_deleted=0 ORDER BY doc_date DESC")
-    fun fetchEncryptedDocumentsByDocDate(doctorId: String): Flow<List<VaultEntity>>
+    @Query("SELECT * FROM vault_table WHERE doctor_id =:doctorId AND is_encrypted = 1 AND oid=:oid AND is_deleted=0 ORDER BY doc_date DESC")
+    fun fetchEncryptedDocumentsByDocDate(oid: String?, doctorId: String): Flow<List<VaultEntity>>
 
     @Query("SELECT * FROM vault_table WHERE oid=:oid AND doc_type =:docType AND is_deleted=0 ORDER BY doc_date DESC")
     suspend fun fetchDocumentsByDocDateAndDocType(oid: String?, docType: Int): List<VaultEntity>
@@ -81,8 +82,8 @@ interface VaultDao {
     @Query("SELECT doc_type as docType, count(doc_type) as count FROM vault_table WHERE oid=:oid AND is_deleted=0 AND is_encrypted = 0 AND doctor_id = :doctorId GROUP BY doc_type")
     suspend fun getAvailableDocTypes(oid: String?, doctorId: String): List<AvailableDocTypes>
 
-    @Query("SELECT doc_type as docType, count(doc_type) as count FROM vault_table WHERE is_deleted=0 AND is_encrypted = 1 AND doctor_id = :doctorId GROUP BY doc_type")
-    suspend fun getAvailableDocTypesForEncryptedDoc(doctorId: String): List<AvailableDocTypes>
+    @Query("SELECT doc_type as docType, count(doc_type) as count FROM vault_table WHERE  oid=:oid AND is_deleted=0 AND is_encrypted = 1 AND doctor_id = :doctorId GROUP BY doc_type")
+    suspend fun getAvailableDocTypesForEncryptedDoc(oid: String?, doctorId: String): List<AvailableDocTypes>
 
     @Query("UPDATE vault_table SET doc_id=:docId WHERE local_id=:localId")
     suspend fun updateDocumentId(docId: String, localId: String)

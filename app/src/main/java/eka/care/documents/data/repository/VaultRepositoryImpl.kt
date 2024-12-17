@@ -88,9 +88,10 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
     }
 
     override suspend fun getAvailableDocTypesForEncryptedDoc(
+        oid : String,
         doctorId: String
     ): List<AvailableDocTypes> {
-        return database.vaultDao().getAvailableDocTypesForEncryptedDoc(doctorId = doctorId)
+        return database.vaultDao().getAvailableDocTypesForEncryptedDoc(oid = oid, doctorId = doctorId)
     }
 
     override fun fetchDocuments(
@@ -105,11 +106,11 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
         }
     }
 
-    override fun fetchEncryptedDocuments(doctorId: String, docType: Int): Flow<List<VaultEntity>> {
+    override fun fetchEncryptedDocuments(oid: String, doctorId: String, docType: Int): Flow<List<VaultEntity>> {
         return if (docType == -1) {
-            database.vaultDao().fetchEncryptedDocuments(doctorId = doctorId)
+            database.vaultDao().fetchEncryptedDocuments(oid = oid , doctorId = doctorId)
         } else {
-            database.vaultDao().fetchEncryptedDocumentsByDocType(docType = docType, doctorId = doctorId)
+            database.vaultDao().fetchEncryptedDocumentsByDocType(docType = docType, doctorId = doctorId , oid = oid)
         }
     }
 
@@ -126,13 +127,14 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
     }
 
     override fun fetchEncryptedDocumentsByDocDate(
+        oid: String,
         doctorId: String,
         docType: Int
     ): Flow<List<VaultEntity>> {
         return if (docType == -1) {
-            database.vaultDao().fetchEncryptedDocumentsByDocDate(doctorId = doctorId)
+            database.vaultDao().fetchEncryptedDocumentsByDocDate(oid = oid, doctorId = doctorId)
         } else {
-            database.vaultDao().fetchEncryptedDocumentsByDocType(docType = docType, doctorId = doctorId)
+            database.vaultDao().fetchEncryptedDocumentsByDocType(docType = docType, doctorId = doctorId, oid =  oid)
         }
     }
 

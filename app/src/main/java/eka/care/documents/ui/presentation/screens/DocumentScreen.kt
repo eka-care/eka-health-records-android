@@ -250,7 +250,7 @@ fun DocumentScreen(
 
     LaunchedEffect(key1 = viewModel.documentType.intValue) {
         viewModel.getAvailableDocTypes(oid = params.patientId, doctorId = params.doctorId)
-        viewModel.getAvailableDocTypesForEncryptedDoc(doctorId = params.doctorId)
+        viewModel.getAvailableDocTypesForEncryptedDoc(doctorId = params.doctorId, oid =  params.patientId)
         viewModel.getLocalRecords(
             oid = params.patientId,
             doctorId = params.doctorId,
