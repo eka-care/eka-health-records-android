@@ -53,6 +53,8 @@
     <string name="title_activity_test">TestActivity</string>
     <string name="your_original_document_is_more_reliable">Your original document is the most reliable source of information.</string>
     <string name="generate_key">Generate Key</string>
+    <string name="open_secret_locker">Open Secret Locker</string>
+    <string name="secret_locker">Secret Locker</string>
     <string name="unique_private_key">Unique Private Key</string>
     <string name="key_generated">Key Generated!</string>
     <string name="key_generated_sub_text">These 12 words put together make up your Key. It is required to retrieve records when you switch device.</string>

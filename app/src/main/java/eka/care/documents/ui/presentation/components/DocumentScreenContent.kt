@@ -84,6 +84,9 @@ fun DocumentScreenContent(
 
             is GetRecordsState.EmptyState -> {
                 DocumentEmptyStateScreen(
+                    openSecretLocker = {
+                        openSecretLocker(context, paramsModel)
+                    },
                     openBottomSheet = {
                         openSheet()
                         viewModel.documentBottomSheetType =
@@ -166,36 +169,7 @@ fun DocumentScreenContent(
                                 .align(Alignment.BottomEnd)
                                 .padding(end = 20.dp, bottom = 100.dp),
                             onClick = {
-                                Intent(context, SecretLockerActivity::class.java)
-                                    .apply {
-                                        putExtra(
-                                            MedicalRecordParams.PATIENT_ID.key,
-                                            paramsModel.patientId
-                                        )
-                                        putExtra(
-                                            MedicalRecordParams.DOCTOR_ID.key,
-                                            paramsModel.doctorId
-                                        )
-                                        putExtra(
-                                            MedicalRecordParams.PATIENT_UUID.key,
-                                            paramsModel.uuid
-                                        )
-                                        putExtra(
-                                            MedicalRecordParams.PATIENT_NAME.key,
-                                            paramsModel.name
-                                        )
-                                        putExtra(
-                                            MedicalRecordParams.PATIENT_GENDER.key,
-                                            paramsModel.gender
-                                        )
-                                        putExtra(
-                                            MedicalRecordParams.PATIENT_AGE.key,
-                                            paramsModel.age
-                                        )
-                                    }
-                                    .also {
-                                        context.startActivity(it)
-                                    }
+                                openSecretLocker(context, paramsModel)
                             },
                             shape = RoundedCornerShape(16.dp),
                             containerColor = MaterialTheme.colorScheme.primary,
@@ -253,11 +227,47 @@ fun DocumentScreenContent(
     }
 }
 
+private fun openSecretLocker(
+    context: Context,
+    paramsModel: RecordParamsModel
+) {
+    Intent(context, SecretLockerActivity::class.java)
+        .apply {
+            putExtra(
+                MedicalRecordParams.PATIENT_ID.key,
+                paramsModel.patientId
+            )
+            putExtra(
+                MedicalRecordParams.DOCTOR_ID.key,
+                paramsModel.doctorId
+            )
+            putExtra(
+                MedicalRecordParams.PATIENT_UUID.key,
+                paramsModel.uuid
+            )
+            putExtra(
+                MedicalRecordParams.PATIENT_NAME.key,
+                paramsModel.name
+            )
+            putExtra(
+                MedicalRecordParams.PATIENT_GENDER.key,
+                paramsModel.gender
+            )
+            putExtra(
+                MedicalRecordParams.PATIENT_AGE.key,
+                paramsModel.age
+            )
+        }
+        .also {
+            context.startActivity(it)
+        }
+}
+
 private fun navigate(context: Context, model: RecordModel, oid: String, password: String) {
     if (isOnline(context)) {
         if (model.tags?.split(",")?.contains("1") == false) {
             Intent(context, DocumentPreview::class.java).also {
-                it.putExtra("local_id", model.localId)
+                it.putExtra("local_id", model.documentId)
                 it.putExtra("password", password)
                 it.putExtra("user_id", oid)
                 context.startActivity(it)
@@ -277,7 +287,7 @@ private fun navigate(context: Context, model: RecordModel, oid: String, password
         }
     } else {
         Intent(context, DocumentPreview::class.java).also {
-            it.putExtra("local_id", model.localId)
+            it.putExtra("local_id", model.documentId)
             it.putExtra("password", password)
             it.putExtra("user_id", oid)
             context.startActivity(it)

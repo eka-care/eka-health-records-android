@@ -3,6 +3,7 @@ package eka.care.documents.ui.presentation.activity.secretLocker
 import android.animation.Animator
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
+import android.app.Application
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
@@ -10,19 +11,45 @@ import android.os.Bundle
 import android.view.View
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModelProvider
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import eka.care.documents.databinding.ActivitySecretLockerWelcomeBinding
 import eka.care.documents.ui.bgSecretLocker
+import eka.care.documents.ui.iconPrimary
+import eka.care.documents.ui.iconSecondary
+import eka.care.documents.ui.presentation.activity.DocumentActivity
 import eka.care.documents.ui.presentation.activity.MedicalRecordParams
+import eka.care.documents.ui.presentation.activity.RecordsViewModelFactory
 import eka.care.documents.ui.presentation.model.RecordParamsModel
+import eka.care.documents.ui.presentation.state.GetRecordsState
+import eka.care.documents.ui.presentation.viewmodel.RecordsViewModel
+import eka.care.documents.ui.touchHeadlineBold
+import eka.care.documents.ui.touchTitle4Bold
 import eka.care.documents.ui.utility.EkaViewDebounceClickListener
 import org.json.JSONObject
 
 class SecretLockerActivity : AppCompatActivity(), Player.Listener {
+    private lateinit var viewModel: RecordsViewModel
     private lateinit var binding: ActivitySecretLockerWelcomeBinding
     private lateinit var sharedPreferences: SharedPreferences
     private var isShowSecretLockerIntro = false
@@ -35,9 +62,14 @@ class SecretLockerActivity : AppCompatActivity(), Player.Listener {
 
         isShowSecretLockerIntro = intent.getBooleanExtra("show_secret_locker_intro", false)
         sharedPreferences = getSharedPreferences("secret_locker_prefs", Context.MODE_PRIVATE)
-        val isIntroShown = sharedPreferences.getBoolean("is_intro_shown", false)
 
-        params =  RecordParamsModel(
+        val application = applicationContext as Application
+        viewModel = ViewModelProvider(
+            this,
+            RecordsViewModelFactory(application)
+        ).get(RecordsViewModel::class.java)
+
+        params = RecordParamsModel(
             patientId = intent.getStringExtra(MedicalRecordParams.PATIENT_ID.key) ?: "",
             doctorId = intent.getStringExtra(MedicalRecordParams.DOCTOR_ID.key) ?: "",
             name = intent.getStringExtra(MedicalRecordParams.PATIENT_NAME.key),
@@ -45,11 +77,6 @@ class SecretLockerActivity : AppCompatActivity(), Player.Listener {
             age = intent.getIntExtra(MedicalRecordParams.PATIENT_AGE.key, -1),
             gender = intent.getStringExtra(MedicalRecordParams.PATIENT_GENDER.key),
         )
-        if (isIntroShown) {
-            navigateToNextScreen()
-            finish()
-            return
-        }
 
         initUI()
     }
@@ -57,8 +84,9 @@ class SecretLockerActivity : AppCompatActivity(), Player.Listener {
     private fun navigateToNextScreen() {
         val intent = Intent(
             this@SecretLockerActivity,
-            SecretLockerSavePrivateKeyActivity::class.java
+            DocumentActivity::class.java
         ).apply {
+            putExtra(MedicalRecordParams.FROM_SECRET_LOCKER.key, true)
             putExtra(MedicalRecordParams.PATIENT_ID.key, params.patientId)
             putExtra(MedicalRecordParams.DOCTOR_ID.key, params.doctorId)
             putExtra(MedicalRecordParams.PATIENT_UUID.key, params.uuid)
@@ -67,6 +95,7 @@ class SecretLockerActivity : AppCompatActivity(), Player.Listener {
             putExtra(MedicalRecordParams.PATIENT_AGE.key, params.age)
         }
         startActivity(intent)
+        finish()
     }
 
     override fun onStart() {
@@ -140,7 +169,6 @@ class SecretLockerActivity : AppCompatActivity(), Player.Listener {
             override fun onAnimationStart(p0: Animator) {}
             override fun onAnimationEnd(p0: Animator) {
                 binding.introVideo.visibility = View.GONE
-                sharedPreferences.edit().putBoolean("is_intro_shown", true).apply()
             }
 
             override fun onAnimationCancel(p0: Animator) {}
@@ -159,10 +187,8 @@ class SecretLockerActivity : AppCompatActivity(), Player.Listener {
 
     private fun initUI() {
         try {
-            val isIntroVideoShown = false
             binding.apply {
-                if (isShowSecretLockerIntro && !isIntroVideoShown) {
-//                    (application as IAmCommon).setValue("show_secret_locker_intro", true)
+                if (isShowSecretLockerIntro) {
                     binding.buffering.visibility = View.VISIBLE
                     initializePlayer()
                 } else {
@@ -175,6 +201,12 @@ class SecretLockerActivity : AppCompatActivity(), Player.Listener {
 
                 ivBack.setOnClickListener {
                     finish()
+                }
+
+                cvShowRecords.setContent {
+                    val encryptedRecordsState= viewModel.getEncryptedRecordsState.collectAsState()
+                    val count = (encryptedRecordsState as? GetRecordsState.Success)?.resp ?: emptyList()
+                    showMedicalRecordsCount(count = count.size)
                 }
 
                 ivInfo.setOnClickListener(EkaViewDebounceClickListener({
@@ -191,5 +223,35 @@ class SecretLockerActivity : AppCompatActivity(), Player.Listener {
         } catch (ex: Exception) {
 
         }
+    }
+}
+
+@Composable
+fun showMedicalRecordsCount(count: Int) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(iconPrimary)
+            .padding(16.dp),
+        verticalAlignment = Alignment.Top,
+        horizontalArrangement = Arrangement.Start
+    ) {
+        Box(
+            modifier = Modifier
+                .size(50.dp)
+                .clip(RoundedCornerShape(50))
+                .background(Color.White)
+                .padding(4.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(text = "$count", style = touchTitle4Bold, color = iconSecondary)
+        }
+        Text(
+            text = "You have $count Encrypted Records in your Secret Locker",
+            maxLines = 2,
+            color = Color.White,
+            modifier = Modifier.padding(start = 4.dp).fillMaxWidth()
+        )
     }
 }

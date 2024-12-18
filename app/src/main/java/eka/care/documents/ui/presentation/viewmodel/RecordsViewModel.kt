@@ -21,7 +21,6 @@ import eka.care.documents.data.repository.VaultRepository
 import eka.care.documents.data.repository.VaultRepositoryImpl
 import eka.care.documents.data.utility.DocumentUtility.Companion.docTypes
 import eka.care.documents.sync.data.remote.dto.request.UpdateFileDetailsRequest
-import eka.care.documents.sync.data.remote.dto.response.SecretLockerResp
 import eka.care.documents.sync.data.repository.MyFileRepository
 import eka.care.documents.ui.presentation.components.DocumentBottomSheetType
 import eka.care.documents.ui.presentation.components.DocumentViewType
@@ -77,9 +76,6 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
         MutableStateFlow<GetRecordsState>(GetRecordsState.Loading)
     val getEncryptedRecordsState: StateFlow<GetRecordsState> = _getEncryptedRecordsState
 
-    private val _secretLockerRespState = MutableStateFlow<SecretLockerResp?>(null)
-    val secretLockerRespState: StateFlow<SecretLockerResp?> = _secretLockerRespState
-
     private val _getAvailableDocTypes = MutableStateFlow(GetAvailableDocTypesState())
     val getAvailableDocTypes: StateFlow<GetAvailableDocTypesState> = _getAvailableDocTypes
 
@@ -104,8 +100,6 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
     var documentBottomSheetType by mutableStateOf<DocumentBottomSheetType?>(null)
 
     var documentViewType by mutableStateOf(DocumentViewType.GridView)
-
-    private var lastEvaluatedValue: String? = null
 
     private val _photoUri = MutableStateFlow<Uri?>(null)
     val photoUri: StateFlow<Uri?> = _photoUri

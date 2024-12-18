@@ -84,11 +84,11 @@ val touchLabelRegular = DefaultTextStyle.copy(
     lineHeight = 16.sp,
 )
 
-val touchFootnoteBold = DefaultTextStyle.copy(
+val touchTitle4Bold = DefaultTextStyle.copy(
     fontFamily = ekaFontFamily,
     fontWeight = FontWeight.Bold,
     fontStyle = FontStyle.Normal,
-    fontSize = 13.sp,
+    fontSize = 24.sp,
     lineHeight = 20.sp,
 )
 

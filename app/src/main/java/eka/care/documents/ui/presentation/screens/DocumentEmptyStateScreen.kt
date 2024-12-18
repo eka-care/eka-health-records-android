@@ -24,7 +24,8 @@ import eka.care.documents.ui.touchTitle3Bold
 
 @Composable
 fun DocumentEmptyStateScreen(
-    openBottomSheet: (DocumentBottomSheetType) -> Unit
+    openBottomSheet: (DocumentBottomSheetType) -> Unit,
+    openSecretLocker : () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -51,6 +52,7 @@ fun DocumentEmptyStateScreen(
             modifier = Modifier.padding(bottom = 24.dp)
         )
         Button(
+            modifier = Modifier.padding(bottom = 8.dp),
             onClick = { openBottomSheet(DocumentBottomSheetType.DocumentUpload) },
             colors = ButtonDefaults.buttonColors(
                 containerColor = DarwinTouchPrimary,
@@ -60,6 +62,18 @@ fun DocumentEmptyStateScreen(
             )
         ) {
             Text(text = stringResource(id = R.string.add_files), style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onPrimary)
+        }
+        Button(
+            onClick = { openSecretLocker() },
+            colors = ButtonDefaults.buttonColors(
+                containerColor = DarwinTouchPrimary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                disabledContentColor = MaterialTheme.colorScheme.onPrimary,
+                disabledContainerColor = DarwinTouchPrimary
+            )
+        ) {
+            Text(text = stringResource(id = R.string.secret_locker), style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onPrimary)
         }
     }

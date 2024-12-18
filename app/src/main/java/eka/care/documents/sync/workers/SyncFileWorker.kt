@@ -94,7 +94,7 @@ class SyncFileWorker(
                             )
                             response?.let {
                                 val filePaths = it.files.map { file ->
-                                    downloadFile(file.assetUrl, file.fileType)
+                                    downloadFile(file.assetUrl, file.fileType, isEncrypted = document.isEncrypted)
                                 }
                                 val fileType = it.files.firstOrNull()?.fileType ?: ""
                                 val updatedDocument = document.copy(
@@ -110,7 +110,7 @@ class SyncFileWorker(
         }
     }
 
-    private suspend fun downloadFile(assetUrl: String?, type: String): String {
+    private suspend fun downloadFile(assetUrl: String?, type: String, isEncrypted : Boolean): String {
         val directory = ContextWrapper(applicationContext).getDir("cache", Context.MODE_PRIVATE)
         val ext = if (type.trim().lowercase() == "pdf") "pdf" else "jpg"
         val childPath = "${UUID.randomUUID()}.$ext"
@@ -124,7 +124,8 @@ class SyncFileWorker(
 
     private suspend fun syncDocuments(oid: String, uuid: String, doctorId: String) {
         try {
-            val vaultDocuments = vaultRepository.getUnSyncedDocuments(oid = oid, doctorId = doctorId)
+            val vaultDocuments =
+                vaultRepository.getUnSyncedDocuments(oid = oid, doctorId = doctorId)
             if (vaultDocuments.isEmpty()) return
 
             val tags = mutableListOf<String>()
@@ -172,7 +173,8 @@ class SyncFileWorker(
                     // Handle multi-file upload for the current document
                     val batchResponse = batchResponses.firstOrNull()
                     if (batchResponse != null) {
-                        val response = awsRepository.uploadFile(batch = batchResponse, fileList = files)
+                        val response =
+                            awsRepository.uploadFile(batch = batchResponse, fileList = files)
                         if (response?.error == false) {
                             response.documentId?.let { docId ->
                                 updateDocumentDetails(docId, oid, vaultEntity)
@@ -260,7 +262,6 @@ class SyncFileWorker(
             val records = response?.body()
             if (records?.error?.message.isNullOrEmpty()) {
                 if (!records?.response?.itemsList.isNullOrEmpty()) {
-                    Log.d("AYUSHI", records?.response?.itemsList.toString())
                     records?.response?.let {
                         storeRecords(
                             recordsResponse = it,
