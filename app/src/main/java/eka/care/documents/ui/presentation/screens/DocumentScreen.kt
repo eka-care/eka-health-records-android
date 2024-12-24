@@ -25,6 +25,7 @@ import androidx.compose.material.ModalBottomSheetLayout
 import androidx.compose.material.ModalBottomSheetState
 import androidx.compose.material.ModalBottomSheetValue
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
+import androidx.compose.material.rememberModalBottomSheetState
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -204,11 +205,10 @@ fun DocumentScreen(
             }
         }
 
-    val modalBottomSheetState = ModalBottomSheetState(
+    val modalBottomSheetState = rememberModalBottomSheetState(
         initialValue = ModalBottomSheetValue.Hidden,
-        density = Density(context),
-        confirmValueChange = { true },
-        isSkipHalfExpanded = true,
+        skipHalfExpanded = true,
+        confirmValueChange = { true }
     )
 
     val scope = rememberCoroutineScope()
