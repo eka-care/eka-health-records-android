@@ -37,7 +37,7 @@ interface VaultRepository {
     suspend fun updateDocumentId(documentId: String, localId: String)
     suspend fun getLocalIdBySource(source: Int, oid: String): List<String>
     suspend fun getLocalId(docId: String): String?
-    suspend fun getDocumentById(docId: String) : VaultEntity?
+    suspend fun getDocumentById(id: String) : VaultEntity?
     suspend fun removeDocument(localId: String, oid: String)
     suspend fun getDocumentsWithoutFilePath(doctorId: String, patientOid : String) : List<VaultEntity>
 }
