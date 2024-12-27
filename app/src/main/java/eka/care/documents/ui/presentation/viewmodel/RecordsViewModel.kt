@@ -235,7 +235,7 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
         localId: String,
         docType: Int?,
         oid: String,
-        docDate: Long,
+        docDate: Long?,
         tags: String,
         doctorId: String
     ) {

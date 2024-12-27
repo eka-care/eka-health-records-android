@@ -32,13 +32,19 @@ class RecordsUtility {
             }
             return bitmap
         }
-        fun convertLongToFormattedDate(timestamp: Long): String {
+        fun convertLongToFormattedDate(timestamp: Long?): String? {
+            if (timestamp == null) {
+                return null
+            }
             val date = Date(timestamp * 1000)
             val outputFormat = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
             return outputFormat.format(date)
         }
 
-        fun timestampToLong(timestamp: String, format: String = "EEE, dd MMM, yyyy"): Long {
+        fun timestampToLong(timestamp: String, format: String = "EEE, dd MMM, yyyy"): Long? {
+            if (timestamp == "Add Date") {
+                return null
+            }
             val dateFormat = SimpleDateFormat(format, Locale.getDefault())
             val date = dateFormat.parse(timestamp) ?: throw IllegalArgumentException("Invalid date format")
             return date.time / 1000
