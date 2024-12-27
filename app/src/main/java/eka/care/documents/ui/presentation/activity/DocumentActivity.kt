@@ -45,14 +45,12 @@ class DocumentActivity : AppCompatActivity() {
 
         setContent {
             val context = this@DocumentActivity
-            Log.d("AYUSHI-3", "called")
             initData(
                 oid = params.patientId,
                 doctorId = params.doctorId,
                 viewModel = viewModel,
                 context = context,
-                patientUuid = params.uuid,
-                syncDoc = false
+                patientUuid = params.uuid
             )
             DocumentScreen(params = params, viewModel = viewModel)
         }

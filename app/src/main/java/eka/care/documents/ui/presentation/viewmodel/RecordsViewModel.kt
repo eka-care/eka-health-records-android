@@ -143,10 +143,6 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun updateSelectedTags(newTags: List<String>) {
-        _selectedTags.value = newTags
-    }
-
     fun compressFile(fileList: List<File>, context: Context) {
         viewModelScope.launch {
             try {

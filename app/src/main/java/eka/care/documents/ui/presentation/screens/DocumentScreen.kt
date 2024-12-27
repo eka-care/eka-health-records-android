@@ -22,9 +22,9 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.ModalBottomSheetLayout
-import androidx.compose.material.ModalBottomSheetState
 import androidx.compose.material.ModalBottomSheetValue
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
+import androidx.compose.material.rememberModalBottomSheetState
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -46,7 +46,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.work.Constraints
 import androidx.work.Data
@@ -116,14 +115,12 @@ fun DocumentScreen(
     val documentViewerLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
-                Log.d("AYUSHI-2", "called")
                 initData(
                     oid = params.patientId,
                     doctorId = params.doctorId,
                     viewModel = viewModel,
                     context = context,
-                    patientUuid = params.uuid,
-                    syncDoc = true
+                    patientUuid = params.uuid
                 )
             }
         }
@@ -204,11 +201,10 @@ fun DocumentScreen(
             }
         }
 
-    val modalBottomSheetState = ModalBottomSheetState(
+    val modalBottomSheetState = rememberModalBottomSheetState(
         initialValue = ModalBottomSheetValue.Hidden,
-        density = Density(context),
-        confirmValueChange = { true },
-        isSkipHalfExpanded = true,
+        skipHalfExpanded = true,
+        confirmValueChange = { true }
     )
 
     val scope = rememberCoroutineScope()
@@ -232,17 +228,27 @@ fun DocumentScreen(
     val pullRefreshState = rememberPullRefreshState(
         refreshing = isRefreshing,
         onRefresh = {
-            Log.d("AYUSHI-1", "called")
             initData(
                 oid = params.patientId,
                 doctorId = params.doctorId,
                 viewModel = viewModel,
                 context = context,
-                patientUuid = params.uuid,
-                syncDoc = true
+                patientUuid = params.uuid
             )
         }
     )
+
+    LaunchedEffect(isOnline) {
+        if (isOnline) {
+            initData(
+                oid = params.patientId,
+                doctorId = params.doctorId,
+                viewModel = viewModel,
+                context = context,
+                patientUuid = params.uuid
+            )
+        }
+    }
 
     LaunchedEffect(key1 = viewModel.documentType.intValue) {
         viewModel.getAvailableDocTypes(oid = params.patientId, doctorId = params.doctorId)
@@ -416,13 +422,11 @@ fun initData(
     doctorId: String,
     viewModel: RecordsViewModel,
     context: Context,
-    syncDoc: Boolean = false
 ) {
     val inputData = Data.Builder()
         .putString("p_uuid", patientUuid)
         .putString("oid", oid)
         .putString("doctorId", doctorId)
-        .putBoolean("syncDoc", syncDoc)
         .build()
 
     val constraints = Constraints.Builder()

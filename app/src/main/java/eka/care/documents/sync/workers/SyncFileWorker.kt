@@ -81,25 +81,21 @@ class SyncFileWorker(
     private suspend fun updateFilePath(doctorId: String, oid: String) {
         try {
             vaultRepository.getDocumentsWithoutFilePath(doctorId, patientOid = oid)
-                .collect { documents ->
-                    documents.forEach { document ->
-                        if (document.filePath.isEmpty()) {
-                            val response = myFileRepository.getDocument(
-                                docId = document.documentId ?: "",
-                                userId = oid
-                            )
-                            response?.let {
-                                val filePaths = it.files.map { file ->
-                                    downloadFile(file.assetUrl, file.fileType)
-                                }
-                                val fileType = it.files.firstOrNull()?.fileType ?: ""
-                                val updatedDocument = document.copy(
-                                    filePath = filePaths,
-                                    fileType = fileType
-                                )
-                                vaultRepository.updateDocuments(listOf(updatedDocument))
-                            }
+                .forEach { document ->
+                    val response = myFileRepository.getDocument(
+                        docId = document.documentId ?: "",
+                        userId = oid
+                    )
+                    response?.let {
+                        val filePaths = it.files.map { file ->
+                            downloadFile(file.assetUrl, file.fileType)
                         }
+                        val fileType = it.files.firstOrNull()?.fileType ?: ""
+                        val updatedDocument = document.copy(
+                            filePath = filePaths,
+                            fileType = fileType
+                        )
+                        vaultRepository.updateDocuments(listOf(updatedDocument))
                     }
                 }
         } catch (_: Exception) {
@@ -135,16 +131,20 @@ class SyncFileWorker(
 
             vaultDocuments.forEach { vaultEntity ->
                 // Prepare file list and metadata for the current document
-                val files = vaultEntity.filePath.map { File(it) }
-                val fileContentList = files.map { file ->
+                val files = vaultEntity.filePath?.map { File(it) }
+                val fileContentList = files?.map { file ->
                     FileType(contentType = file.getMimeType() ?: "", fileSize = file.length())
                 }
-                val isMultiFile = files.size > 1 // Determine if the document has multiple files
+                val isMultiFile =
+                    (files?.size ?: 0) > 1 // Determine if the document has multiple files
                 val documentType = vaultEntity.documentType?.let { docType ->
                     docTypes.find { it.idNew == docType }?.id ?: "ot"
                 } ?: "ot"
 
                 // Initialize the upload for the current document
+                if (fileContentList.isNullOrEmpty()) {
+                    return
+                }
                 val uploadInitResponse = awsRepository.fileUploadInit(
                     files = fileContentList,
                     patientOid = oid,
@@ -178,7 +178,7 @@ class SyncFileWorker(
                     }
                 } else {
                     // Handle single-file upload for the current document
-                    vaultEntity.filePath.forEachIndexed { index, path ->
+                    vaultEntity.filePath?.forEachIndexed { index, path ->
                         val file = File(path)
                         val batchResponse = batchResponses.getOrNull(index)
                         if (batchResponse != null) {
@@ -322,7 +322,7 @@ class SyncFileWorker(
                         documentId = recordItem.documentId,
                         uuid = uuid,
                         oid = app_oid,
-                        filePath = listOf(),
+                        filePath = null,
                         fileType = "",
                         thumbnail = null,
                         createdAt = recordItem.uploadDate.seconds,

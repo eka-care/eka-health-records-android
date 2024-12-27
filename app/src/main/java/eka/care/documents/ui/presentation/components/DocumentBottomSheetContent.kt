@@ -6,7 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.provider.MediaStore
-import android.util.Log
+import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.result.ActivityResult
@@ -14,11 +14,11 @@ import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.core.content.FileProvider
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
+import com.google.accompanist.permissions.shouldShowRationale
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanner
 import eka.care.documents.ui.presentation.model.CTA
 import eka.care.documents.ui.presentation.model.RecordParamsModel
@@ -28,8 +28,6 @@ import eka.care.documents.ui.presentation.screens.DocumentUploadBottomSheet
 import eka.care.documents.ui.presentation.screens.EnterDetailsBottomSheet
 import eka.care.documents.ui.presentation.viewmodel.RecordsViewModel
 import eka.care.documents.ui.utility.RecordsAction
-import kotlinx.coroutines.Job
-import vault.common.Cta
 import java.io.File
 
 @OptIn(ExperimentalPermissionsApi::class)
@@ -67,7 +65,15 @@ fun DocumentBottomSheetContent(
 
                             cameraLauncher.launch(cameraIntent)
                         } else {
-                            cameraPermissionState.launchPermissionRequest()
+                            if (cameraPermissionState.status.shouldShowRationale) {
+                                // Show rationale and call `cameraPermissionState.launchPermissionRequest()`
+                                cameraPermissionState.launchPermissionRequest()
+                            } else {
+                                // Permission permanently denied. Guide user to app settings.
+                                Toast.makeText(context, "Permission Permanently Denied!", Toast.LENGTH_SHORT).show()
+                                navigateToAppSettings(context = context)
+                                // Show a dialog or toast guiding the user to enable the permission from settings.
+                            }
                         }
                     }
                     RecordsAction.ACTION_SCAN_A_DOCUMENT-> {
@@ -153,4 +159,11 @@ fun DocumentBottomSheetContent(
 
         null -> {}
     }
+}
+
+fun navigateToAppSettings(context: Context) {
+    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+        data = Uri.fromParts("package", context.packageName, null)
+    }
+    context.startActivity(intent)
 }
