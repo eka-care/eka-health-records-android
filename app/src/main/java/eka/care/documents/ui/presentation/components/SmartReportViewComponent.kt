@@ -31,6 +31,7 @@ fun SmartReportViewComponent(
     viewModel: DocumentPreviewViewModel,
     docId: String,
     userId: String,
+    localId: String,
     documentDate: String,
     onClick: (CTA?) -> Unit
 ) {
@@ -38,7 +39,7 @@ fun SmartReportViewComponent(
     val scope = rememberCoroutineScope()
     val pdfManager = PdfReaderManager(context)
     val pagerState = rememberPagerState(initialPage = SmartViewTab.SMARTREPORT.ordinal)
-    initData(viewModel, docId, userId)
+    initData(viewModel = viewModel, docId =  docId, userId =  userId, localId = localId)
 
     val state by viewModel.documentSmart.collectAsState()
     val filePathState by viewModel.document.collectAsState()
@@ -123,11 +124,12 @@ fun SmartReportViewComponent(
     }
 }
 
-private fun initData(viewModel: DocumentPreviewViewModel, docId: String, userId: String) {
+private fun initData(viewModel: DocumentPreviewViewModel, docId: String, userId: String, localId : String) {
     viewModel.getSmartReport(docId = docId, userId = userId)
     viewModel.getDocument(
-        userId = userId ?: "",
-        docId = docId ?: ""
+        userId = userId,
+        docId = docId,
+        localId = localId
     )
 }
 

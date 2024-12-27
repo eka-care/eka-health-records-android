@@ -69,10 +69,10 @@ class DocumentPreviewViewModel(val app: Application): AndroidViewModel(app){
         _selectedTab.value = newTab
     }
 
-    fun getDocument(docId: String, userId: String) {
+    fun getDocument(docId: String, userId: String, localId : String) {
         viewModelScope.launch {
             try {
-                val recordEntity = vaultRepository.getDocumentByDocId(docId = docId)
+                val recordEntity = vaultRepository.getDocumentByDocId(docId = localId)
                 if(!recordEntity?.filePath.isNullOrEmpty()) {
                     _document.value = DocumentPreviewState.Success(
                         Pair(

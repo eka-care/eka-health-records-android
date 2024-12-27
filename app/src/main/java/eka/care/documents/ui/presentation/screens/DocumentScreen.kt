@@ -75,7 +75,6 @@ import eka.care.documents.ui.presentation.components.DocumentFilter
 import eka.care.documents.ui.presentation.components.DocumentScreenContent
 import eka.care.documents.ui.presentation.components.DocumentsSort
 import eka.care.documents.ui.presentation.components.TopAppBarSmall
-import eka.care.documents.ui.presentation.components.isOnline
 import eka.care.documents.ui.presentation.model.RecordParamsModel
 import eka.care.documents.ui.presentation.state.GetRecordsState
 import eka.care.documents.ui.presentation.viewmodel.RecordsViewModel
@@ -232,16 +231,14 @@ fun DocumentScreen(
     val pullRefreshState = rememberPullRefreshState(
         refreshing = isRefreshing,
         onRefresh = {
-            if (isOnline(context)) {
-                initData(
-                    oid = params.patientId,
-                    doctorId = params.doctorId,
-                    viewModel = viewModel,
-                    context = context,
-                    patientUuid = params.uuid,
-                    syncDoc = false
-                )
-            }
+            initData(
+                oid = params.patientId,
+                doctorId = params.doctorId,
+                viewModel = viewModel,
+                context = context,
+                patientUuid = params.uuid,
+                syncDoc = true
+            )
         }
     )
 
