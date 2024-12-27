@@ -72,7 +72,7 @@ class DocumentPreviewViewModel(val app: Application): AndroidViewModel(app){
     fun getDocument(docId: String, userId: String, localId : String) {
         viewModelScope.launch {
             try {
-                val recordEntity = vaultRepository.getDocumentByDocId(docId = localId)
+                val recordEntity = vaultRepository.getDocumentById(docId = localId)
                 if(!recordEntity?.filePath.isNullOrEmpty()) {
                     _document.value = DocumentPreviewState.Success(
                         Pair(
@@ -94,7 +94,7 @@ class DocumentPreviewViewModel(val app: Application): AndroidViewModel(app){
                     val path = downloadFile(it.assetUrl, it.fileType)
                     files.add(path)
                 }
-                val documentEntity = vaultRepository.getDocumentByDocId(docId)
+                val documentEntity = vaultRepository.getDocumentById(docId)
                 if(documentEntity == null) {
                     _document.value = DocumentPreviewState.Error("Something went wrong!")
                     return@launch

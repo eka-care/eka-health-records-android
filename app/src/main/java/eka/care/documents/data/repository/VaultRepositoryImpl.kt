@@ -125,8 +125,8 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
         return database.vaultDao().getLocalId(docId)
     }
 
-    override suspend fun getDocumentByDocId(docId: String  ) : VaultEntity {
-        return database.vaultDao().getDocumentByDocId(docId)
+    override suspend fun getDocumentById(docId: String  ) : VaultEntity {
+        return database.vaultDao().getDocumentById(docId)
     }
 
     override suspend fun removeDocument(localId: String, oid: String) {

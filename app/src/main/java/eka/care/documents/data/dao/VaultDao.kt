@@ -85,7 +85,7 @@ interface VaultDao {
     suspend fun getLocalIdBySource(oid: String?, source: Int): List<String>
 
     @Query("SELECT * FROM vault_table WHERE doc_id=:docId OR local_id=:docId")
-    suspend fun getDocumentByDocId(docId: String): VaultEntity
+    suspend fun getDocumentById(docId: String): VaultEntity
 
     @Query("UPDATE vault_table SET file_path=:filePath WHERE doc_id=:docId")
     suspend fun updateFilePath(docId: String?, filePath: String)
