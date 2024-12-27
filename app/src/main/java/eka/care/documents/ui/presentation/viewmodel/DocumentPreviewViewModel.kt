@@ -94,7 +94,7 @@ class DocumentPreviewViewModel(val app: Application): AndroidViewModel(app){
                     val path = downloadFile(it.assetUrl, it.fileType)
                     files.add(path)
                 }
-                val documentEntity = vaultRepository.getDocumentById(docId)
+                val documentEntity = vaultRepository.getDocumentById(id = localId)
                 if(documentEntity == null) {
                     _document.value = DocumentPreviewState.Error("Something went wrong!")
                     return@launch
