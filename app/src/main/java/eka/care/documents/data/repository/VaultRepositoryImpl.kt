@@ -26,7 +26,7 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
     override suspend fun editDocument(
         localId: String,
         docType: Int?,
-        docDate: Long,
+        docDate: Long?,
         tags: String,
         patientId : String
     ) {
@@ -125,8 +125,8 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
         return database.vaultDao().getLocalId(docId)
     }
 
-    override suspend fun getDocumentByDocId(docId: String  ) : VaultEntity {
-        return database.vaultDao().getDocumentByDocId(docId)
+    override suspend fun getDocumentById(id: String  ) : VaultEntity {
+        return database.vaultDao().getDocumentById(id)
     }
 
     override suspend fun removeDocument(localId: String, oid: String) {
@@ -134,7 +134,7 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
         return
     }
 
-    override suspend fun getDocumentsWithoutFilePath(doctorId: String, patientOid : String): Flow<List<VaultEntity>> {
+    override suspend fun getDocumentsWithoutFilePath(doctorId: String, patientOid : String): List<VaultEntity> {
         return database.vaultDao().fetchDocumentsWithoutFilePath( doctorId = doctorId, patientoid =  patientOid)
     }
 }

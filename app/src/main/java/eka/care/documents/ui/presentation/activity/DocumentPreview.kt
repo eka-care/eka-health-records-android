@@ -33,10 +33,12 @@ class DocumentPreview : ComponentActivity() {
 
         try {
             val localId = intent.getStringExtra("local_id")
+            val docId = intent.getStringExtra("doc_id")
             val userId = intent.getStringExtra("user_id")
             viewModel.getDocument(
                 userId = userId ?: "",
-                docId = localId ?: ""
+                docId = docId ?: "",
+                localId = localId ?: ""
             )
         } catch (_: Exception) {
         }

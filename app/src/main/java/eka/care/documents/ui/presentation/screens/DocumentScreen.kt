@@ -22,7 +22,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.ModalBottomSheetLayout
-import androidx.compose.material.ModalBottomSheetState
 import androidx.compose.material.ModalBottomSheetValue
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material.rememberModalBottomSheetState
@@ -47,7 +46,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.work.Constraints
 import androidx.work.Data
@@ -76,7 +74,6 @@ import eka.care.documents.ui.presentation.components.DocumentFilter
 import eka.care.documents.ui.presentation.components.DocumentScreenContent
 import eka.care.documents.ui.presentation.components.DocumentsSort
 import eka.care.documents.ui.presentation.components.TopAppBarSmall
-import eka.care.documents.ui.presentation.components.isOnline
 import eka.care.documents.ui.presentation.model.RecordParamsModel
 import eka.care.documents.ui.presentation.state.GetRecordsState
 import eka.care.documents.ui.presentation.viewmodel.RecordsViewModel
@@ -123,8 +120,7 @@ fun DocumentScreen(
                     doctorId = params.doctorId,
                     viewModel = viewModel,
                     context = context,
-                    patientUuid = params.uuid,
-                    syncDoc = true
+                    patientUuid = params.uuid
                 )
             }
         }
@@ -232,18 +228,27 @@ fun DocumentScreen(
     val pullRefreshState = rememberPullRefreshState(
         refreshing = isRefreshing,
         onRefresh = {
-            if (isOnline(context)) {
-                initData(
-                    oid = params.patientId,
-                    doctorId = params.doctorId,
-                    viewModel = viewModel,
-                    context = context,
-                    patientUuid = params.uuid,
-                    syncDoc = false
-                )
-            }
+            initData(
+                oid = params.patientId,
+                doctorId = params.doctorId,
+                viewModel = viewModel,
+                context = context,
+                patientUuid = params.uuid
+            )
         }
     )
+
+    LaunchedEffect(isOnline) {
+        if (isOnline) {
+            initData(
+                oid = params.patientId,
+                doctorId = params.doctorId,
+                viewModel = viewModel,
+                context = context,
+                patientUuid = params.uuid
+            )
+        }
+    }
 
     LaunchedEffect(key1 = viewModel.documentType.intValue) {
         viewModel.getAvailableDocTypes(oid = params.patientId, doctorId = params.doctorId)
@@ -417,13 +422,11 @@ fun initData(
     doctorId: String,
     viewModel: RecordsViewModel,
     context: Context,
-    syncDoc: Boolean = false
 ) {
     val inputData = Data.Builder()
         .putString("p_uuid", patientUuid)
         .putString("oid", oid)
         .putString("doctorId", doctorId)
-        .putBoolean("syncDoc", syncDoc)
         .build()
 
     val constraints = Constraints.Builder()
@@ -441,7 +444,7 @@ fun initData(
     WorkManager.getInstance(context)
         .enqueueUniqueWork(
             uniqueWorkName,
-            ExistingWorkPolicy.REPLACE,
+            ExistingWorkPolicy.KEEP,
             uniqueSyncWorkRequest
         )
 

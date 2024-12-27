@@ -196,7 +196,8 @@ private fun navigate(context: Context, model: RecordModel, oid: String) {
     if (isOnline(context)) {
         if (model.tags?.split(",")?.contains("1") == false) {
             Intent(context, DocumentPreview::class.java).also {
-                it.putExtra("local_id", model.documentId)
+                it.putExtra("local_id", model.localId)
+                it.putExtra("doc_id", model.documentId)
                 it.putExtra("user_id", oid)
                 context.startActivity(it)
             }
@@ -206,6 +207,7 @@ private fun navigate(context: Context, model: RecordModel, oid: String) {
             Intent(context, SmartReportActivity::class.java)
                 .also {
                     it.putExtra("doc_id", model.documentId)
+                    it.putExtra("local_id", model.localId)
                     it.putExtra("user_id", oid)
                     it.putExtra("doc_date", date)
                     context.startActivity(it)
@@ -214,7 +216,8 @@ private fun navigate(context: Context, model: RecordModel, oid: String) {
         }
     } else {
         Intent(context, DocumentPreview::class.java).also {
-            it.putExtra("local_id", model.documentId)
+            it.putExtra("local_id", model.localId)
+            it.putExtra("doc_id", model.documentId)
             it.putExtra("user_id", oid)
             context.startActivity(it)
         }

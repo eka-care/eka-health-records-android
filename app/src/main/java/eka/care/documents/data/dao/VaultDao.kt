@@ -39,7 +39,7 @@ interface VaultDao {
     suspend fun editDocument(
         localId: String,
         docType: Int?,
-        docDate: Long,
+        docDate: Long?,
         tags: String,
         oid: String?
     )
@@ -84,8 +84,8 @@ interface VaultDao {
     @Query("SELECT local_id FROM vault_table WHERE oid=:oid AND source=:source")
     suspend fun getLocalIdBySource(oid: String?, source: Int): List<String>
 
-    @Query("SELECT * FROM vault_table WHERE doc_id=:docId OR local_id=:docId")
-    suspend fun getDocumentByDocId(docId: String): VaultEntity
+    @Query("SELECT * FROM vault_table WHERE doc_id=:id OR local_id=:id")
+    suspend fun getDocumentById(id: String): VaultEntity
 
     @Query("UPDATE vault_table SET file_path=:filePath WHERE doc_id=:docId")
     suspend fun updateFilePath(docId: String?, filePath: String)
@@ -93,6 +93,6 @@ interface VaultDao {
     @Query("DELETE FROM vault_table WHERE oid=:oid AND local_id=:localId")
     suspend fun removeDocument(localId: String, oid: String?)
 
-    @Query("SELECT * FROM vault_table WHERE doctor_id = :doctorId AND oid = :patientoid")
-    fun fetchDocumentsWithoutFilePath(doctorId: String, patientoid : String): Flow<List<VaultEntity>>
+    @Query("SELECT * FROM vault_table WHERE doctor_id = :doctorId AND oid = :patientoid and file_path is null")
+    fun fetchDocumentsWithoutFilePath(doctorId: String, patientoid : String): List<VaultEntity>
 }

@@ -124,7 +124,7 @@ fun AddMedicalRecordsDetailViewComponent(
                 localId = viewModel.cardClickData.value?.localId ?: "",
                 docType = selectedChipId,
                 oid = paramsModel.patientId,
-                docDate = timestampToLong(date ?: System.currentTimeMillis().toString()),
+                docDate = timestampToLong(date),
                 tags = selectedTags.joinToString(separator = ","),
                 doctorId = paramsModel.doctorId
             )
