@@ -116,6 +116,7 @@ fun DocumentScreen(
     val documentViewerLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
+                Log.d("AYUSHI-2", "called")
                 initData(
                     oid = params.patientId,
                     doctorId = params.doctorId,
@@ -231,6 +232,7 @@ fun DocumentScreen(
     val pullRefreshState = rememberPullRefreshState(
         refreshing = isRefreshing,
         onRefresh = {
+            Log.d("AYUSHI-1", "called")
             initData(
                 oid = params.patientId,
                 doctorId = params.doctorId,
@@ -438,7 +440,7 @@ fun initData(
     WorkManager.getInstance(context)
         .enqueueUniqueWork(
             uniqueWorkName,
-            ExistingWorkPolicy.REPLACE,
+            ExistingWorkPolicy.KEEP,
             uniqueSyncWorkRequest
         )
 

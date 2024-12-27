@@ -51,31 +51,27 @@ class SyncFileWorker(
             val uuid = inputData.getString("p_uuid") ?: return@coroutineScope Result.failure()
             val oid = inputData.getString("oid") ?: return@coroutineScope Result.failure()
             val doctorId = inputData.getString("doctorId") ?: return@coroutineScope Result.failure()
-            val syncDoc = inputData.getBoolean("syncDoc", false)
-            if (syncDoc) {
-                syncDocuments(oid = oid, uuid = uuid, doctorId = doctorId)
-            } else {
-                val updatedAt =
-                    updatedAtRepository.getUpdatedAtByOid(oid = oid, doctorId = doctorId)
-                        ?: run {
-                            updatedAtRepository.insertUpdatedAtEntity(
-                                UpdatedAtEntity(
-                                    oid = oid,
-                                    updatedAt = "0",
-                                    doctor_id = doctorId
-                                )
+            syncDocuments(oid = oid, uuid = uuid, doctorId = doctorId)
+            val updatedAt =
+                updatedAtRepository.getUpdatedAtByOid(oid = oid, doctorId = doctorId)
+                    ?: run {
+                        updatedAtRepository.insertUpdatedAtEntity(
+                            UpdatedAtEntity(
+                                oid = oid,
+                                updatedAt = "0",
+                                doctor_id = doctorId
                             )
-                            "0"
-                        }
-                fetchRecords(
-                    offset = null,
-                    updatedAt = updatedAt,
-                    uuid = uuid,
-                    oid = oid,
-                    doctorId = doctorId
-                )
-                updateFilePath(doctorId, oid)
-            }
+                        )
+                        "0"
+                    }
+            fetchRecords(
+                offset = null,
+                updatedAt = updatedAt,
+                uuid = uuid,
+                oid = oid,
+                doctorId = doctorId
+            )
+            updateFilePath(doctorId, oid)
             Result.success()
         } catch (e: Exception) {
             Result.failure()
@@ -124,7 +120,8 @@ class SyncFileWorker(
 
     private suspend fun syncDocuments(oid: String, uuid: String, doctorId: String) {
         try {
-            val vaultDocuments = vaultRepository.getUnsyncedDocuments(oid = oid, doctorId = doctorId)
+            val vaultDocuments =
+                vaultRepository.getUnsyncedDocuments(oid = oid, doctorId = doctorId)
             if (vaultDocuments.isEmpty()) return
 
             val tags = mutableListOf<String>()
@@ -171,7 +168,8 @@ class SyncFileWorker(
                     // Handle multi-file upload for the current document
                     val batchResponse = batchResponses.firstOrNull()
                     if (batchResponse != null) {
-                        val response = awsRepository.uploadFile(batch = batchResponse, fileList = files)
+                        val response =
+                            awsRepository.uploadFile(batch = batchResponse, fileList = files)
                         if (response?.error == false) {
                             response.documentId?.let { docId ->
                                 updateDocumentDetails(docId, oid, vaultEntity)

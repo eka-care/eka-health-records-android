@@ -45,7 +45,7 @@ class DocumentActivity : AppCompatActivity() {
 
         setContent {
             val context = this@DocumentActivity
-
+            Log.d("AYUSHI-3", "called")
             initData(
                 oid = params.patientId,
                 doctorId = params.doctorId,
