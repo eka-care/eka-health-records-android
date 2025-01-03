@@ -67,7 +67,7 @@ import eka.care.documents.data.utility.DocumentUtility.Companion.PARAM_RECORD_PA
 import eka.care.documents.sync.workers.SyncFileWorker
 import eka.care.documents.ui.BgWhite
 import eka.care.documents.ui.Gray200
-import eka.care.documents.ui.presentation.activity.DocumentViewerActivity
+import eka.care.documents.ui.presentation.activity.FileViewerActivity
 import eka.care.documents.ui.presentation.components.DocumentBottomSheetContent
 import eka.care.documents.ui.presentation.components.DocumentBottomSheetType
 import eka.care.documents.ui.presentation.components.DocumentFilter
@@ -135,7 +135,7 @@ fun DocumentScreen(
                     add(uri.toString())
                 }
 
-                Intent(context, DocumentViewerActivity::class.java).apply {
+                Intent(context, FileViewerActivity::class.java).apply {
                     putStringArrayListExtra("IMAGE_URIS", imageUris)
                     putExtra(PARAM_RECORD_PARAMS_MODEL, params)
                 }.also {
@@ -150,7 +150,7 @@ fun DocumentScreen(
         onResult = { uri ->
             uri?.let {
                 viewModel.pdfSource = PdfSource.Uri(it)
-                Intent(context, DocumentViewerActivity::class.java).apply {
+                Intent(context, FileViewerActivity::class.java).apply {
                     putExtra("PDF_URI", it.toString())
                     putExtra(PARAM_RECORD_PARAMS_MODEL, params)
                 }.also { intent ->
@@ -172,7 +172,7 @@ fun DocumentScreen(
                     }
                     Intent(
                         context,
-                        DocumentViewerActivity::class.java
+                        FileViewerActivity::class.java
                     ).apply {
                         putStringArrayListExtra("IMAGE_URIS", imageUris)
                         putExtra(PARAM_RECORD_PARAMS_MODEL, params)
@@ -190,7 +190,7 @@ fun DocumentScreen(
                 for (uri in uris) {
                     imageUris.add(uri.toString())
                 }
-                Intent(context, DocumentViewerActivity::class.java).apply {
+                Intent(context, FileViewerActivity::class.java).apply {
                     putStringArrayListExtra("IMAGE_URIS", imageUris)
                     putExtra(PARAM_RECORD_PARAMS_MODEL, params)
                 }.also {

@@ -1,5 +1,6 @@
 package eka.care.documents.ui.presentation.components
 
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -9,7 +10,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -39,8 +43,8 @@ fun SmartReportViewComponent(
     val scope = rememberCoroutineScope()
     val pdfManager = PdfReaderManager(context)
     val pagerState = rememberPagerState(initialPage = SmartViewTab.SMARTREPORT.ordinal)
-    initData(viewModel = viewModel, docId =  docId, userId =  userId, localId = localId)
-
+    initData(viewModel = viewModel, docId = docId, userId = userId, localId = localId)
+    var selectedUri by remember { mutableStateOf<Uri?>(null) }
     val state by viewModel.documentSmart.collectAsState()
     val filePathState by viewModel.document.collectAsState()
     Column(
@@ -52,7 +56,10 @@ fun SmartReportViewComponent(
     ) {
         SmartReportTopBar(onClick = {
             onClick(it)
-        }, documentDate)
+        }, documentDate = documentDate,
+            onDownloadClick = {
+                handleFileDownload(state = filePathState, context = context, selectedUri = selectedUri)
+            })
         SmartReportTabBar(pagerState = pagerState, onTabSelect = {
             scope.launch {
                 pagerState.animateScrollToPage(it)
@@ -114,7 +121,8 @@ fun SmartReportViewComponent(
                             DocumentSuccessState(
                                 state = (filePathState as? DocumentPreviewState.Success),
                                 pdfManager = pdfManager,
-                                paddingValues = PaddingValues()
+                                paddingValues = PaddingValues(),
+                                onUriSelected = { uri -> selectedUri = uri }
                             )
                         }
                     }
@@ -124,7 +132,12 @@ fun SmartReportViewComponent(
     }
 }
 
-private fun initData(viewModel: DocumentPreviewViewModel, docId: String, userId: String, localId : String) {
+private fun initData(
+    viewModel: DocumentPreviewViewModel,
+    docId: String,
+    userId: String,
+    localId: String
+) {
     viewModel.getSmartReport(docId = docId, userId = userId)
     viewModel.getDocument(
         userId = userId,

@@ -109,6 +109,7 @@ fun DocumentSuccessState(
     state: DocumentPreviewState.Success?,
     paddingValues: PaddingValues,
     pdfManager: PdfReaderManager,
+    onUriSelected: (Uri?) -> Unit
 ) {
     when (state?.data?.second?.trim()?.lowercase()) {
         "pdf" -> PdfPreview(
@@ -119,14 +120,14 @@ fun DocumentSuccessState(
 
         else -> {
             state?.data?.first?.let {
-                DocumentImagePreview(it)
+                DocumentImagePreview(filePaths = it, onUriSelected = onUriSelected)
             }
         }
     }
 }
 
 @Composable
-fun DocumentImagePreview(filePaths: List<String>) {
+fun DocumentImagePreview(filePaths: List<String>, onUriSelected: (Uri?) -> Unit) {
     var selectedUri by remember { mutableStateOf<Uri?>(Uri.parse(filePaths.firstOrNull())) }
 
     Column(
@@ -135,6 +136,7 @@ fun DocumentImagePreview(filePaths: List<String>) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         selectedUri?.let {
+            onUriSelected(it)
             ImagePreview(
                 uri = it, modifier = Modifier
                     .fillMaxWidth()

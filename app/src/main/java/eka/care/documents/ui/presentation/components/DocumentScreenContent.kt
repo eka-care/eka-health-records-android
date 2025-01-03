@@ -39,7 +39,7 @@ import androidx.compose.ui.unit.dp
 import eka.care.documents.R
 import eka.care.documents.ui.DarwinTouchNeutral0
 import eka.care.documents.ui.DarwinTouchNeutral1000
-import eka.care.documents.ui.presentation.activity.DocumentPreview
+import eka.care.documents.ui.presentation.activity.DocumentViewActivity
 import eka.care.documents.ui.presentation.activity.SmartReportActivity
 import eka.care.documents.ui.presentation.model.RecordModel
 import eka.care.documents.ui.presentation.model.RecordParamsModel
@@ -195,7 +195,7 @@ fun DocumentScreenContent(
 private fun navigate(context: Context, model: RecordModel, oid: String) {
     if (isOnline(context)) {
         if (model.tags?.split(",")?.contains("1") == false) {
-            Intent(context, DocumentPreview::class.java).also {
+            Intent(context, DocumentViewActivity::class.java).also {
                 it.putExtra("local_id", model.localId)
                 it.putExtra("doc_id", model.documentId)
                 it.putExtra("user_id", oid)
@@ -215,7 +215,7 @@ private fun navigate(context: Context, model: RecordModel, oid: String) {
             return
         }
     } else {
-        Intent(context, DocumentPreview::class.java).also {
+        Intent(context, DocumentViewActivity::class.java).also {
             it.putExtra("local_id", model.localId)
             it.putExtra("doc_id", model.documentId)
             it.putExtra("user_id", oid)
