@@ -9,9 +9,9 @@
         >
         <activity android:name=".ui.presentation.activity.DocumentActivity"
             android:theme="@style/Document.Theme.Drive"/>
-        <activity android:name=".ui.presentation.activity.DocumentPreview"
+        <activity android:name=".ui.presentation.activity.DocumentViewActivity"
             android:theme="@style/Document.Theme.Drive"/>
-        <activity android:name=".ui.presentation.activity.DocumentViewerActivity"
+        <activity android:name=".ui.presentation.activity.FileViewerActivity"
             android:theme="@style/Document.Theme.Drive"
             />
         <activity android:name=".ui.presentation.activity.SmartReportActivity"

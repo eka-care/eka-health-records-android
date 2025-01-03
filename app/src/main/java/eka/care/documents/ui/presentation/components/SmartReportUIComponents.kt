@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
 import androidx.compose.material.Text
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -210,7 +211,7 @@ fun SmartReportFilter(smartReport: SmartReport?, viewModel: DocumentPreviewViewM
 }
 
 @Composable
-fun SmartReportTopBar(onClick: (CTA?) -> Unit, documentDate: String) {
+fun SmartReportTopBar(onClick: (CTA?) -> Unit, documentDate: String, onDownloadClick : ()-> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -233,6 +234,17 @@ fun SmartReportTopBar(onClick: (CTA?) -> Unit, documentDate: String) {
         )
         Spacer(modifier = Modifier.width(12.dp))
         Text(text = documentDate, style = touchBodyBold, color = Text01)
+        Spacer(modifier = Modifier.weight(1f))
+        IconButton(
+            content = {
+                Image(
+                    painter = painterResource(id = R.drawable.ic_download_regular),
+                    contentDescription = "TrailingIcon1",
+                    modifier = Modifier.size(16.dp)
+                )
+            },
+            onClick = onDownloadClick
+        )
     }
 }
 

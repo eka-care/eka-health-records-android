@@ -120,6 +120,7 @@ fun TopAppBarSmall(
                         Image(
                             painter = painterResource(id = it),
                             contentDescription = "TrailingIcon1",
+                            modifier = Modifier.size(16.dp)
                         )
                     },
                     onClick = onTrailingIcon1Click ?: { }

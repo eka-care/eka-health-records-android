@@ -7,7 +7,6 @@ import android.graphics.Matrix
 import android.media.ExifInterface
 import android.net.Uri
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -60,7 +59,7 @@ import kotlinx.coroutines.launch
 import java.io.File
 import java.io.IOException
 
-class DocumentViewerActivity : AppCompatActivity() {
+class FileViewerActivity : AppCompatActivity() {
 
     private val pdfReaderManager: PdfReaderManager by lazy { PdfReaderManager(this) }
     private var fileToUpload: File? = null
