@@ -68,7 +68,7 @@ afterEvaluate {
 
                 groupId = "com.eka.records"
                 artifactId = "eka-records"
-                version = "3.0.7"
+                version = "3.0.8"
             }
         }
     }
@@ -144,4 +144,5 @@ dependencies {
     implementation(libs.protobuf.kotlin.lite)
     implementation(libs.protobuf.javalite)
     implementation(libs.accompanist.permissions)
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.1")
 }

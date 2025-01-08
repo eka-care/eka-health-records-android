@@ -9,30 +9,30 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import eka.care.documents.ui.presentation.model.RecordParamsModel
+import com.google.gson.Gson
+import com.google.gson.JsonObject
 import eka.care.documents.ui.presentation.screens.DocumentScreen
 import eka.care.documents.ui.presentation.screens.initData
 import eka.care.documents.ui.presentation.viewmodel.RecordsViewModel
 
 class DocumentActivity : AppCompatActivity() {
     private lateinit var viewModel: RecordsViewModel
-    private lateinit var params: RecordParamsModel
+    private lateinit var params: JsonObject
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         window.statusBarColor = Color.White.toArgb()
 
-        params =  RecordParamsModel(
-            patientId = intent.getStringExtra(MedicalRecordParams.PATIENT_ID.key) ?: "",
-            doctorId = intent.getStringExtra(MedicalRecordParams.DOCTOR_ID.key) ?: "",
-            name = intent.getStringExtra(MedicalRecordParams.PATIENT_NAME.key),
-            uuid = intent.getStringExtra(MedicalRecordParams.PATIENT_UUID.key) ?: "",
-            age = intent.getIntExtra(MedicalRecordParams.PATIENT_AGE.key, -1),
-            gender = intent.getStringExtra(MedicalRecordParams.PATIENT_GENDER.key)
-        )
+        val jsonString = intent.getStringExtra("params")
+        if (jsonString.isNullOrEmpty()) {
+            Log.e("DocumentActivity", "Params JSON is missing!")
+            return
+        }
 
-        if (params.patientId.isEmpty()) {
+        params = Gson().fromJson(jsonString, JsonObject::class.java)
+
+        if (!params.has(MedicalRecordParams.PATIENT_ID.key)) {
             Log.e("DocumentActivity", "Patient ID is missing!")
             return
         }
@@ -46,16 +46,17 @@ class DocumentActivity : AppCompatActivity() {
         setContent {
             val context = this@DocumentActivity
             initData(
-                oid = params.patientId,
-                doctorId = params.doctorId,
+                oid = params[MedicalRecordParams.PATIENT_ID.key]?.asString ?: "",
+                doctorId = params[MedicalRecordParams.DOCTOR_ID.key]?.asString ?: "",
                 viewModel = viewModel,
                 context = context,
-                patientUuid = params.uuid
+                patientUuid = params[MedicalRecordParams.PATIENT_UUID.key]?.asString ?: ""
             )
-            DocumentScreen(params = params, viewModel = viewModel)
+            DocumentScreen(param = params, onBackClick = {})
         }
     }
 }
+
 
 class RecordsViewModelFactory(private val application: Application) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
