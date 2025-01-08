@@ -10,7 +10,6 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import eka.care.documents.ui.presentation.model.RecordParamsModel
-import eka.care.documents.ui.presentation.screens.DocumentScreen
 import eka.care.documents.ui.presentation.screens.initData
 import eka.care.documents.ui.presentation.viewmodel.RecordsViewModel
 
@@ -52,7 +51,7 @@ class DocumentActivity : AppCompatActivity() {
                 context = context,
                 patientUuid = params.uuid
             )
-            DocumentScreen(params = params, viewModel = viewModel)
+          //  DocumentScreen(param = )
         }
     }
 }

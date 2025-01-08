@@ -2,22 +2,17 @@ package eka.care.documents.ui.presentation.screens
 
 import android.Manifest
 import android.app.Activity
+import android.app.Application
 import android.content.Context
 import android.content.Intent
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ExperimentalMaterialApi
@@ -40,13 +35,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.work.Constraints
 import androidx.work.Data
 import androidx.work.ExistingWorkPolicy
@@ -57,6 +51,7 @@ import com.example.reader.presentation.states.PdfSource
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionStatus
 import com.google.accompanist.permissions.rememberPermissionState
+import com.google.gson.JsonObject
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.RESULT_FORMAT_JPEG
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.SCANNER_MODE_FULL
@@ -66,8 +61,9 @@ import eka.care.documents.R
 import eka.care.documents.data.utility.DocumentUtility.Companion.PARAM_RECORD_PARAMS_MODEL
 import eka.care.documents.sync.workers.SyncFileWorker
 import eka.care.documents.ui.BgWhite
-import eka.care.documents.ui.Gray200
 import eka.care.documents.ui.presentation.activity.FileViewerActivity
+import eka.care.documents.ui.presentation.activity.MedicalRecordParams
+import eka.care.documents.ui.presentation.activity.RecordsViewModelFactory
 import eka.care.documents.ui.presentation.components.DocumentBottomSheetContent
 import eka.care.documents.ui.presentation.components.DocumentBottomSheetType
 import eka.care.documents.ui.presentation.components.DocumentFilter
@@ -83,19 +79,37 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterialApi::class, ExperimentalPermissionsApi::class)
 @Composable
 fun DocumentScreen(
-    params: RecordParamsModel,
-    viewModel: RecordsViewModel
+    param: JsonObject,
+    onBackClick:()-> Unit
 ) {
     val context = LocalContext.current
-
+    val viewModel: RecordsViewModel = viewModel(
+        factory = RecordsViewModelFactory(context.applicationContext as Application)
+    )
     val cameraPermissionState = rememberPermissionState(permission = Manifest.permission.CAMERA)
-
-    LaunchedEffect(Unit) {
-        viewModel.observeNetworkStatus(context)
-    }
-
     val isOnline by viewModel.isOnline.collectAsState()
     val photoUri by viewModel.photoUri.collectAsState()
+    val params = remember(param) {
+        RecordParamsModel(
+            patientId = param.get(MedicalRecordParams.PATIENT_ID.key)?.asString ?: "",
+            doctorId = param.get(MedicalRecordParams.DOCTOR_ID.key)?.asString ?: "",
+            name = param.get(MedicalRecordParams.PATIENT_NAME.key)?.asString,
+            uuid = param.get(MedicalRecordParams.PATIENT_UUID.key)?.asString ?: "",
+            age = param.get(MedicalRecordParams.PATIENT_AGE.key)?.asInt,
+            gender = param.get(MedicalRecordParams.PATIENT_GENDER.key)?.asString
+        )
+    }
+
+    LaunchedEffect(Unit) {
+        initData(
+            oid = params.patientId,
+            doctorId = params.doctorId,
+            viewModel = viewModel,
+            context = context,
+            patientUuid = params.uuid
+        )
+        viewModel.observeNetworkStatus(context)
+    }
 
     LaunchedEffect(cameraPermissionState.status) {
         if (cameraPermissionState.status != PermissionStatus.Granted) {
@@ -356,27 +370,9 @@ fun DocumentScreen(
                         },
                         leading = R.drawable.ic_back_arrow,
                         onLeadingClick = {
-                            (context as? Activity)?.finish()
+                            onBackClick()
                         }
                     )
-                    if (!isOnline) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(color = Gray200)
-                                .padding(8.dp),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Image(
-                                painter = painterResource(id = R.drawable.no_cloud),
-                                contentDescription = "",
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(text = "offline")
-                        }
-                    }
                     if (resp.isNotEmpty()) {
                         DocumentFilter(
                             viewModel = viewModel,
