@@ -243,7 +243,7 @@ class SyncFileWorker(
             val response = recordsRepository.getRecords(
                 updatedAt = updatedAt,
                 offset = offset,
-                uuid = uuid
+                oid  = oid
             )
             // eka-uat of latest updated or inserted record
             val ekaUat = response?.headers()?.get("Eka-Uat")
