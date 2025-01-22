@@ -18,15 +18,21 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -43,8 +49,8 @@ import eka.care.documents.data.utility.DocumentUtility.Companion.docTypes
 import eka.care.documents.ui.DarwinTouchNeutral1000
 import eka.care.documents.ui.presentation.model.CTA
 import eka.care.documents.ui.presentation.model.RecordModel
+import eka.care.documents.ui.presentation.screens.Mode
 import eka.care.documents.ui.presentation.viewmodel.RecordsViewModel
-import eka.care.documents.ui.touchCalloutBold
 import eka.care.documents.ui.touchLabelBold
 import eka.care.documents.ui.touchLabelRegular
 import java.text.SimpleDateFormat
@@ -53,14 +59,20 @@ import java.util.Locale
 
 @Composable
 fun DocumentGrid(
-    records: List<RecordModel>, viewModel: RecordsViewModel, onClick: (CTA?, RecordModel) -> Unit
+    records: List<RecordModel>,
+    viewModel: RecordsViewModel,
+    onClick: (CTA?, RecordModel) -> Unit,
+    mode: Mode,
+    selectedItems: SnapshotStateList<RecordModel>,
+    onSelectedItemsChange: (List<RecordModel>) -> Unit
 ) {
     val screenHeight = LocalConfiguration.current.screenHeightDp
-    val itemHeightDp = 160 // Set this to the approximate height of each grid item
+    val itemHeightDp = 160
     val gridHeight = remember(records.size) {
-        val rows = (records.size + 1) / 2 // Calculate rows needed for the grid
-        (rows * itemHeightDp).coerceAtMost(screenHeight) // Cap the height at screen height
+        val rows = (records.size + 1) / 2
+        (rows * itemHeightDp).coerceAtMost(screenHeight)
     }
+
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
         contentPadding = PaddingValues(8.dp),
@@ -70,94 +82,145 @@ fun DocumentGrid(
     ) {
         items(records) { recordModel ->
             viewModel.localId.value = recordModel.localId ?: ""
-            DocumentGridItem(recordModel = recordModel, onClick = onClick, viewModel)
+            DocumentGridItem(
+                recordModel = recordModel,
+                onClick = { cta, model ->
+                    if (mode == Mode.SELECTION) {
+                        if (selectedItems.contains(model)) {
+                            selectedItems.remove(model)
+                        } else {
+                            selectedItems.add(model)
+                        }
+                        onSelectedItemsChange(selectedItems.toList())
+                    } else {
+                        onClick(cta, model)
+                    }
+                },
+                viewModel = viewModel,
+                isSelected = selectedItems.contains(recordModel),
+                mode = mode
+            )
         }
     }
 }
 
 @Composable
 fun DocumentGridItem(
-    recordModel: RecordModel, onClick: (CTA?, RecordModel) -> Unit, viewModel: RecordsViewModel
+    recordModel: RecordModel,
+    onClick: (CTA?, RecordModel) -> Unit,
+    viewModel: RecordsViewModel,
+    isSelected: Boolean,
+    mode: Mode
 ) {
     val docType = docTypes.find { it.idNew == recordModel.documentType }
     val uploadTimestamp = recordModel.documentDate
     val uploadDate = uploadTimestamp?.times(1000)?.let { Date(it) }
     val sdf = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
     val formattedDate = uploadDate?.let { sdf.format(it) }
-    Column(modifier = Modifier
-        .padding(horizontal = 12.dp, vertical = 4.dp)
-        .clickable {
-            onClick(CTA(action = "open_deepThought"), recordModel)
-        }
-        .height(120.dp)
-        .background(
-            MaterialTheme.colorScheme.surface,
-            shape = MaterialTheme.shapes.medium
-        )
-        .padding(8.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Start
-        ) {
-            Image(
-                painter = painterResource(
-                    id = docType?.icon ?: R.drawable.ic_others_new
-                ), contentDescription = ""
+
+    Box(
+        modifier = Modifier
+            .padding(horizontal = 12.dp, vertical = 4.dp)
+            .clickable(enabled = mode == Mode.SELECTION || mode == Mode.VIEW) {
+                onClick(CTA(action = "open_deepThought"), recordModel)
+            }
+            .height(120.dp)
+            .background(
+                color = if (isSelected && mode == Mode.SELECTION) {
+                    Color.DarkGray
+                } else {
+                    MaterialTheme.colorScheme.surface
+                },
+                shape = MaterialTheme.shapes.medium
             )
-            Spacer(modifier = Modifier.width(8.dp))
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.Top,
-                horizontalAlignment = Alignment.Start,
+            .padding(8.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.Top,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Start
             ) {
-                Text(
-                    text = docType?.documentType.toString(),
-                    style = touchLabelBold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.width(100.dp)
+                Image(
+                    painter = painterResource(
+                        id = docType?.icon ?: R.drawable.ic_others_new
+                    ),
+                    contentDescription = ""
                 )
-                if (formattedDate != null) {
+                Spacer(modifier = Modifier.width(8.dp))
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.Top,
+                    horizontalAlignment = Alignment.Start,
+                ) {
                     Text(
-                        text = formattedDate,
-                        style = touchLabelRegular,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = docType?.documentType.toString(),
+                        style = touchLabelBold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.width(100.dp)
+                    )
+                    if (formattedDate != null) {
+                        Text(
+                            text = formattedDate,
+                            style = touchLabelRegular,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                if (mode == Mode.VIEW) {
+                    Icon(
+                        modifier = Modifier.clickable {
+                            viewModel.localId.value = recordModel.localId ?: ""
+                            viewModel.cardClickData.value = recordModel
+                            onClick(CTA(action = "open_options"), recordModel)
+                        },
+                        imageVector = Icons.Rounded.MoreVert,
+                        contentDescription = ""
                     )
                 }
             }
-            Icon(
-                modifier = Modifier.clickable {
-                    viewModel.localId.value = recordModel.localId ?: ""
-                    viewModel.cardClickData.value = recordModel
-                    onClick(CTA(action = "open_options"), recordModel)
-                }, imageVector = Icons.Rounded.MoreVert, contentDescription = ""
-            )
-        }
-        if (formattedDate == null) {
             Spacer(modifier = Modifier.height(8.dp))
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.BottomEnd) {
-            AsyncImage(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(60.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(color = DarwinTouchNeutral1000)
-                    .graphicsLayer(alpha = 0.4f),
-                model = recordModel.thumbnail,
-                contentDescription = "",
-                contentScale = ContentScale.FillWidth,
-            )
-            if (recordModel.tags?.split(",")?.contains("1") == true) {
-                SmartChip()
-            }
+            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.BottomEnd) {
+                AsyncImage(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(60.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(color = DarwinTouchNeutral1000)
+                        .graphicsLayer(alpha = 0.4f),
+                    model = recordModel.thumbnail,
+                    contentDescription = "",
+                    contentScale = ContentScale.FillWidth,
+                )
+                if (recordModel.tags?.split(",")?.contains("1") == true) {
+                    SmartChip()
+                }
 //            if(recordModel.isAnalyzing){
 //                AnalysingChip()
 //            }
+            }
+        }
+
+        if (isSelected && mode == Mode.SELECTION) {
+            Icon(
+                imageVector = Icons.Default.Check,
+                contentDescription = "Selected",
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .size(24.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.surface,
+                        shape = CircleShape
+                    )
+                    .padding(2.dp)
+            )
         }
     }
 }

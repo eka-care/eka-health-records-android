@@ -111,7 +111,7 @@ fun TopAppBarSmall(
             }
             trailingText?.let {
                 TextButton(onClick = { onTrailingTextClick?.invoke() }) {
-                    Text(text = it, color = Color(0XFF6B5CE0), style = MaterialTheme.typography.labelSmall)
+                    Text(text = it, color = Color(0XFF6B5CE0), style = MaterialTheme.typography.labelLarge)
                 }
             }
             trailingIcon1?.let {

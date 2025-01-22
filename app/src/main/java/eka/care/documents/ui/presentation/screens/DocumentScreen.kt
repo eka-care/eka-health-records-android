@@ -30,6 +30,7 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -70,17 +71,24 @@ import eka.care.documents.ui.presentation.components.DocumentFilter
 import eka.care.documents.ui.presentation.components.DocumentScreenContent
 import eka.care.documents.ui.presentation.components.DocumentsSort
 import eka.care.documents.ui.presentation.components.TopAppBarSmall
+import eka.care.documents.ui.presentation.model.RecordModel
 import eka.care.documents.ui.presentation.model.RecordParamsModel
 import eka.care.documents.ui.presentation.state.GetRecordsState
 import eka.care.documents.ui.presentation.viewmodel.RecordsViewModel
 import eka.care.documents.ui.utility.RecordsAction
 import kotlinx.coroutines.launch
 
+enum class Mode {
+    VIEW, SELECTION
+}
+
 @OptIn(ExperimentalMaterialApi::class, ExperimentalPermissionsApi::class)
 @Composable
 fun DocumentScreen(
     param: JsonObject,
-    onBackClick:()-> Unit
+    mode: Mode,
+    selectedRecords: ((List<RecordModel>) -> Unit)? = null,
+    onBackClick: () -> Unit
 ) {
     val context = LocalContext.current
     val viewModel: RecordsViewModel = viewModel(
@@ -99,6 +107,8 @@ fun DocumentScreen(
             gender = param.get(MedicalRecordParams.PATIENT_GENDER.key)?.asString
         )
     }
+
+    val selectedItems = remember { mutableStateListOf<RecordModel>() }
 
     LaunchedEffect(Unit) {
         initData(
@@ -371,19 +381,24 @@ fun DocumentScreen(
                         leading = R.drawable.ic_back_arrow,
                         onLeadingClick = {
                             onBackClick()
+                        },
+                        trailingText = if (mode == Mode.SELECTION) stringResource(id = R.string.done) else "",
+                        onTrailingTextClick = {
+                            if(mode == Mode.SELECTION){
+                                selectedRecords?.invoke(selectedItems.toList())
+                                onBackClick()
+                            }
                         }
                     )
                     if (resp.isNotEmpty()) {
                         DocumentFilter(
                             viewModel = viewModel,
                             onClick = {
-                                //    if (viewModel.documentType.intValue != it) {
                                 viewModel.getLocalRecords(
                                     oid = params.patientId,
                                     doctorId = params.doctorId,
                                     docType = it
                                 )
-                                //    }
                             }
                         )
                         DocumentsSort(
@@ -405,7 +420,13 @@ fun DocumentScreen(
                     viewModel = viewModel,
                     listState = listState,
                     isRefreshing = isRefreshing,
-                    paramsModel = params
+                    paramsModel = params,
+                    mode = mode,
+                    selectedItems = selectedItems,
+                    onSelectedItemsChange = { items ->
+                        selectedItems.clear()
+                        selectedItems.addAll(items)
+                    }
                 )
             },
         )
