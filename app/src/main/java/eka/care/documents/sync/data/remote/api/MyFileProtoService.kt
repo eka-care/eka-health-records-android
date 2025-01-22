@@ -2,7 +2,6 @@ package eka.care.documents.sync.data.remote.api
 
 import retrofit2.Response
 import retrofit2.http.GET
-import retrofit2.http.Headers
 import retrofit2.http.Query
 import vault.records.Records
 
@@ -11,6 +10,6 @@ interface MyDocumentsProtoService {
     suspend fun getFiles(
         @Query("u_at__gt") updatedAt: String?,
         @Query("offset") offset: String?,
-        @Query("p_uuid") uuid : String
+        @Query("oid") oid : String
     ): Response<Records.RecordsAPIResponse>
 }

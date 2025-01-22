@@ -22,14 +22,14 @@ class SyncRecordsRepository(val app: Application) {
     suspend fun getRecords(
         updatedAt: String?,
         offset: String? = null,
-        uuid : String
+        oid : String
     ):  Response<Records.RecordsAPIResponse>? {
         return withContext(Dispatchers.IO) {
             try {
                 val response = recordsProtoService.getFiles(
                     updatedAt = updatedAt,
                     offset = offset,
-                    uuid = uuid
+                    oid = oid
                 )
                 if (response.isSuccessful) {
                     response
