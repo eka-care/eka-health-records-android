@@ -29,7 +29,7 @@ class FileSharing {
                 // Generate a URI for each file
                 val uri = FileProvider.getUriForFile(
                     context,
-                    "com.eka.care.doctor.records.provider", // Your FileProvider authority
+                    "eka.care.doctor.fileprovider", // Your FileProvider authority
                     file
                 )
                 uris.add(uri)

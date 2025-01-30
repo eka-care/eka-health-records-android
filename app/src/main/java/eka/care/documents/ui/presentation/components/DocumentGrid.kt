@@ -127,7 +127,7 @@ fun DocumentGridItem(
             .height(120.dp)
             .background(
                 color = if (isSelected && mode == Mode.SELECTION) {
-                    Color.DarkGray
+                    Color.LightGray
                 } else {
                     MaterialTheme.colorScheme.surface
                 },

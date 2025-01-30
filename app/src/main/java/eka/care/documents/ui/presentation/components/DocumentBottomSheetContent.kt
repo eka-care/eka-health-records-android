@@ -54,7 +54,7 @@ fun DocumentBottomSheetContent(
                             val imageFile = File(context.cacheDir, "photo_${System.currentTimeMillis()}.jpg")
                             val photoUri = FileProvider.getUriForFile(
                                 context,
-                                "com.eka.care.doctor.records.provider",
+                                "eka.care.doctor.fileprovider",
                                 imageFile
                             )
                             viewModel.updatePhotoUri(photoUri)

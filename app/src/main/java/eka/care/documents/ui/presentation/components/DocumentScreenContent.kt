@@ -131,19 +131,24 @@ fun DocumentScreenContent(
                         items(resp) { model ->
                             DocumentList(
                                 recordModel = model,
-                                onClick = { cta ->
-                                    viewModel.cardClickData.value = model
-                                    if (cta?.action == "open_deepThought") {
-                                        navigate(
-                                            context = context,
-                                            model = model,
-                                            oid = paramsModel.patientId,
-                                        )
-                                    } else {
-                                        viewModel.localId.value = model.localId ?: ""
-                                        openSheet()
-                                        viewModel.documentBottomSheetType =
-                                            DocumentBottomSheetType.DocumentOptions
+                                mode = mode,
+                                selectedItems = selectedItems,
+                                onSelectedItemsChange = onSelectedItemsChange,
+                                onClick = { cta, model ->
+                                    if (mode == Mode.VIEW) {
+                                        viewModel.cardClickData.value = model
+                                        if (cta?.action == "open_deepThought") {
+                                            navigate(
+                                                context = context,
+                                                model = model,
+                                                oid = paramsModel.patientId,
+                                            )
+                                        } else {
+                                            viewModel.localId.value = model.localId ?: ""
+                                            openSheet()
+                                            viewModel.documentBottomSheetType =
+                                                DocumentBottomSheetType.DocumentOptions
+                                        }
                                     }
                                 }
                             )
@@ -153,42 +158,40 @@ fun DocumentScreenContent(
                         Spacer(modifier = Modifier.height(80.dp))
                     }
                 }
-                if (mode == Mode.VIEW) {
-                    FloatingActionButton(
+                FloatingActionButton(
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(end = 20.dp, bottom = 20.dp),
+                    onClick = {
+                        openSheet()
+                        viewModel.documentBottomSheetType =
+                            DocumentBottomSheetType.DocumentUpload
+                    },
+                    shape = RoundedCornerShape(16.dp),
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                ) {
+                    Row(
                         modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .padding(end = 20.dp, bottom = 20.dp),
-                        onClick = {
-                            openSheet()
-                            viewModel.documentBottomSheetType =
-                                DocumentBottomSheetType.DocumentUpload
-                        },
-                        shape = RoundedCornerShape(16.dp),
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            .background(
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                shape = RoundedCornerShape(16.dp)
+                            )
+                            .padding(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .background(
-                                    color = MaterialTheme.colorScheme.surfaceVariant,
-                                    shape = RoundedCornerShape(16.dp)
-                                )
-                                .padding(horizontal = 16.dp),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Image(
-                                painter = painterResource(id = R.drawable.ic_plus_brand),
-                                contentDescription = "",
-                                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary),
-                                modifier = Modifier.size(24.dp)
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text(
-                                text = stringResource(id = R.string.upload),
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_plus_brand),
+                            contentDescription = "",
+                            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary),
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = stringResource(id = R.string.upload),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary
+                        )
                     }
                 }
             }

@@ -380,11 +380,12 @@ fun DocumentScreen(
                         },
                         leading = R.drawable.ic_back_arrow,
                         onLeadingClick = {
-                            onBackClick()
+                            closeSheet()
                         },
                         trailingText = if (mode == Mode.SELECTION) stringResource(id = R.string.done) else "",
                         onTrailingTextClick = {
                             if(mode == Mode.SELECTION){
+                                viewModel.documentBottomSheetType = null
                                 selectedRecords?.invoke(selectedItems.toList())
                                 onBackClick()
                             }
