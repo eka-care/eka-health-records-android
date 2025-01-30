@@ -61,7 +61,6 @@ fun DocumentList(
                 else MaterialTheme.colorScheme.surface
             )
             .clickable {
-                Log.d("MEDICAL_RECORDS", mode.toString())
                 if (mode == Mode.SELECTION) {
                     if (isSelected) {
                         selectedItems.remove(recordModel)
