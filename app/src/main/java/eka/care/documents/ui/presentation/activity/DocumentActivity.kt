@@ -12,6 +12,7 @@ import androidx.lifecycle.ViewModelProvider
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import eka.care.documents.ui.presentation.screens.DocumentScreen
+import eka.care.documents.ui.presentation.screens.Mode
 import eka.care.documents.ui.presentation.screens.initData
 import eka.care.documents.ui.presentation.viewmodel.RecordsViewModel
 
@@ -52,7 +53,9 @@ class DocumentActivity : AppCompatActivity() {
                 context = context,
                 patientUuid = params[MedicalRecordParams.PATIENT_UUID.key]?.asString ?: ""
             )
-            DocumentScreen(param = params, onBackClick = {})
+            DocumentScreen(param = params, onBackClick = {
+
+            }, mode = Mode.VIEW)
         }
     }
 }

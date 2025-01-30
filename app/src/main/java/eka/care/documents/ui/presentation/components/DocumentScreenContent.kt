@@ -29,6 +29,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
@@ -44,6 +45,7 @@ import eka.care.documents.ui.presentation.activity.SmartReportActivity
 import eka.care.documents.ui.presentation.model.RecordModel
 import eka.care.documents.ui.presentation.model.RecordParamsModel
 import eka.care.documents.ui.presentation.screens.DocumentEmptyStateScreen
+import eka.care.documents.ui.presentation.screens.Mode
 import eka.care.documents.ui.presentation.state.GetRecordsState
 import eka.care.documents.ui.presentation.viewmodel.RecordsViewModel
 import eka.care.documents.ui.utility.RecordsUtility.Companion.convertLongToDateString
@@ -59,6 +61,9 @@ fun DocumentScreenContent(
     viewModel: RecordsViewModel,
     listState: LazyListState,
     isRefreshing: Boolean,
+    mode: Mode,
+    selectedItems: SnapshotStateList<RecordModel>,
+    onSelectedItemsChange: (List<RecordModel>) -> Unit,
     paramsModel: RecordParamsModel
 ) {
     val context = LocalContext.current
@@ -100,19 +105,24 @@ fun DocumentScreenContent(
                         item {
                             DocumentGrid(
                                 records = resp,
+                                mode = mode,
                                 viewModel = viewModel,
+                                selectedItems = selectedItems,
+                                onSelectedItemsChange = onSelectedItemsChange,
                                 onClick = { cta, model ->
-                                    viewModel.cardClickData.value = model
-                                    if (cta?.action == "open_deepThought") {
-                                        navigate(
-                                            context = context,
-                                            model = model,
-                                            oid = paramsModel.patientId,
-                                        )
-                                    } else {
-                                        openSheet()
-                                        viewModel.documentBottomSheetType =
-                                            DocumentBottomSheetType.DocumentOptions
+                                    if (mode == Mode.VIEW) {
+                                        viewModel.cardClickData.value = model
+                                        if (cta?.action == "open_deepThought") {
+                                            navigate(
+                                                context = context,
+                                                model = model,
+                                                oid = paramsModel.patientId,
+                                            )
+                                        } else {
+                                            openSheet()
+                                            viewModel.documentBottomSheetType =
+                                                DocumentBottomSheetType.DocumentOptions
+                                        }
                                     }
                                 }
                             )
@@ -121,19 +131,24 @@ fun DocumentScreenContent(
                         items(resp) { model ->
                             DocumentList(
                                 recordModel = model,
-                                onClick = { cta ->
-                                    viewModel.cardClickData.value = model
-                                    if (cta?.action == "open_deepThought") {
-                                        navigate(
-                                            context = context,
-                                            model = model,
-                                            oid = paramsModel.patientId,
-                                        )
-                                    } else {
-                                        viewModel.localId.value = model.localId ?: ""
-                                        openSheet()
-                                        viewModel.documentBottomSheetType =
-                                            DocumentBottomSheetType.DocumentOptions
+                                mode = mode,
+                                selectedItems = selectedItems,
+                                onSelectedItemsChange = onSelectedItemsChange,
+                                onClick = { cta, model ->
+                                    if (mode == Mode.VIEW) {
+                                        viewModel.cardClickData.value = model
+                                        if (cta?.action == "open_deepThought") {
+                                            navigate(
+                                                context = context,
+                                                model = model,
+                                                oid = paramsModel.patientId,
+                                            )
+                                        } else {
+                                            viewModel.localId.value = model.localId ?: ""
+                                            openSheet()
+                                            viewModel.documentBottomSheetType =
+                                                DocumentBottomSheetType.DocumentOptions
+                                        }
                                     }
                                 }
                             )
