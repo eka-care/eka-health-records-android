@@ -3,7 +3,11 @@ package eka.care.documents
 import android.content.Context
 import com.eka.network.ConverterFactoryType
 import com.eka.network.Networking
+import com.google.gson.Gson
 import eka.care.documents.data.db.database.DocumentDatabase
+import eka.care.documents.data.db.entity.VaultEntity
+import eka.care.documents.ui.presentation.model.CTA
+import eka.care.documents.ui.presentation.model.RecordModel
 
 object Document {
     private var configuration: DocumentConfiguration? = null
@@ -20,6 +24,28 @@ object Document {
     fun destroy(){
         db?.clearAllTables()
     }
+    suspend fun getRecordById(id: String?): RecordModel? {
+        if(id.isNullOrEmpty()) return null
+        val vaultEntity = db?.vaultDao()?.getDocumentById(id)
+        return vaultEntity?.toRecordModel()
+    }
 
     fun getConfiguration() = configuration
+}
+fun VaultEntity.toRecordModel(): RecordModel {
+    return RecordModel(
+        localId = this.localId,
+        documentId = this.documentId,
+        doctorId = this.doctorId,
+        documentType = this.documentType,
+        documentDate = this.documentDate,
+        createdAt = this.createdAt,
+        thumbnail = this.thumbnail,
+        filePath = this.filePath,
+        fileType = this.fileType,
+        cta = Gson().fromJson(this.cta, CTA::class.java),
+        tags = this.tags,
+        source = this.source,
+        isAnalyzing = this.isAnalyzing
+    )
 }
