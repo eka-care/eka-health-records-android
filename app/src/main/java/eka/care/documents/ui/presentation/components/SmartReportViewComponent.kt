@@ -1,6 +1,7 @@
 package eka.care.documents.ui.presentation.components
 
 import android.net.Uri
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -90,6 +91,7 @@ fun SmartReportViewComponent(
 
                         is DocumentSmartReportState.Success -> {
                             val resp = (state as? DocumentSmartReportState.Success)?.data
+                            Log.d("AYUSHI", resp.toString())
                             Column(
                                 modifier = Modifier
                                     .fillMaxWidth()

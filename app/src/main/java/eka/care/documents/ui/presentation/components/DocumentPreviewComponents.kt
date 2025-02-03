@@ -1,6 +1,7 @@
 package eka.care.documents.ui.presentation.components
 
 import android.net.Uri
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -67,6 +68,7 @@ fun ErrorState(message: String) {
 
 @Composable
 fun PdfPreview(uri: Uri, pdfManager: PdfReaderManager, paddingValues: PaddingValues) {
+    Log.d("AYUSHI-1", uri.toString())
     Column(verticalArrangement = Arrangement.Center, modifier = Modifier.padding(paddingValues)) {
         Box(modifier = Modifier.fillMaxSize()) {
             pdfManager.PdfViewer(pdfSource = PdfSource.Uri(uri))
