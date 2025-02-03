@@ -116,16 +116,16 @@ class DocumentPreviewViewModel(val app: Application): AndroidViewModel(app){
         }
     }
 
-    fun getSmartReport(docId: String, userId : String){
-        viewModelScope.launch {
-            val response = myFileRepository.getDocument(docId = docId, userId = userId)
-            if(response != null){
-                _documentSmart.value = DocumentSmartReportState.Success(response)
-            }else{
-                _documentSmart.value = DocumentSmartReportState.Error("Something went wrong!")
-            }
-        }
-    }
+//    fun getSmartReport(docId: String, userId : String){
+//        viewModelScope.launch {
+//            val response = myFileRepository.getDocument(docId = docId, userId = userId)
+//            if(response != null){
+//                _documentSmart.value = DocumentSmartReportState.Success(response)
+//            }else{
+//                _documentSmart.value = DocumentSmartReportState.Error("Something went wrong!")
+//            }
+//        }
+//    }
 
     private suspend fun downloadFile(assetUrl: String?, type: String): String {
         val directory = ContextWrapper(app).getDir("cache", Context.MODE_PRIVATE)

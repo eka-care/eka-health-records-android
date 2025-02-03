@@ -26,4 +26,5 @@ data class VaultEntity(
     @ColumnInfo(name = "is_abha_linked") var isABHALinked: Boolean = false,
     @ColumnInfo(name = "share_with_doctor") var shareWithDoctor: Boolean = false,
     @ColumnInfo(name = "is_analyzing") var isAnalyzing: Boolean = false,
+    @ColumnInfo(name = "smart_report_field") var smartReportField : String?
 )

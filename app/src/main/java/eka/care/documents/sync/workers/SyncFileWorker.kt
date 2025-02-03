@@ -335,7 +335,8 @@ class SyncFileWorker(
                         isAnalyzing = recordItem.availableDocumentCase == Records.Record.Item.AvailableDocumentCase.IN_TRANSIT,
                         cta = if (localCta.pageId.isNullOrEmpty()) null
                         else Gson().toJson(localCta, CTA::class.java).toString(),
-                        doctorId = doctorId
+                        doctorId = doctorId,
+                        smartReportField = null
                     )
                 )
             }

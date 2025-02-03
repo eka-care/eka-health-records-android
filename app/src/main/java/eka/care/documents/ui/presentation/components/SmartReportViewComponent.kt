@@ -40,11 +40,12 @@ fun SmartReportViewComponent(
     documentDate: String,
     onClick: (CTA?) -> Unit
 ) {
+    viewModel.getDocument(docId = docId, userId = userId, localId = localId)
+
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val pdfManager = PdfReaderManager(context)
     val pagerState = rememberPagerState(initialPage = SmartViewTab.SMARTREPORT.ordinal)
-    initData(viewModel = viewModel, docId = docId, userId = userId, localId = localId)
     var selectedUri by remember { mutableStateOf<Uri?>(null) }
     val state by viewModel.documentSmart.collectAsState()
     val filePathState by viewModel.document.collectAsState()
@@ -91,7 +92,6 @@ fun SmartReportViewComponent(
 
                         is DocumentSmartReportState.Success -> {
                             val resp = (state as? DocumentSmartReportState.Success)?.data
-                            Log.d("AYUSHI", resp.toString())
                             Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -132,20 +132,6 @@ fun SmartReportViewComponent(
             }
         }
     }
-}
-
-private fun initData(
-    viewModel: DocumentPreviewViewModel,
-    docId: String,
-    userId: String,
-    localId: String
-) {
-    viewModel.getSmartReport(docId = docId, userId = userId)
-    viewModel.getDocument(
-        userId = userId,
-        docId = docId,
-        localId = localId
-    )
 }
 
 enum class SmartViewTab(val type: String) {
