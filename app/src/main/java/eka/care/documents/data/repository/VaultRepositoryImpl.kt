@@ -6,6 +6,14 @@ import eka.care.documents.data.db.model.AvailableDocTypes
 import kotlinx.coroutines.flow.Flow
 
 class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultRepository {
+    override fun fetchDocuments(ownerId: String?, filterId: String?, docType: Int): Flow<List<VaultEntity>> {
+        return if (docType == -1) {
+            database.vaultDao().fetchDocuments(ownerId = ownerId, filterId = filterId)
+        } else {
+            database.vaultDao().fetchDocuments(ownerId = ownerId, filterId = filterId, docType = docType)
+        }
+    }
+
     override suspend fun updateDocuments(vaultEntityList: List<VaultEntity>) {
         database.vaultDao().updateDocuments(vaultEntityList)
     }
