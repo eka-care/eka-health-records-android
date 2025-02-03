@@ -4,7 +4,7 @@ import eka.care.documents.data.db.entity.VaultEntity
 import eka.care.documents.data.db.model.AvailableDocTypes
 import kotlinx.coroutines.flow.Flow
 
-interface VaultRepository {
+interface VaultRepository: DocumentsRepository {
     suspend fun updateDocuments(vaultEntityList: List<VaultEntity>)
     suspend fun storeDocuments(vaultEntityList: List<VaultEntity>)
     suspend fun setThumbnail(thumbnail: String, documentId: String?)

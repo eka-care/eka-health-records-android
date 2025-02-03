@@ -320,6 +320,8 @@ class SyncFileWorker(
                     VaultEntity(
                         localId = localId ?: UUID.randomUUID().toString(),
                         documentId = recordItem.documentId,
+                        ownerId = doctorId,
+                        filterId = app_oid,
                         uuid = uuid,
                         oid = app_oid,
                         filePath = null,
