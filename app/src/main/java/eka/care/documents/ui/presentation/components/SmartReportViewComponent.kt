@@ -37,11 +37,11 @@ fun SmartReportViewComponent(
     docId: String,
     userId: String,
     localId: String,
+    doctorId : String,
     documentDate: String,
     onClick: (CTA?) -> Unit
 ) {
-    viewModel.getDocument(docId = docId, userId = userId, localId = localId)
-
+    initData(viewModel, docId, userId, localId, doctorId = doctorId)
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val pdfManager = PdfReaderManager(context)
@@ -104,7 +104,7 @@ fun SmartReportViewComponent(
                                         pagerState.scrollToPage(SmartViewTab.ORIGINALRECORD.ordinal)
                                     }
                                 })
-                                SmartReportFilter(resp?.smartReport, viewModel = viewModel)
+                                SmartReportFilter(resp, viewModel = viewModel)
                                 SmartReportList(viewModel = viewModel)
                             }
                         }
@@ -132,6 +132,17 @@ fun SmartReportViewComponent(
             }
         }
     }
+}
+
+private fun initData(
+    viewModel: DocumentPreviewViewModel,
+    docId: String,
+    userId: String,
+    localId: String,
+    doctorId: String
+) {
+    viewModel.getDocument(docId = docId, userId = userId, localId = localId)
+    viewModel.getSmartReport(documentId = docId, ownerId = doctorId, filterId = userId)
 }
 
 enum class SmartViewTab(val type: String) {

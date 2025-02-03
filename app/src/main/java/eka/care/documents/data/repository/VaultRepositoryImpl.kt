@@ -1,9 +1,12 @@
 package eka.care.documents.data.repository
 
+import android.util.Log
 import eka.care.documents.data.db.database.DocumentDatabase
 import eka.care.documents.data.db.entity.VaultEntity
 import eka.care.documents.data.db.model.AvailableDocTypes
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.withContext
 
 class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultRepository {
     override fun fetchDocuments(ownerId: String?, filterId: String?, docType: Int): Flow<List<VaultEntity>> {
@@ -13,6 +16,21 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
             database.vaultDao().fetchDocuments(ownerId = ownerId, filterId = filterId, docType = docType)
         }
     }
+
+    override suspend fun getSmartReport(filterId: String, ownerId: String, documentId: String) : String?{
+        return withContext(Dispatchers.IO) {
+            val result = database.vaultDao().getSmartReport(filterId = filterId, ownerId = ownerId, documentId = documentId)
+            return@withContext result
+        }
+    }
+
+    override suspend fun updateSmartReport(filterId: String, ownerId: String, documentId: String, smartReport: String) {
+        withContext(Dispatchers.IO) {
+            database.vaultDao().updateSmartReport(filterId = filterId, ownerId = ownerId, documentId = documentId, smartReport = smartReport)
+        }
+    }
+
+    // OLD
 
     override suspend fun updateDocuments(vaultEntityList: List<VaultEntity>) {
         database.vaultDao().updateDocuments(vaultEntityList)

@@ -208,28 +208,7 @@ fun DocumentScreenContent(
 }
 
 private fun navigate(context: Context, model: RecordModel, oid: String) {
-    if (isOnline(context)) {
-        if (model.tags?.split(",")?.contains("1") == false) {
-            Intent(context, DocumentViewActivity::class.java).also {
-                it.putExtra("local_id", model.localId)
-                it.putExtra("doc_id", model.documentId)
-                it.putExtra("user_id", oid)
-                context.startActivity(it)
-            }
-            return
-        } else {
-            val date = convertLongToDateString(model.documentDate ?: model.createdAt)
-            Intent(context, SmartReportActivity::class.java)
-                .also {
-                    it.putExtra("doc_id", model.documentId)
-                    it.putExtra("local_id", model.localId)
-                    it.putExtra("user_id", oid)
-                    it.putExtra("doc_date", date)
-                    context.startActivity(it)
-                }
-            return
-        }
-    } else {
+    if (model.tags?.split(",")?.contains("1") == false) {
         Intent(context, DocumentViewActivity::class.java).also {
             it.putExtra("local_id", model.localId)
             it.putExtra("doc_id", model.documentId)
@@ -237,22 +216,17 @@ private fun navigate(context: Context, model: RecordModel, oid: String) {
             context.startActivity(it)
         }
         return
+    } else {
+        val date = convertLongToDateString(model.documentDate ?: model.createdAt)
+        Intent(context, SmartReportActivity::class.java)
+            .also {
+                it.putExtra("doc_id", model.documentId)
+                it.putExtra("local_id", model.localId)
+                it.putExtra("doctor_id", model.doctorId)
+                it.putExtra("user_id", oid)
+                it.putExtra("doc_date", date)
+                context.startActivity(it)
+            }
+        return
     }
-}
-
-fun isOnline(context: Context): Boolean {
-    val connectivityManager =
-        context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-    val capabilities =
-        connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)
-    if (capabilities != null) {
-        if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) {
-            return true
-        } else if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
-            return true
-        } else if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)) {
-            return true
-        }
-    }
-    return false
 }
