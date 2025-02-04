@@ -33,6 +33,10 @@ object Document {
         )
     }
 
+    suspend fun storeDocuments(vaultEntityList: List<VaultEntity>) {
+        documentRepository?.storeDocuments(vaultEntityList)
+    }
+
     fun destroy(){
         db?.clearAllTables()
     }

@@ -143,6 +143,8 @@ fun AddMedicalRecordsDetailViewComponent(
                     documentId = null,
                     uuid = paramsModel.uuid,
                     oid = paramsModel.patientId,
+                    ownerId = paramsModel.doctorId,
+                    filterId = paramsModel.patientId,
                     filePath = if (fileType == FileType.IMAGE.ordinal) compressedFiles.map { it.path } else fileList.map { it.path },
                     fileType = if (fileType == FileType.IMAGE.ordinal) "img" else "pdf",
                     thumbnail = if (fileType == FileType.IMAGE.ordinal) {

@@ -8,9 +8,9 @@ import kotlinx.coroutines.flow.Flow
 class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultRepository {
     override fun fetchDocuments(ownerId: String?, filterId: String?, docType: Int): Flow<List<VaultEntity>> {
         return if (docType == -1) {
-            database.vaultDao().fetchDocuments(ownerId = ownerId, filterId = filterId)
+            database.vaultDao().fetchDocumentsNew(ownerId = ownerId, filterId = filterId)
         } else {
-            database.vaultDao().fetchDocuments(ownerId = ownerId, filterId = filterId, docType = docType)
+            database.vaultDao().fetchDocumentsNew(ownerId = ownerId, filterId = filterId, docType = docType)
         }
     }
 
