@@ -16,6 +16,7 @@ class SmartReportActivity : ComponentActivity() {
                 viewModel = viewModel,
                 docId = intent.getStringExtra("doc_id") ?: "",
                 userId = intent.getStringExtra("user_id") ?: "",
+                doctorId = intent.getStringExtra("doctor_id") ?: "",
                 documentDate = intent.getStringExtra("doc_date") ?: "",
                 localId = intent.getStringExtra("local_id") ?: "",
                 onClick = {

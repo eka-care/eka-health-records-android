@@ -50,7 +50,6 @@ class DocumentViewActivity : ComponentActivity() {
 
         setContent {
             val state by viewModel.document.collectAsState()
-
             Content(state, pdfManager)
         }
     }

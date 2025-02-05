@@ -91,9 +91,11 @@ class SyncFileWorker(
                             downloadFile(file.assetUrl, file.fileType)
                         }
                         val fileType = it.files.firstOrNull()?.fileType ?: ""
+                        val smartReportField = it.smartReport?.let { report -> Gson().toJson(report) }
                         val updatedDocument = document.copy(
                             filePath = filePaths,
-                            fileType = fileType
+                            fileType = fileType,
+                            smartReportField = smartReportField
                         )
                         vaultRepository.updateDocuments(listOf(updatedDocument))
                     }
@@ -307,7 +309,7 @@ class SyncFileWorker(
                     localId = localId,
                     cta = if (localCta.pageId.isNullOrEmpty()) null
                     else Gson().toJson(localCta, CTA::class.java).toString(),
-                    isAnalysing = recordItem.availableDocumentCase == Records.Record.Item.AvailableDocumentCase.IN_TRANSIT,
+                    isAnalysing = recordItem.metadata.isInitialized,
                     docId = recordItem.documentId,
                     hasId = it.record.hash.toString(),
                     isAbhaLinked = false,
@@ -320,6 +322,8 @@ class SyncFileWorker(
                     VaultEntity(
                         localId = localId ?: UUID.randomUUID().toString(),
                         documentId = recordItem.documentId,
+                        ownerId = doctorId,
+                        filterId = app_oid,
                         uuid = uuid,
                         oid = app_oid,
                         filePath = null,
@@ -332,7 +336,7 @@ class SyncFileWorker(
                         documentDate = documentDate,
                         hashId = it.record.hash.toString(),
                         isABHALinked = false,
-                        isAnalyzing = recordItem.availableDocumentCase == Records.Record.Item.AvailableDocumentCase.IN_TRANSIT,
+                        isAnalyzing = recordItem.metadata.isInitialized,
                         cta = if (localCta.pageId.isNullOrEmpty()) null
                         else Gson().toJson(localCta, CTA::class.java).toString(),
                         doctorId = doctorId

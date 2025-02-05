@@ -3,6 +3,7 @@ package eka.care.documents.data.db.entity
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import androidx.room.TypeConverters
 
 @Entity(tableName = "vault_table")
 data class VaultEntity(
@@ -11,6 +12,8 @@ data class VaultEntity(
     @ColumnInfo(name = "doctor_id")  var doctorId : String,
     @ColumnInfo(name = "uuid") var uuid: String?,
     @ColumnInfo(name = "oid") var oid: String?,
+    @ColumnInfo(name = "owner_id") var ownerId: String? = null,
+    @ColumnInfo(name = "filter_id") var filterId: String? = null,
     @ColumnInfo(name = "file_path") var filePath: List<String>?,
     @ColumnInfo(name = "file_type") var fileType: String,
     @ColumnInfo(name = "thumbnail") var thumbnail: String?,
@@ -25,5 +28,6 @@ data class VaultEntity(
     @ColumnInfo(name = "hash_id") var hashId: String?,
     @ColumnInfo(name = "is_abha_linked") var isABHALinked: Boolean = false,
     @ColumnInfo(name = "share_with_doctor") var shareWithDoctor: Boolean = false,
-    @ColumnInfo(name = "is_analyzing") var isAnalyzing: Boolean = false,
+    @ColumnInfo(name = "is_analyzing") var isAnalyzing: Boolean,
+    @ColumnInfo(name = "smart_report_field") var smartReportField : String? = null
 )

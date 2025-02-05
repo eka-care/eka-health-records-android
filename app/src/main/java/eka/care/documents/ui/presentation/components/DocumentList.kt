@@ -1,6 +1,5 @@
 package eka.care.documents.ui.presentation.components
 
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -10,7 +9,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -30,11 +28,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import eka.care.documents.R
 import eka.care.documents.data.utility.DocumentUtility.Companion.docTypes
-import eka.care.documents.ui.DarwinTouchNeutral200
-import eka.care.documents.ui.DarwinTouchNeutral50
-import eka.care.documents.ui.Gray200
-import eka.care.documents.ui.Gray400
-import eka.care.documents.ui.touchBodyRegular
 import eka.care.documents.ui.presentation.model.CTA
 import eka.care.documents.ui.presentation.model.RecordModel
 import eka.care.documents.ui.presentation.screens.Mode
@@ -113,8 +106,10 @@ fun DocumentList(
             }
         }
         Row {
-            if (recordModel.tags?.split(",")?.contains("1") == true) {
-                SmartChip()
+            if (recordModel.fileType.equals("pdf", ignoreCase = true)) {
+                if (recordModel.tags?.split(",")?.contains("1") == true) {
+                    SmartChip()
+                }
             }
             if (mode == Mode.VIEW) {
                 Icon(

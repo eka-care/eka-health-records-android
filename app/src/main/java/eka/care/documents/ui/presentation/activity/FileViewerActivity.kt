@@ -152,7 +152,7 @@ class FileViewerActivity : AppCompatActivity() {
     }
 
     private fun uriToFile(uri: Uri): File {
-        val fileName = "temp_pdf_file.pdf"
+        val fileName = "temp_pdf_${System.currentTimeMillis()}.pdf"
         val file = File(applicationContext.cacheDir, fileName)
 
         return try {

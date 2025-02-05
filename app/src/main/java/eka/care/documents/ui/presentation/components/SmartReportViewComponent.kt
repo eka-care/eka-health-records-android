@@ -1,6 +1,7 @@
 package eka.care.documents.ui.presentation.components
 
 import android.net.Uri
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -36,14 +37,15 @@ fun SmartReportViewComponent(
     docId: String,
     userId: String,
     localId: String,
+    doctorId : String,
     documentDate: String,
     onClick: (CTA?) -> Unit
 ) {
+    initData(viewModel, docId, userId, localId, doctorId = doctorId)
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val pdfManager = PdfReaderManager(context)
     val pagerState = rememberPagerState(initialPage = SmartViewTab.SMARTREPORT.ordinal)
-    initData(viewModel = viewModel, docId = docId, userId = userId, localId = localId)
     var selectedUri by remember { mutableStateOf<Uri?>(null) }
     val state by viewModel.documentSmart.collectAsState()
     val filePathState by viewModel.document.collectAsState()
@@ -102,7 +104,7 @@ fun SmartReportViewComponent(
                                         pagerState.scrollToPage(SmartViewTab.ORIGINALRECORD.ordinal)
                                     }
                                 })
-                                SmartReportFilter(resp?.smartReport, viewModel = viewModel)
+                                SmartReportFilter(resp, viewModel = viewModel)
                                 SmartReportList(viewModel = viewModel)
                             }
                         }
@@ -136,14 +138,11 @@ private fun initData(
     viewModel: DocumentPreviewViewModel,
     docId: String,
     userId: String,
-    localId: String
+    localId: String,
+    doctorId: String
 ) {
-    viewModel.getSmartReport(docId = docId, userId = userId)
-    viewModel.getDocument(
-        userId = userId,
-        docId = docId,
-        localId = localId
-    )
+    viewModel.getDocument(docId = docId, userId = userId, localId = localId)
+    viewModel.getSmartReport(documentId = docId, ownerId = doctorId, filterId = userId)
 }
 
 enum class SmartViewTab(val type: String) {

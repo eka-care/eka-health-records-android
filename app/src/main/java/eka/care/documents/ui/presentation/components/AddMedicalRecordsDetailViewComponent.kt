@@ -161,7 +161,10 @@ fun AddMedicalRecordsDetailViewComponent(
                     isABHALinked = false,
                     hashId = null,
                     cta = null,
-                    doctorId = paramsModel.doctorId
+                    filterId = paramsModel.patientId,
+                    ownerId = paramsModel.doctorId,
+                    doctorId = paramsModel.doctorId,
+                    isAnalyzing = false
                 )
 
                 viewModel.createVaultRecord(vaultEntity)
