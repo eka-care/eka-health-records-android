@@ -212,9 +212,6 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
                     }
             }
             catch (ex: Exception) {
-                // will fix later
-//                _getRecordsState.value =
-//                    GetRecordsState.Error(ex.localizedMessage ?: "An error occurred")
             }
         }
     }

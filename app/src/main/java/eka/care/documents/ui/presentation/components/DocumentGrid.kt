@@ -1,5 +1,6 @@
 package eka.care.documents.ui.presentation.components
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -198,12 +199,13 @@ fun DocumentGridItem(
                     contentDescription = "",
                     contentScale = ContentScale.FillWidth,
                 )
-                if (recordModel.tags?.split(",")?.contains("1") == true) {
-                    SmartChip()
+                if (recordModel.fileType.equals("pdf", ignoreCase = true)) {
+                    if (recordModel.tags?.split(",")?.contains("1") == true) {
+                        SmartChip()
+                    } else if (recordModel.isAnalyzing) {
+                        AnalysingChip()
+                    }
                 }
-//            if(recordModel.isAnalyzing){
-//                AnalysingChip()
-//            }
             }
         }
 
@@ -269,12 +271,11 @@ fun AnalysingChip() {
             .background(color = MaterialTheme.colorScheme.surfaceVariant)
             .padding(start = 4.dp, end = 6.dp, top = 2.dp, bottom = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
         CircularProgressIndicator(
-            modifier = Modifier.size(16.dp), color = Color.LightGray, strokeWidth = strokeWidth
+            modifier = Modifier.size(12.dp), color = Color.DarkGray, strokeWidth = strokeWidth
         )
-        Spacer(modifier = Modifier.width(2.dp))
         Text(
             text = "Generating...",
             style = touchLabelBold,

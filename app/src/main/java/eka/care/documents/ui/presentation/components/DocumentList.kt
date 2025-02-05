@@ -113,8 +113,12 @@ fun DocumentList(
             }
         }
         Row {
-            if (recordModel.tags?.split(",")?.contains("1") == true) {
-                SmartChip()
+            if (recordModel.fileType.equals("pdf", ignoreCase = true)) {
+                if (recordModel.tags?.split(",")?.contains("1") == true) {
+                    SmartChip()
+                } else if (recordModel.isAnalyzing) {
+                    AnalysingChip()
+                }
             }
             if (mode == Mode.VIEW) {
                 Icon(
