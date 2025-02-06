@@ -1,0 +1,93 @@
+syntax = "proto3";
+
+package vault.labs;
+
+import "cta.proto";
+
+option go_package = "github.com/eka-care/proto-contracts/go/vault/labs";
+
+/* CategoriesResponse represent generic lab test categories */
+message CategoriesResponse {
+  string img = 1;                   // Image of the block.
+  repeated Category categories = 2; // Lab booking categories.
+}
+
+/* Category represent lab test category */
+message Category {
+  ItemType item_type = 1;                   // Type of the item to render.
+  string name = 2;                          // Name of the category.
+  string type = 3;                          // Type of category.
+  string img = 4;                           // Image of the category.
+  string description = 5;                   // Category description.
+  string price = 6;                         // Price of the category.
+  optional string discount_description = 7; // Discount discription.
+  vault.common.CTA cta = 8;                 // CTA of the category item.
+
+  /* ItemType represents the type of the item. */
+  enum ItemType {
+    ITEM_TYPE_UNSPECIFIED = 0; // Item Type -> Unspecified.
+    ITEM_TYPE_ONE = 1;         // Item Type -> One.
+  }
+}
+
+/* PackagesResponse represents packages API response */
+message PackagesResponse {
+  repeated Package packages = 1;     // list of packages.
+  vault.common.CTA view_all_cta = 2; // CTA of view all button.
+  string title = 3;                  // Title of packages.
+  string sub_title = 4;              // Subtitle of packages.
+  optional bool hide_prices = 5;     // Bool to decide whether to hide prices.
+}
+
+/* Package represents information of a lab package that can be booked */
+message Package {
+  ItemType item_type = 1;                   // Type of the item to render.
+  Type type = 2;                            // Type of package.
+  string name = 3;                          // Name of the package.
+  string description = 4;                   // Description of the package.
+  repeated Info notes = 5;                  // Notes about the package.
+  string final_price = 6;                   // Final price after discount.
+  optional string original_price = 7;       // Original price.
+  optional string discount_description = 8; // description of the discount.
+  vault.common.CTA cta = 9;                 // CTA of the item.
+  optional Nudge nudge = 10;                // Nudge strip.
+
+  message Nudge {
+    Type icon = 1;      // Icon Type.
+    string message = 2; // Nudge message (Expect HTML in this).
+
+    enum Type {
+      TYPE_UNSPECIFIED = 0; // Unspecified.
+      TYPE_HEALTH_PASS = 1; // Health Pass.
+    }
+  }
+
+  // Information related to package.
+  message Info {
+    Type icon = 1;          // icon denotes a symbol for the information.
+    string description = 2; // description is the information text.
+
+    /* Type represents information type. */
+    enum Type {
+      TYPE_UNSPECIFIED = 0;     // Unspecified.
+      TYPE_SAMPLE = 1;          // Sample collection information.
+      TYPE_INFO = 2;            // Generic information.
+      TYPE_REPORT_DELIVERY = 3; // Report Generation time information.
+      TYPE_SAFE_SECURE = 4;     // Safe and secure.
+      TYPE_HOME_COLLECTION = 5; // Information to denote home sample collection.
+      TYPE_NABL = 6;            // NABL Accredited Labs.
+    }
+  }
+
+  /* Type represents package type. */
+  enum Type {
+    TYPE_UNSPECIFIED = 0; // Package Type -> Unspecified.
+    TYPE_LAB = 1;         // Package Type -> Lab.
+  }
+
+  /* ItemType represents the type of the item. */
+  enum ItemType {
+    ITEM_TYPE_UNSPECIFIED = 0; // Item Type -> Unspecified.
+    ITEM_TYPE_ONE = 1;         // Item Type -> One.
+  }
+}

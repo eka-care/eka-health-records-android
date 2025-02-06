@@ -1,11 +1,13 @@
 syntax = "proto3";
 
-package protobuf;
+package vault.insights;
 
 import "google/protobuf/timestamp.proto";
 import "range.proto";
 import "interpretation.proto";
 import "coordinate.proto";
+
+option go_package = "github.com/eka-care/proto-contracts/go/vault/insights";
 
 /* VitalInsightsResponse represents insights
 response */

@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package insurance;
+
+option go_package = "github.com/eka-care/proto-contracts/go/insurance";
+
+enum Type {
+  TYPE_UNSPECIFIED = 0; // Unspecified.
+  TYPE_HEALTH = 1;      // Health.
+  TYPE_LIFE = 2;        // Life.
+  TYPE_VEHICLE = 3;     // vehicle.
+  TYPE_TRAVEL = 4;      // travel.
+}
+
+enum SubType {
+  SUBTYPE_UNSPECIFIED = 0; // Unspecified.
+  SUBTYPE_SUPER_TOPUP = 1;        // super-top-up.
+}

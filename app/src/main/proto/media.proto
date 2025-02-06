@@ -3,6 +3,7 @@ syntax = "proto3";
 package vault.media;
 import "cta.proto";
 
+option go_package = "github.com/eka-care/proto-contracts/go/vault/media";
 
 message Media {
   oneof Asset {

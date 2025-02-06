@@ -1,0 +1,72 @@
+syntax = "proto3";
+
+package vault.bannersv5;
+
+import "cta.proto";
+import "media.proto";
+import "banner_body_parameter.proto";
+
+option go_package = "github.com/eka-care/proto-contracts/go/vault/bannersv5";
+
+/* Banner represents banner info. */
+message Banner {
+  Item item = 1;
+  string hash = 2; // Hash of the banner.
+
+  message Item {
+    oneof result {
+      Content content = 1;
+      media.Media asset = 2;
+    }
+    string banner_id =
+        3; // ID represents banner identifier for tracking in Mixpanel.
+    vault.common.CTA cta = 4; // CTA configuration for button.
+  }
+
+  message Content {
+    string title = 1;              // Title of the banner.
+    optional string sub_title = 2; // Sub Title of the banner.
+    repeated vault.banner_body_parameter.BannerBodyParameter body_parameters =
+        3; // dynamic parameters with-in sub title to be filled by client.
+    Assets assets = 4;                // Assets for the banner.
+    optional Highlight highlight = 5; // Hightlight type of the banner.
+
+    message Assets {
+      media.Media bg_asset = 1;
+      optional media.Media top_asset = 2;
+    }
+
+    enum Highlight {
+      TYPE_UNSPECIFIED = 0; // Unspecified.
+      TYPE_ONE = 1;
+      TYPE_TWO = 2;
+      TYPE_THREE = 3;
+      TYPE_FOUR = 4;
+    }
+  }
+}
+
+/* BannersResponse represents banners on records page such as gmail sync,
+ * insights etc. */
+message BannersResponse {
+  repeated Banner banners = 1;
+  optional string next_page_token = 2;
+}
+
+message BannersAPIResponse {
+  /* ErrorCode represents list of errors */
+  enum ErrorCode {
+    ERROR_UNSPECIFIED = 0; // Error -> Unspecified.
+  }
+
+  /* Error represents error resonse of API */
+  message Error {
+    ErrorCode code = 1; // Error Code.
+    string message = 2; // Error Message.
+  }
+
+  oneof result {
+    BannersResponse response = 1;
+    Error error = 2;
+  }
+}

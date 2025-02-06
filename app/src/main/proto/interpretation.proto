@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package vault.vitals;
 
+option go_package = "github.com/eka-care/proto-contracts/go/vault/vitals/interpretation";
+
 enum Interpretation {
   INTERPRETATION_UNSPECIFIED = 0; // Interpretation -> Unspecified.
 
