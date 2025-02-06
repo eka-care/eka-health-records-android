@@ -21,4 +21,5 @@ data class RecordModel(
     val tags: String?,
     val source: Int?,
     val isAnalyzing: Boolean = false,
+    val isAbhaLinked : Boolean = false
 ): Parcelable

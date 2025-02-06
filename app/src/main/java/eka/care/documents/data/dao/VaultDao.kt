@@ -10,12 +10,15 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface VaultDao {
-    @Query("SELECT * FROM vault_table WHERE owner_id = :ownerId AND filter_id = :filterId ORDER BY created_at DESC")
+    @Query("SELECT * FROM vault_table WHERE owner_id = :ownerId AND filter_id = :filterId AND is_deleted=0 ORDER BY created_at DESC")
     fun fetchDocumentsNew(ownerId: String?, filterId: String?): Flow<List<VaultEntity>>
 
-    @Query("SELECT * FROM vault_table WHERE owner_id = :ownerId AND filter_id = :filterId AND doc_type = :docType ORDER BY created_at DESC")
-    fun fetchDocumentsNew(ownerId: String?, filterId: String?, docType: Int): Flow<List<VaultEntity>>
-
+    @Query("SELECT * FROM vault_table WHERE owner_id = :ownerId AND filter_id = :filterId AND doc_type = :docType AND is_deleted=0 ORDER BY created_at DESC")
+    fun fetchDocumentsNew(
+        ownerId: String?,
+        filterId: String?,
+        docType: Int
+    ): Flow<List<VaultEntity>>
 
 
     //OLD
@@ -32,7 +35,11 @@ interface VaultDao {
     fun fetchDocuments(oid: String?, doctorId: String): Flow<List<VaultEntity>>
 
     @Query("SELECT * FROM vault_table WHERE oid=:oid AND is_deleted=0 AND doctor_id =:doctorId AND doc_type =:docType ORDER BY created_at DESC")
-    fun fetchDocumentsByDocType(oid: String?, docType: Int, doctorId: String): Flow<List<VaultEntity>>
+    fun fetchDocumentsByDocType(
+        oid: String?,
+        docType: Int,
+        doctorId: String
+    ): Flow<List<VaultEntity>>
 
     @Query("SELECT * FROM vault_table WHERE oid=:oid AND is_deleted=0 ORDER BY doc_date DESC")
     fun fetchDocumentsByDocDate(oid: String?): Flow<List<VaultEntity>>
@@ -40,13 +47,13 @@ interface VaultDao {
     @Query("SELECT * FROM vault_table WHERE oid=:oid AND doc_type =:docType AND is_deleted=0 ORDER BY doc_date DESC")
     suspend fun fetchDocumentsByDocDateAndDocType(oid: String?, docType: Int): List<VaultEntity>
 
-    @Query("UPDATE vault_table SET doc_type = :docType,  doc_date = :docDate, tags = :tags, is_edited = 1 WHERE local_id = :localId AND oid = :oid")
+    @Query("UPDATE vault_table SET doc_type = :docType,  doc_date = :docDate, is_abha_linked = :isAbhaLinked, is_edited = 1 WHERE local_id = :localId AND oid = :oid")
     suspend fun editDocument(
         localId: String,
         docType: Int?,
         docDate: Long?,
-        tags: String,
-        oid: String?
+        oid: String?,
+        isAbhaLinked: Boolean
     )
 
     @Query("UPDATE vault_table SET  oid = :oid, doc_date = :documentDate ,tags = :tags, is_abha_linked = :isAbhaLinked, is_analyzing = :isAnalysing, hash_id = :hasId, cta = :cta WHERE local_id = :localId AND doc_id = :docId")
@@ -59,7 +66,7 @@ interface VaultDao {
         hasId: String,
         cta: String?,
         tags: String,
-        documentDate : Long?
+        documentDate: Long?
     )
 
     @Query("UPDATE vault_table SET is_deleted=1 WHERE oid=:oid AND local_id=:localId")
@@ -99,5 +106,5 @@ interface VaultDao {
     suspend fun removeDocument(localId: String, oid: String?)
 
     @Query("SELECT * FROM vault_table WHERE doctor_id = :doctorId AND oid = :patientoid and file_path is null")
-    fun fetchDocumentsWithoutFilePath(doctorId: String, patientoid : String): List<VaultEntity>
+    fun fetchDocumentsWithoutFilePath(doctorId: String, patientoid: String): List<VaultEntity>
 }

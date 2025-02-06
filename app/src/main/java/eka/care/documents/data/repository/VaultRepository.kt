@@ -7,14 +7,6 @@ import kotlinx.coroutines.flow.Flow
 interface VaultRepository: DocumentsRepository {
     suspend fun updateDocuments(vaultEntityList: List<VaultEntity>)
     suspend fun setThumbnail(thumbnail: String, documentId: String?)
-    suspend fun deleteDocument(oid: String, localId: String)
-    suspend fun editDocument(
-        localId: String,
-        docType: Int?,
-        docDate: Long?,
-        tags: String,
-        patientId : String
-    )
     suspend fun storeDocument(
         localId: String,
         oid: String?,

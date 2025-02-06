@@ -11,8 +11,8 @@ data class VaultEntity(
     @ColumnInfo(name = "doctor_id")  var doctorId : String,
     @ColumnInfo(name = "uuid") var uuid: String?,
     @ColumnInfo(name = "oid") var oid: String?,
-    @ColumnInfo(name = "owner_id") var ownerId: String? = null,
-    @ColumnInfo(name = "filter_id") var filterId: String? = null,
+    @ColumnInfo(name = "owner_id") var ownerId: String? = null, // doctorId new
+    @ColumnInfo(name = "filter_id") var filterId: String? = null, // app_oid, patient_id
     @ColumnInfo(name = "file_path") var filePath: List<String>?,
     @ColumnInfo(name = "file_type") var fileType: String,
     @ColumnInfo(name = "thumbnail") var thumbnail: String?,

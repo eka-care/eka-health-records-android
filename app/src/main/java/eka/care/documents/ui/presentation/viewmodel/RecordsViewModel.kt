@@ -233,11 +233,12 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
         oid: String,
         docDate: Long?,
         tags: String,
-        doctorId: String
+        doctorId: String,
+        isAbhaLinked : Boolean
     ) {
         try {
             viewModelScope.launch {
-                vaultRepository.editDocument(localId, docType, docDate, tags, patientId = oid)
+                vaultRepository.editDocument(localId, docType, docDate, filterId = oid, isAbhaLinked = isAbhaLinked)
                 val tagList = tags.split(",")
               //  val tagNames = Tags().getTagNamesByIds(tagList)
                 val updateFileDetailsRequest = UpdateFileDetailsRequest(
@@ -264,7 +265,7 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
     fun deleteDocument(localId: String, oid: String, doctorId: String) {
         try {
             viewModelScope.launch {
-                vaultRepository.deleteDocument(oid = oid, localId = localId)
+                vaultRepository.deleteDocument(filterId = oid, localId = localId)
                 getLocalRecords(oid, doctorId = doctorId)
             }
         } catch (_: Exception) {

@@ -6,28 +6,25 @@ import eka.care.documents.data.db.model.AvailableDocTypes
 import kotlinx.coroutines.flow.Flow
 
 class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultRepository {
-    override fun fetchDocuments(ownerId: String?, filterId: String?, docType: Int): Flow<List<VaultEntity>> {
+    // New
+    override fun fetchDocuments(
+        ownerId: String?,
+        filterId: String?,
+        docType: Int
+    ): Flow<List<VaultEntity>> {
         return if (docType == -1) {
             database.vaultDao().fetchDocumentsNew(ownerId = ownerId, filterId = filterId)
         } else {
-            database.vaultDao().fetchDocumentsNew(ownerId = ownerId, filterId = filterId, docType = docType)
+            database.vaultDao()
+                .fetchDocumentsNew(ownerId = ownerId, filterId = filterId, docType = docType)
         }
     }
-
-    override suspend fun updateDocuments(vaultEntityList: List<VaultEntity>) {
-        database.vaultDao().updateDocuments(vaultEntityList)
-    }
-
     override suspend fun storeDocuments(vaultEntityList: List<VaultEntity>) {
         database.vaultDao().storeDocuments(vaultEntityList)
     }
 
-    override suspend fun setThumbnail(thumbnail: String, documentId: String?) {
-        database.vaultDao().setThumbnail(thumbnail = thumbnail, docId = documentId)
-    }
-
-    override suspend fun deleteDocument(oid: String, localId: String) {
-        database.vaultDao().deleteDocument(oid = oid, localId = localId)
+    override suspend fun deleteDocument(filterId: String, localId: String) {
+        database.vaultDao().deleteDocument(oid = filterId, localId = localId)
         return
     }
 
@@ -35,16 +32,25 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
         localId: String,
         docType: Int?,
         docDate: Long?,
-        tags: String,
-        patientId : String
+        filterId: String?,
+        isAbhaLinked: Boolean
     ) {
         database.vaultDao().editDocument(
             localId = localId,
             docType = docType,
             docDate = docDate,
-            tags = tags,
-            oid = patientId
+            oid = filterId,
+            isAbhaLinked = isAbhaLinked
         )
+    }
+
+    // OLD
+    override suspend fun updateDocuments(vaultEntityList: List<VaultEntity>) {
+        database.vaultDao().updateDocuments(vaultEntityList)
+    }
+
+    override suspend fun setThumbnail(thumbnail: String, documentId: String?) {
+        database.vaultDao().setThumbnail(thumbnail = thumbnail, docId = documentId)
     }
 
     override suspend fun storeDocument(
@@ -56,7 +62,7 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
         hasId: String,
         cta: String?,
         tags: String,
-        documentDate : Long?
+        documentDate: Long?
     ) {
         database.vaultDao().storeDocument(
             localId = localId,
@@ -91,7 +97,10 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
         return database.vaultDao().getDocumentData(oid = oid, localId = localId)
     }
 
-    override suspend fun getAvailableDocTypes(oid: String, doctorId: String): List<AvailableDocTypes> {
+    override suspend fun getAvailableDocTypes(
+        oid: String,
+        doctorId: String
+    ): List<AvailableDocTypes> {
         return database.vaultDao().getAvailableDocTypes(oid = oid, doctorId = doctorId)
     }
 
@@ -103,7 +112,8 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
         return if (docType == -1) {
             database.vaultDao().fetchDocuments(oid = oid, doctorId = doctorId)
         } else {
-            database.vaultDao().fetchDocumentsByDocType(oid = oid, docType = docType, doctorId = doctorId)
+            database.vaultDao()
+                .fetchDocumentsByDocType(oid = oid, docType = docType, doctorId = doctorId)
         }
     }
 
@@ -115,7 +125,8 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
         return if (docType == -1) {
             database.vaultDao().fetchDocumentsByDocDate(oid = oid)
         } else {
-            database.vaultDao().fetchDocumentsByDocType(oid = oid, docType = docType, doctorId = doctorId)
+            database.vaultDao()
+                .fetchDocumentsByDocType(oid = oid, docType = docType, doctorId = doctorId)
         }
     }
 
@@ -133,7 +144,7 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
         return database.vaultDao().getLocalId(docId)
     }
 
-    override suspend fun getDocumentById(id: String  ) : VaultEntity {
+    override suspend fun getDocumentById(id: String): VaultEntity {
         return database.vaultDao().getDocumentById(id)
     }
 
@@ -142,7 +153,11 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
         return
     }
 
-    override suspend fun getDocumentsWithoutFilePath(doctorId: String, patientOid : String): List<VaultEntity> {
-        return database.vaultDao().fetchDocumentsWithoutFilePath( doctorId = doctorId, patientoid =  patientOid)
+    override suspend fun getDocumentsWithoutFilePath(
+        doctorId: String,
+        patientOid: String
+    ): List<VaultEntity> {
+        return database.vaultDao()
+            .fetchDocumentsWithoutFilePath(doctorId = doctorId, patientoid = patientOid)
     }
 }

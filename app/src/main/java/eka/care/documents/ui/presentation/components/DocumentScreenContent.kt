@@ -192,7 +192,7 @@ fun DocumentScreenContent(
     }
 }
 
-private fun navigate(context: Context, model: RecordModel, oid: String) {
+fun navigate(context: Context, model: RecordModel, oid: String) {
     if (isOnline(context)) {
         if (model.tags?.split(",")?.contains("1") == false) {
             Intent(context, DocumentViewActivity::class.java).also {
