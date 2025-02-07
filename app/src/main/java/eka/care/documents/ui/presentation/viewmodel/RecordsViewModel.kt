@@ -235,7 +235,7 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
     ) {
         try {
             viewModelScope.launch {
-                vaultRepository.editDocument(localId, docType, docDate, filterId = oid, isAbhaLinked = isAbhaLinked)
+                vaultRepository.editDocument(localId, docType, docDate, filterId = oid)
                 val tagList = tags.split(",")
               //  val tagNames = Tags().getTagNamesByIds(tagList)
                 val updateFileDetailsRequest = UpdateFileDetailsRequest(

@@ -49,15 +49,13 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
         localId: String,
         docType: Int?,
         docDate: Long?,
-        filterId: String?,
-        isAbhaLinked: Boolean
+        filterId: String?
     ) {
         database.vaultDao().editDocument(
             localId = localId,
             docType = docType,
             docDate = docDate,
-            oid = filterId,
-            isAbhaLinked = isAbhaLinked
+            oid = filterId
         )
     }
 
@@ -70,7 +68,6 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
     override suspend fun storeDocument(
         localId: String,
         oid: String?,
-        isAbhaLinked: Boolean,
         docId: String,
         isAnalysing: Boolean,
         hasId: String,
@@ -81,7 +78,6 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
         database.vaultDao().storeDocument(
             localId = localId,
             oid = oid,
-            isAbhaLinked = isAbhaLinked,
             docId = docId,
             isAnalysing = isAnalysing,
             hasId = hasId,

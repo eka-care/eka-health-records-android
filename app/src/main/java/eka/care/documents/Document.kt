@@ -65,14 +65,12 @@ object Document {
         docType: Int?,
         docDate: Long?,
         filterId: String?,
-        isAbhaLinked : Boolean
     ) {
         documentRepository?.editDocument(
             localId = localId,
             docType = docType,
             docDate = docDate,
-            filterId= filterId,
-            isAbhaLinked = isAbhaLinked
+            filterId= filterId
         )
     }
 
@@ -81,15 +79,7 @@ object Document {
     }
 
     fun view(context: Context, model: RecordModel, oid: String){
-        if (model.tags?.split(",")?.contains("1") == false) {
-            Intent(context, DocumentViewActivity::class.java).also {
-                it.putExtra("local_id", model.localId)
-                it.putExtra("doc_id", model.documentId)
-                it.putExtra("user_id", oid)
-                context.startActivity(it)
-            }
-            return
-        } else {
+        if (model.tags?.split(",")?.contains("1") == true) {
             val date = RecordsUtility.convertLongToDateString(model.documentDate ?: model.createdAt)
             Intent(context, SmartReportActivity::class.java)
                 .also {
@@ -100,6 +90,14 @@ object Document {
                     it.putExtra("doc_date", date)
                     context.startActivity(it)
                 }
+            return
+        } else {
+            Intent(context, DocumentViewActivity::class.java).also {
+                it.putExtra("local_id", model.localId)
+                it.putExtra("doc_id", model.documentId)
+                it.putExtra("user_id", oid)
+                context.startActivity(it)
+            }
             return
         }
     }

@@ -217,8 +217,7 @@ class SyncFileWorker(
                 oid = vaultEntity.oid,
                 documentType = docTypes.find { it.idNew == vaultEntity.documentType }?.id,
                 documentDate = if (documentDate.isNotEmpty()) changeDateFormat(documentDate) else null,
-                userTags = emptyList(),
-                linkAbha = vaultEntity.isABHALinked
+                userTags = emptyList()
             )
 
             myFileRepository.updateFileDetails(
@@ -312,7 +311,6 @@ class SyncFileWorker(
                     isAnalysing = recordItem.availableDocumentCase == Records.Record.Item.AvailableDocumentCase.IN_TRANSIT,
                     docId = recordItem.documentId,
                     hasId = it.record.hash.toString(),
-                    isAbhaLinked = false,
                     oid = app_oid,
                     tags = recordItem.metadata.tagsValueList.joinToString(","),
                     documentDate = documentDate,
@@ -335,7 +333,6 @@ class SyncFileWorker(
                         tags = recordItem.metadata.tagsValueList.joinToString(","),
                         documentDate = documentDate,
                         hashId = it.record.hash.toString(),
-                        isABHALinked = false,
                         isAnalyzing = recordItem.availableDocumentCase == Records.Record.Item.AvailableDocumentCase.IN_TRANSIT,
                         cta = if (localCta.pageId.isNullOrEmpty()) null
                         else Gson().toJson(localCta, CTA::class.java).toString(),

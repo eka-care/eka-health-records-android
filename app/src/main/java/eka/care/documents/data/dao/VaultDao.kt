@@ -49,20 +49,18 @@ interface VaultDao {
     @Query("SELECT * FROM vault_table WHERE oid=:oid AND doc_type =:docType AND is_deleted=0 ORDER BY doc_date DESC")
     suspend fun fetchDocumentsByDocDateAndDocType(oid: String?, docType: Int): List<VaultEntity>
 
-    @Query("UPDATE vault_table SET doc_type = :docType,  doc_date = :docDate, is_abha_linked = :isAbhaLinked, is_edited = 1 WHERE local_id = :localId AND oid = :oid")
+    @Query("UPDATE vault_table SET doc_type = :docType,  doc_date = :docDate, is_edited = 1 WHERE local_id = :localId AND oid = :oid")
     suspend fun editDocument(
         localId: String,
         docType: Int?,
         docDate: Long?,
         oid: String?,
-        isAbhaLinked: Boolean
     )
 
-    @Query("UPDATE vault_table SET  oid = :oid, doc_date = :documentDate ,tags = :tags, is_abha_linked = :isAbhaLinked, is_analyzing = :isAnalysing, hash_id = :hasId, cta = :cta WHERE local_id = :localId AND doc_id = :docId")
+    @Query("UPDATE vault_table SET  oid = :oid, doc_date = :documentDate ,tags = :tags, is_analyzing = :isAnalysing, hash_id = :hasId, cta = :cta WHERE local_id = :localId AND doc_id = :docId")
     suspend fun storeDocument(
         localId: String,
         oid: String?,
-        isAbhaLinked: Boolean,
         docId: String,
         isAnalysing: Boolean,
         hasId: String,

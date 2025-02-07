@@ -13,7 +13,6 @@ interface DocumentsRepository {
         docType: Int?,
         docDate: Long?,
         filterId: String?,
-        isAbhaLinked : Boolean
     )
     suspend fun getAvailableDocTypes(filterId: String, ownerId: String): List<AvailableDocTypes>
 }

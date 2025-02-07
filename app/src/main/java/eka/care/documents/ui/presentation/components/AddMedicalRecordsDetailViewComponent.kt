@@ -161,7 +161,6 @@ fun AddMedicalRecordsDetailViewComponent(
                     documentType = selectedChipId,
                     documentDate = unixTimestamp,
                     tags = selectedTags.joinToString(",").trimStart(','),
-                    isABHALinked = false,
                     hashId = null,
                     cta = null,
                     doctorId = paramsModel.doctorId,

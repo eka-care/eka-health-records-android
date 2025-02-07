@@ -15,7 +15,6 @@ interface VaultRepository: DocumentsRepository {
     suspend fun storeDocument(
         localId: String,
         oid: String?,
-        isAbhaLinked: Boolean,
         docId: String,
         isAnalysing: Boolean,
         hasId: String,
