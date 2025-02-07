@@ -6,6 +6,8 @@
 # Ignore Gradle files
 .gradle/
 .gradle/**
+*.lock
+*.bin
 
 # Ignore Build directories
 /build/

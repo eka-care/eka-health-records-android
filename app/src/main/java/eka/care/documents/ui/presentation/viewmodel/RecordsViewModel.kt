@@ -230,8 +230,7 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
         oid: String,
         docDate: Long?,
         tags: String,
-        doctorId: String,
-        isAbhaLinked : Boolean
+        doctorId: String
     ) {
         try {
             viewModelScope.launch {

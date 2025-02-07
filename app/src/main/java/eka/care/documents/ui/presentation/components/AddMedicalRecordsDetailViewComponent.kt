@@ -127,7 +127,6 @@ fun AddMedicalRecordsDetailViewComponent(
                 docDate = timestampToLong(date),
                 tags = selectedTags.joinToString(separator = ","),
                 doctorId = paramsModel.doctorId,
-                isAbhaLinked = viewModel.cardClickData.value?.isAbhaLinked ?: false
             )
             onClick(CTA(action = "onBackClick"))
         } else {
