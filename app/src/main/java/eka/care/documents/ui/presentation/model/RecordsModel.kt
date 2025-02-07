@@ -1,7 +1,6 @@
 package eka.care.documents.ui.presentation.model
 
 import android.os.Parcelable
-import androidx.annotation.DrawableRes
 import androidx.annotation.Keep
 import kotlinx.parcelize.Parcelize
 

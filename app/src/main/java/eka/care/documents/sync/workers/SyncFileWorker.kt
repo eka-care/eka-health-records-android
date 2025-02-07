@@ -91,9 +91,11 @@ class SyncFileWorker(
                             downloadFile(file.assetUrl, file.fileType)
                         }
                         val fileType = it.files.firstOrNull()?.fileType ?: ""
+                        val smartReportField = it.smartReport?.let { report -> Gson().toJson(report) }
                         val updatedDocument = document.copy(
                             filePath = filePaths,
-                            fileType = fileType
+                            fileType = fileType,
+                            smartReportField = smartReportField
                         )
                         vaultRepository.updateDocuments(listOf(updatedDocument))
                     }

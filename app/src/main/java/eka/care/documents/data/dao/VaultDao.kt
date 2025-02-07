@@ -6,20 +6,22 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import eka.care.documents.data.db.entity.VaultEntity
 import eka.care.documents.data.db.model.AvailableDocTypes
+import eka.care.documents.sync.data.remote.dto.response.SmartReport
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface VaultDao {
-    @Query("SELECT * FROM vault_table WHERE owner_id = :ownerId AND filter_id = :filterId AND is_deleted=0 ORDER BY created_at DESC")
-    fun fetchDocumentsNew(ownerId: String?, filterId: String?): Flow<List<VaultEntity>>
+    @Query("SELECT * FROM vault_table WHERE owner_id = :ownerId AND filter_id = :filterId ORDER BY created_at DESC")
+    fun fetchDocumentsByOwnerId(ownerId: String?, filterId: String?): Flow<List<VaultEntity>>
 
-    @Query("SELECT * FROM vault_table WHERE owner_id = :ownerId AND filter_id = :filterId AND doc_type = :docType AND is_deleted=0 ORDER BY created_at DESC")
-    fun fetchDocumentsNew(
-        ownerId: String?,
-        filterId: String?,
-        docType: Int
-    ): Flow<List<VaultEntity>>
+    @Query("SELECT * FROM vault_table WHERE owner_id = :ownerId AND filter_id = :filterId AND doc_type = :docType ORDER BY created_at DESC")
+    fun fetchDocuments(ownerId: String?, filterId: String?, docType: Int): Flow<List<VaultEntity>>
 
+    @Query("SELECT smart_report_field FROM vault_table WHERE filter_id = :filterId AND owner_id = :ownerId AND doc_id = :documentId")
+    fun getSmartReport(filterId: String, ownerId: String, documentId :String): String?
+
+    @Query("UPDATE vault_table SET smart_report_field = :smartReport WHERE filter_id = :filterId AND owner_id = :ownerId AND doc_id =:documentId")
+    suspend fun updateSmartReport(filterId: String, ownerId: String, documentId: String, smartReport: String)
 
     //OLD
     @Insert(onConflict = OnConflictStrategy.IGNORE)
@@ -106,5 +108,6 @@ interface VaultDao {
     suspend fun removeDocument(localId: String, oid: String?)
 
     @Query("SELECT * FROM vault_table WHERE doctor_id = :doctorId AND oid = :patientoid and file_path is null")
-    fun fetchDocumentsWithoutFilePath(doctorId: String, patientoid: String): List<VaultEntity>
+    fun fetchDocumentsWithoutFilePath(doctorId: String, patientoid : String): List<VaultEntity>
+
 }

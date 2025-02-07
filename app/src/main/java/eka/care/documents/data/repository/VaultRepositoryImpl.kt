@@ -1,24 +1,41 @@
 package eka.care.documents.data.repository
 
+import android.util.Log
 import eka.care.documents.data.db.database.DocumentDatabase
 import eka.care.documents.data.db.entity.VaultEntity
 import eka.care.documents.data.db.model.AvailableDocTypes
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.withContext
 
 class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultRepository {
-    // New
-    override fun fetchDocuments(
-        ownerId: String?,
-        filterId: String?,
-        docType: Int
-    ): Flow<List<VaultEntity>> {
+    override fun fetchDocuments(ownerId: String?, filterId: String?, docType: Int): Flow<List<VaultEntity>> {
         return if (docType == -1) {
-            database.vaultDao().fetchDocumentsNew(ownerId = ownerId, filterId = filterId)
+            database.vaultDao().fetchDocumentsByOwnerId(ownerId = ownerId, filterId = filterId)
         } else {
-            database.vaultDao()
-                .fetchDocumentsNew(ownerId = ownerId, filterId = filterId, docType = docType)
+            database.vaultDao().fetchDocuments(ownerId = ownerId, filterId = filterId, docType = docType)
         }
     }
+
+    override suspend fun getSmartReport(filterId: String, ownerId: String, documentId: String) : String?{
+        return withContext(Dispatchers.IO) {
+            val result = database.vaultDao().getSmartReport(filterId = filterId, ownerId = ownerId, documentId = documentId)
+            return@withContext result
+        }
+    }
+
+    override suspend fun updateSmartReport(filterId: String, ownerId: String, documentId: String, smartReport: String) {
+        withContext(Dispatchers.IO) {
+            database.vaultDao().updateSmartReport(filterId = filterId, ownerId = ownerId, documentId = documentId, smartReport = smartReport)
+        }
+    }
+
+    // OLD
+
+    override suspend fun updateDocuments(vaultEntityList: List<VaultEntity>) {
+        database.vaultDao().updateDocuments(vaultEntityList)
+    }
+
     override suspend fun storeDocuments(vaultEntityList: List<VaultEntity>) {
         database.vaultDao().storeDocuments(vaultEntityList)
     }
@@ -45,9 +62,6 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
     }
 
     // OLD
-    override suspend fun updateDocuments(vaultEntityList: List<VaultEntity>) {
-        database.vaultDao().updateDocuments(vaultEntityList)
-    }
 
     override suspend fun setThumbnail(thumbnail: String, documentId: String?) {
         database.vaultDao().setThumbnail(thumbnail = thumbnail, docId = documentId)

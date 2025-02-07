@@ -6,6 +6,7 @@ import android.content.ContextWrapper
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.gson.Gson
 import eka.care.documents.ui.presentation.components.Filter
 import eka.care.documents.ui.presentation.components.LabParamResult
 import eka.care.documents.ui.presentation.components.SmartViewTab
@@ -116,12 +117,28 @@ class DocumentPreviewViewModel(val app: Application): AndroidViewModel(app){
         }
     }
 
-    fun getSmartReport(docId: String, userId : String){
+    fun getSmartReport(ownerId : String, filterId : String, documentId : String){
         viewModelScope.launch {
-            val response = myFileRepository.getDocument(docId = docId, userId = userId)
-            if(response != null){
-                _documentSmart.value = DocumentSmartReportState.Success(response)
-            }else{
+            _documentSmart.value = DocumentSmartReportState.Loading
+            try {
+                val localSmartReportJson = vaultRepository.getSmartReport(ownerId = ownerId, filterId =  filterId, documentId =  documentId)
+                if (!localSmartReportJson.isNullOrEmpty()) {
+                    // Deserialize JSON to SmartReport object
+                    val smartReport = Gson().fromJson(localSmartReportJson, SmartReport::class.java)
+                    _documentSmart.value = DocumentSmartReportState.Success(smartReport)
+                    return@launch
+                }
+                val response = myFileRepository.getDocument(docId = documentId, userId = filterId)
+                if (response?.smartReport != null) {
+                    _documentSmart.value = DocumentSmartReportState.Success(response.smartReport)
+
+                    // Serialize SmartReport to JSON and store it in DB
+                    val smartReportJson = Gson().toJson(response.smartReport)
+                    vaultRepository.updateSmartReport(documentId = documentId, filterId = filterId, smartReport =  smartReportJson, ownerId =  ownerId)
+                } else {
+                    _documentSmart.value = DocumentSmartReportState.Error("Something went wrong!")
+                }
+            }catch (e : Exception){
                 _documentSmart.value = DocumentSmartReportState.Error("Something went wrong!")
             }
         }

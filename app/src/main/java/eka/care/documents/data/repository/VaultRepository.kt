@@ -5,6 +5,11 @@ import eka.care.documents.data.db.model.AvailableDocTypes
 import kotlinx.coroutines.flow.Flow
 
 interface VaultRepository: DocumentsRepository {
+    // NEW
+    suspend fun getSmartReport(filterId: String, ownerId: String, documentId: String) : String?
+    suspend fun updateSmartReport(filterId: String, ownerId: String, documentId: String, smartReport: String)
+
+    // OLD
     suspend fun updateDocuments(vaultEntityList: List<VaultEntity>)
     suspend fun setThumbnail(thumbnail: String, documentId: String?)
     suspend fun storeDocument(
