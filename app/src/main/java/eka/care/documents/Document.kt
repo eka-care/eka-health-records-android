@@ -42,7 +42,7 @@ object Document {
 
     fun getDocuments(
         ownerId: String,
-        filterId: String,
+        filterId: String?,
         docType: Int = -1
     ): Flow<List<VaultEntity>>? {
         return documentRepository?.fetchDocuments(
