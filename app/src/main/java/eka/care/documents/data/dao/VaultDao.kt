@@ -11,10 +11,10 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface VaultDao {
-    @Query("SELECT * FROM vault_table WHERE owner_id = :ownerId AND filter_id = :filterId ORDER BY created_at DESC")
+    @Query("SELECT * FROM vault_table WHERE owner_id = :ownerId AND filter_id = :filterId AND is_deleted=0 ORDER BY created_at DESC")
     fun fetchDocumentsByOwnerId(ownerId: String?, filterId: String?): Flow<List<VaultEntity>>
 
-    @Query("SELECT * FROM vault_table WHERE owner_id = :ownerId AND filter_id = :filterId AND doc_type = :docType ORDER BY created_at DESC")
+    @Query("SELECT * FROM vault_table WHERE owner_id = :ownerId AND filter_id = :filterId AND doc_type = :docType AND is_deleted=0 ORDER BY created_at DESC")
     fun fetchDocuments(ownerId: String?, filterId: String?, docType: Int): Flow<List<VaultEntity>>
 
     @Query("SELECT smart_report_field FROM vault_table WHERE filter_id = :filterId AND owner_id = :ownerId AND doc_id = :documentId")

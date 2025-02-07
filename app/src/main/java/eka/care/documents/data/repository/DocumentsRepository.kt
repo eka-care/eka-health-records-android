@@ -1,6 +1,7 @@
 package eka.care.documents.data.repository
 
 import eka.care.documents.data.db.entity.VaultEntity
+import eka.care.documents.data.db.model.AvailableDocTypes
 import kotlinx.coroutines.flow.Flow
 
 interface DocumentsRepository {
@@ -14,4 +15,5 @@ interface DocumentsRepository {
         filterId: String?,
         isAbhaLinked : Boolean
     )
+    suspend fun getAvailableDocTypes(filterId: String, ownerId: String): List<AvailableDocTypes>
 }

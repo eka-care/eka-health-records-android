@@ -27,7 +27,6 @@ interface VaultRepository: DocumentsRepository {
     suspend fun getDeletedDocuments(oid: String , doctorId: String): List<VaultEntity>
     suspend fun getEditedDocuments(oid: String, doctorId: String): List<VaultEntity>
     suspend fun fetchDocumentData(oid: String, localId: String): VaultEntity
-    suspend fun getAvailableDocTypes(oid: String, doctorId: String): List<AvailableDocTypes>
     fun fetchDocuments(oid: String, docType: Int, doctorId: String): Flow<List<VaultEntity>>
     fun fetchDocumentsByDocDate(oid: String, docType: Int, doctorId: String): Flow<List<VaultEntity>>
     suspend fun updateDocumentId(documentId: String, localId: String)

@@ -2,15 +2,19 @@ package eka.care.documents
 
 import android.content.Context
 import android.content.Intent
+import android.util.Log
+import androidx.compose.runtime.Composable
 import com.eka.network.ConverterFactoryType
 import com.eka.network.Networking
 import com.google.gson.Gson
 import eka.care.documents.data.db.database.DocumentDatabase
 import eka.care.documents.data.db.entity.VaultEntity
+import eka.care.documents.data.db.model.AvailableDocTypes
 import eka.care.documents.data.repository.DocumentsRepository
 import eka.care.documents.data.repository.VaultRepositoryImpl
 import eka.care.documents.ui.presentation.activity.DocumentViewActivity
 import eka.care.documents.ui.presentation.activity.SmartReportActivity
+import eka.care.documents.ui.presentation.components.DocumentFilter
 import eka.care.documents.ui.presentation.model.RecordModel
 import eka.care.documents.ui.utility.RecordsUtility
 import kotlinx.coroutines.flow.Flow
@@ -72,6 +76,10 @@ object Document {
         )
     }
 
+    suspend fun getAvailableDocTypes(filterId: String, ownerId: String): List<AvailableDocTypes>?{
+       return documentRepository?.getAvailableDocTypes(filterId = filterId, ownerId = ownerId)
+    }
+
     fun view(context: Context, model: RecordModel, oid: String){
         if (model.tags?.split(",")?.contains("1") == false) {
             Intent(context, DocumentViewActivity::class.java).also {
@@ -95,6 +103,7 @@ object Document {
             return
         }
     }
+
 
     fun destroy() {
         db?.clearAllTables()

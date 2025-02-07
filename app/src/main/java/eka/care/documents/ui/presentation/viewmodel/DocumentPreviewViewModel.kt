@@ -28,9 +28,10 @@ import okhttp3.ResponseBody
 import java.io.File
 import java.util.UUID
 
-class DocumentPreviewViewModel(val app: Application): AndroidViewModel(app){
+class DocumentPreviewViewModel(val app: Application) : AndroidViewModel(app) {
 
-    private val vaultRepository: VaultRepository = VaultRepositoryImpl(DocumentDatabase.getInstance(app))
+    private val vaultRepository: VaultRepository =
+        VaultRepositoryImpl(DocumentDatabase.getInstance(app))
     private val myFileRepository = MyFileRepository()
 
     private val _selectedTab = MutableStateFlow(SmartViewTab.SMARTREPORT)
@@ -45,7 +46,8 @@ class DocumentPreviewViewModel(val app: Application): AndroidViewModel(app){
     private val _document = MutableStateFlow<DocumentPreviewState>(DocumentPreviewState.Loading)
     val document: StateFlow<DocumentPreviewState> = _document
 
-    private val _documentSmart = MutableStateFlow<DocumentSmartReportState>(DocumentSmartReportState.Loading)
+    private val _documentSmart =
+        MutableStateFlow<DocumentSmartReportState>(DocumentSmartReportState.Loading)
     val documentSmart: StateFlow<DocumentSmartReportState> = _documentSmart
     fun updateFilter(filter: Filter, smartReport: SmartReport?) {
         _selectedFilter.value = filter
@@ -70,11 +72,11 @@ class DocumentPreviewViewModel(val app: Application): AndroidViewModel(app){
         _selectedTab.value = newTab
     }
 
-    fun getDocument(docId: String, userId: String, localId : String) {
+    fun getDocument(docId: String, userId: String, localId: String) {
         viewModelScope.launch {
             try {
                 val recordEntity = vaultRepository.getDocumentById(id = localId)
-                if(!recordEntity?.filePath.isNullOrEmpty()) {
+                if (!recordEntity?.filePath.isNullOrEmpty()) {
                     _document.value = DocumentPreviewState.Success(
                         Pair(
                             first = recordEntity?.filePath ?: emptyList(),
@@ -84,7 +86,7 @@ class DocumentPreviewViewModel(val app: Application): AndroidViewModel(app){
                     return@launch
                 }
                 val response = myFileRepository.getDocument(docId = docId, userId = userId)
-                if(response == null) {
+                if (response == null) {
                     _document.value = DocumentPreviewState.Error("Something went wrong!")
                     return@launch
                 }
@@ -96,7 +98,7 @@ class DocumentPreviewViewModel(val app: Application): AndroidViewModel(app){
                     files.add(path)
                 }
                 val documentEntity = vaultRepository.getDocumentById(id = localId)
-                if(documentEntity == null) {
+                if (documentEntity == null) {
                     _document.value = DocumentPreviewState.Error("Something went wrong!")
                     return@launch
                 }
@@ -112,16 +114,21 @@ class DocumentPreviewViewModel(val app: Application): AndroidViewModel(app){
                     )
                 )
             } catch (ex: Exception) {
-                _document.value = DocumentPreviewState.Error(ex.localizedMessage ?: "Something went wrong!")
+                _document.value =
+                    DocumentPreviewState.Error(ex.localizedMessage ?: "Something went wrong!")
             }
         }
     }
 
-    fun getSmartReport(ownerId : String, filterId : String, documentId : String){
+    fun getSmartReport(ownerId: String, filterId: String, documentId: String) {
         viewModelScope.launch {
             _documentSmart.value = DocumentSmartReportState.Loading
             try {
-                val localSmartReportJson = vaultRepository.getSmartReport(ownerId = ownerId, filterId =  filterId, documentId =  documentId)
+                val localSmartReportJson = vaultRepository.getSmartReport(
+                    ownerId = ownerId,
+                    filterId = filterId,
+                    documentId = documentId
+                )
                 if (!localSmartReportJson.isNullOrEmpty()) {
                     // Deserialize JSON to SmartReport object
                     val smartReport = Gson().fromJson(localSmartReportJson, SmartReport::class.java)
@@ -134,11 +141,16 @@ class DocumentPreviewViewModel(val app: Application): AndroidViewModel(app){
 
                     // Serialize SmartReport to JSON and store it in DB
                     val smartReportJson = Gson().toJson(response.smartReport)
-                    vaultRepository.updateSmartReport(documentId = documentId, filterId = filterId, smartReport =  smartReportJson, ownerId =  ownerId)
+                    vaultRepository.updateSmartReport(
+                        documentId = documentId,
+                        filterId = filterId,
+                        smartReport = smartReportJson,
+                        ownerId = ownerId
+                    )
                 } else {
                     _documentSmart.value = DocumentSmartReportState.Error("Something went wrong!")
                 }
-            }catch (e : Exception){
+            } catch (e: Exception) {
                 _documentSmart.value = DocumentSmartReportState.Error("Something went wrong!")
             }
         }
@@ -146,7 +158,7 @@ class DocumentPreviewViewModel(val app: Application): AndroidViewModel(app){
 
     private suspend fun downloadFile(assetUrl: String?, type: String): String {
         val directory = ContextWrapper(app).getDir("cache", Context.MODE_PRIVATE)
-        val ext = if(type.trim().lowercase() == "pdf") "pdf" else "jpg"
+        val ext = if (type.trim().lowercase() == "pdf") "pdf" else "jpg"
         val childPath = "${UUID.randomUUID()}.$ext"
         withContext(Dispatchers.IO) {
             val resp = myFileRepository.downloadFile(assetUrl)

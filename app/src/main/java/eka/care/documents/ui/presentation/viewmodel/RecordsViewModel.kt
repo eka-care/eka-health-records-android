@@ -305,8 +305,8 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
                 _getAvailableDocTypes.value =
                     GetAvailableDocTypesState(
                         resp = vaultRepository.getAvailableDocTypes(
-                            oid = oid,
-                            doctorId = doctorId
+                            filterId = oid,
+                            ownerId = doctorId
                         )
                     )
             }
