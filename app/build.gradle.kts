@@ -70,7 +70,7 @@ afterEvaluate {
 
                 groupId = "com.eka.records"
                 artifactId = "eka-records"
-                version = "3.1.3"
+                version = "3.1.4"
             }
         }
     }
