@@ -7,7 +7,7 @@ import com.google.gson.annotations.SerializedName
 data class Document(
     @SerializedName("patient_name") val patientName: String,
     @SerializedName("document_type") val documentType: String,
-    @SerializedName("document_date") val documentDate: String,
+    @SerializedName("document_date_epoch") val documentDate: String,
     @SerializedName("user_tags") val userTags: List<String>? = null,
     @SerializedName("tags") val tags: List<String>? = null,
     @SerializedName("files") val files: List<File>,

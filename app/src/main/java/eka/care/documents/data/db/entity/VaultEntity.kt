@@ -9,7 +9,7 @@ import androidx.room.TypeConverters
 data class VaultEntity(
     @PrimaryKey @ColumnInfo(name = "local_id") var localId: String,
     @ColumnInfo(name = "doc_id") var documentId: String?,
-    @ColumnInfo(name = "doctor_id")  var doctorId : String,
+    @ColumnInfo(name = "doctor_id")  var doctorId : String? = null,
     @ColumnInfo(name = "uuid") var uuid: String?,
     @ColumnInfo(name = "oid") var oid: String?,
     @ColumnInfo(name = "owner_id") var ownerId: String? = null, // doctorId new

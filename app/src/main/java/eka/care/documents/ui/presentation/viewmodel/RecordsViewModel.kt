@@ -31,15 +31,12 @@ import eka.care.documents.ui.presentation.state.GetAvailableDocTypesState
 import eka.care.documents.ui.presentation.state.GetRecordsState
 import eka.care.documents.ui.utility.RecordsUtility.Companion.convertLongToFormattedDate
 import id.zelory.compressor.Compressor
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.cancellable
-import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -120,10 +117,10 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
         _isOnline.value = activeNetwork?.isConnected == true
     }
 
-    fun getTags(docId: String, userId: String) {
+    fun getTags(documentId: String, userId: String) {
         viewModelScope.launch {
             _selectedTags.value = emptyList()
-            val response = myFileRepository.getDocument(docId = docId, userId = userId)?.tags
+            val response = myFileRepository.getDocument(documentId = documentId, filterId = userId)?.tags
             //   val apiTags = response?.let { Tags().getTagIdByNames(it) } ?: emptyList()
             val cardTags = cardClickData.value?.tags?.split(",")?.map { it.trim() } ?: emptyList()
             val allTags = (cardTags).distinct()
@@ -162,7 +159,7 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun getLocalRecords(oid: String, docType: Int = -1, doctorId: String) {
+    fun getLocalRecords(oid: String, docType: Int = -1, doctorId: String?) {
         documentType.intValue = docType
         if (::launch.isInitialized) {
             launch.cancel()
@@ -247,7 +244,7 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
 
                 cardClickData.value?.documentId?.let {
                     myFileRepository.updateFileDetails(
-                        docId = it,
+                        documentId = it,
                         oid = oid,
                         updateFileDetailsRequest = updateFileDetailsRequest
                     )
@@ -268,7 +265,7 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun syncEditedDocuments(oid: String, doctorId: String) {
+    fun syncEditedDocuments(oid: String, doctorId: String?) {
         try {
             viewModelScope.launch {
                 vaultRepository.getEditedDocuments(oid = oid, doctorId = doctorId)
@@ -277,7 +274,7 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun syncDeletedDocuments(oid: String, doctorId: String) {
+    fun syncDeletedDocuments(oid: String, doctorId: String?) {
         try {
             viewModelScope.launch {
                 val vaultDocuments =
@@ -285,7 +282,7 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
 
                 vaultDocuments.forEach { vaultEntity ->
                     vaultEntity.documentId?.let {
-                        val resp = myFileRepository.deleteDocument(docId = it, oid = oid)
+                        val resp = myFileRepository.deleteDocument(documentId = it, filterId = oid)
 
                         if (resp in 200..299) {
                             vaultRepository.removeDocument(localId = vaultEntity.localId, oid = oid)
@@ -298,7 +295,7 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun getAvailableDocTypes(oid: String, doctorId: String) {
+    fun getAvailableDocTypes(oid: String, doctorId: String?) {
         try {
             viewModelScope.launch {
                 _getAvailableDocTypes.value =

@@ -1,9 +1,16 @@
 package eka.care.documents
 
+import android.app.Application
 import android.content.Context
 import android.content.Intent
 import android.util.Log
 import androidx.compose.runtime.Composable
+import androidx.work.Constraints
+import androidx.work.Data
+import androidx.work.ExistingWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import com.eka.network.ConverterFactoryType
 import com.eka.network.Networking
 import com.google.gson.Gson
@@ -12,6 +19,8 @@ import eka.care.documents.data.db.entity.VaultEntity
 import eka.care.documents.data.db.model.AvailableDocTypes
 import eka.care.documents.data.repository.DocumentsRepository
 import eka.care.documents.data.repository.VaultRepositoryImpl
+import eka.care.documents.sync.data.repository.SyncRecordsRepository
+import eka.care.documents.sync.workers.SyncFileWorker
 import eka.care.documents.ui.presentation.activity.DocumentViewActivity
 import eka.care.documents.ui.presentation.activity.SmartReportActivity
 import eka.care.documents.ui.presentation.components.DocumentFilter
@@ -19,13 +28,17 @@ import eka.care.documents.ui.presentation.model.RecordModel
 import eka.care.documents.ui.utility.RecordsUtility
 import kotlinx.coroutines.flow.Flow
 import eka.care.documents.ui.presentation.model.CTA
+import eka.care.documents.ui.presentation.screens.initData
 
 object Document {
+    private var appContext: Context? = null
     private var configuration: DocumentConfiguration? = null
     private var db: DocumentDatabase? = null
     private var documentRepository: DocumentsRepository? = null
+    private lateinit var recordsRepository: SyncRecordsRepository
 
     fun init(context: Context, documentConfiguration: DocumentConfiguration) {
+        appContext = context.applicationContext
         configuration = documentConfiguration
         configuration?.let {
             Networking.init(
@@ -38,10 +51,44 @@ object Document {
         db?.let {
             documentRepository = VaultRepositoryImpl(it)
         }
+        if (appContext is Application) {
+            recordsRepository = SyncRecordsRepository(appContext as Application)
+        } else {
+            Log.e("Document", "Context is not an Application, cannot initialize SyncRecordsRepository")
+        }
+    }
+
+    fun getContext(): Context? {
+        return appContext
+    }
+
+    fun initSyncingData(context: Context, doctorId : String?, oid: String?, patientUuid : String){
+        val inputData = Data.Builder()
+            .putString("p_uuid", patientUuid)
+            .putString("oid", oid)
+            .putString("doctorId", doctorId)
+            .build()
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
+
+        val uniqueWorkName = "syncFileWorker_${patientUuid}_$oid$doctorId"
+        val uniqueSyncWorkRequest =
+            OneTimeWorkRequestBuilder<SyncFileWorker>()
+                .setInputData(inputData)
+                .setConstraints(constraints)
+                .build()
+
+        WorkManager.getInstance(context)
+            .enqueueUniqueWork(
+                uniqueWorkName,
+                ExistingWorkPolicy.KEEP,
+                uniqueSyncWorkRequest
+            )
     }
 
     fun getDocuments(
-        ownerId: String,
+        ownerId: String?,
         filterId: String?,
         docType: Int = -1
     ): Flow<List<VaultEntity>>? {
@@ -74,7 +121,7 @@ object Document {
         )
     }
 
-    suspend fun getAvailableDocTypes(filterId: String, ownerId: String): List<AvailableDocTypes>?{
+    suspend fun getAvailableDocTypes(filterId: String?, ownerId: String?): List<AvailableDocTypes>?{
        return documentRepository?.getAvailableDocTypes(filterId = filterId, ownerId = ownerId)
     }
 

@@ -26,7 +26,7 @@ data class Batch(
     @SerializedName("patient_oid")
     val patientOid : String,
     @SerializedName("p_uuid")
-    val patientUuid : String,
+    val patientUuid : String?,
     @SerializedName("p_poid")
     val captainOid : String? = null
 )

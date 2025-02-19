@@ -11,7 +11,16 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface VaultDao {
-    @Query("SELECT * FROM vault_table WHERE owner_id = :ownerId AND (filter_id = :filterId OR :filterId IS NULL) AND is_deleted = 0 ORDER BY created_at DESC")
+    @Query("""
+    SELECT * FROM vault_table 
+    WHERE is_deleted = 0 
+    AND (
+        (:ownerId IS NULL AND :filterId IS NULL) 
+        OR (owner_id = :ownerId OR :ownerId IS NULL) 
+        AND (filter_id = :filterId OR :filterId IS NULL)
+    )
+    ORDER BY created_at DESC
+""")
     fun fetchDocumentsByOwnerId(ownerId: String?, filterId: String?): Flow<List<VaultEntity>>
 
     @Query("SELECT * FROM vault_table WHERE owner_id = :ownerId AND (filter_id = :filterId OR :filterId IS NULL)  AND doc_type = :docType AND is_deleted=0 ORDER BY created_at DESC")
@@ -33,14 +42,14 @@ interface VaultDao {
     @Query("UPDATE vault_table SET thumbnail=:thumbnail WHERE doc_id=:docId")
     suspend fun setThumbnail(thumbnail: String, docId: String?)
 
-    @Query("SELECT * FROM vault_table WHERE oid=:oid AND is_deleted=0 AND doctor_id= :doctorId ORDER BY created_at DESC")
-    fun fetchDocuments(oid: String?, doctorId: String): Flow<List<VaultEntity>>
+    @Query("SELECT * FROM vault_table WHERE oid=:oid AND is_deleted=0 AND (doctor_id = :doctorId OR (:doctorId IS NULL AND doctor_id IS NULL)) ORDER BY created_at DESC")
+    fun fetchDocuments(oid: String?, doctorId: String?): Flow<List<VaultEntity>>
 
-    @Query("SELECT * FROM vault_table WHERE oid=:oid AND is_deleted=0 AND doctor_id =:doctorId AND doc_type =:docType ORDER BY created_at DESC")
+    @Query("SELECT * FROM vault_table WHERE oid=:oid AND is_deleted=0 AND (doctor_id = :doctorId OR (:doctorId IS NULL AND doctor_id IS NULL)) AND doc_type =:docType ORDER BY created_at DESC")
     fun fetchDocumentsByDocType(
         oid: String?,
         docType: Int,
-        doctorId: String
+        doctorId: String?
     ): Flow<List<VaultEntity>>
 
     @Query("SELECT * FROM vault_table WHERE oid=:oid AND is_deleted=0 ORDER BY doc_date DESC")
@@ -72,14 +81,14 @@ interface VaultDao {
     @Query("UPDATE vault_table SET is_deleted=1 WHERE oid=:oid AND local_id=:localId")
     suspend fun deleteDocument(oid: String?, localId: String)
 
-    @Query("SELECT * FROM vault_table WHERE doc_id IS NULL AND oid=:oid AND is_deleted=0 AND doctor_id = :doctorId ")
-    suspend fun getUnsyncedDocuments(oid: String?, doctorId: String): List<VaultEntity>
+    @Query("SELECT * FROM vault_table WHERE doc_id IS NULL AND oid = :oid AND is_deleted = 0 AND (doctor_id = :doctorId OR (:doctorId IS NULL AND doctor_id IS NULL))")
+    suspend fun getUnSyncedDocuments(oid: String?, doctorId: String?): List<VaultEntity>
 
     @Query("SELECT * FROM vault_table WHERE oid=:oid AND local_id=:localId")
     suspend fun getDocumentData(oid: String?, localId: String): VaultEntity
 
-    @Query("SELECT doc_type as docType, count(doc_type) as count FROM vault_table WHERE oid=:oid AND is_deleted=0 AND doctor_id = :doctorId GROUP BY doc_type")
-    suspend fun getAvailableDocTypes(oid: String?, doctorId: String): List<AvailableDocTypes>
+    @Query("SELECT doc_type as docType, count(doc_type) as count FROM vault_table WHERE (oid = :oid OR (:oid IS NULL AND oid IS NULL)) AND is_deleted=0 AND (doctor_id = :doctorId OR (:doctorId IS NULL AND doctor_id IS NULL)) GROUP BY doc_type")
+    suspend fun getAvailableDocTypes(oid: String?, doctorId: String?): List<AvailableDocTypes>
 
     @Query("UPDATE vault_table SET doc_id=:docId WHERE local_id=:localId")
     suspend fun updateDocumentId(docId: String, localId: String)
@@ -105,7 +114,7 @@ interface VaultDao {
     @Query("DELETE FROM vault_table WHERE oid=:oid AND local_id=:localId")
     suspend fun removeDocument(localId: String, oid: String?)
 
-    @Query("SELECT * FROM vault_table WHERE doctor_id = :doctorId AND oid = :patientoid and file_path is null")
-    fun fetchDocumentsWithoutFilePath(doctorId: String, patientoid : String): List<VaultEntity>
+    @Query("SELECT * FROM vault_table WHERE (doctor_id = :doctorId OR (:doctorId IS NULL AND doctor_id IS NULL)) AND oid = :patientoid and file_path is null")
+    fun fetchDocumentsWithoutFilePath(doctorId: String?, patientoid : String?): List<VaultEntity>
 
 }

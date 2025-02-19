@@ -438,7 +438,7 @@ fun DocumentScreen(
 fun initData(
     patientUuid: String,
     oid: String,
-    doctorId: String,
+    doctorId: String?,
     viewModel: RecordsViewModel,
     context: Context,
 ) {
@@ -453,7 +453,6 @@ fun initData(
         .build()
 
     val uniqueWorkName = "syncFileWorker_${patientUuid}_$oid$doctorId"
-
     val uniqueSyncWorkRequest =
         OneTimeWorkRequestBuilder<SyncFileWorker>()
             .setInputData(inputData)

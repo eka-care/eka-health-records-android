@@ -87,19 +87,19 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
         )
     }
 
-    override suspend fun getUnsyncedDocuments(oid: String, doctorId: String): List<VaultEntity> {
-        val resp = database.vaultDao().getUnsyncedDocuments(
+    override suspend fun getUnSyncedDocuments(oid: String?, doctorId: String?): List<VaultEntity> {
+        val resp = database.vaultDao().getUnSyncedDocuments(
             oid = oid,
             doctorId = doctorId
         )
         return resp
     }
 
-    override suspend fun getDeletedDocuments(oid: String, doctorId: String): List<VaultEntity> {
+    override suspend fun getDeletedDocuments(oid: String, doctorId: String?): List<VaultEntity> {
         return database.vaultDao().getDeletedDocuments(oid = oid, doctorId = doctorId)
     }
 
-    override suspend fun getEditedDocuments(oid: String, doctorId: String): List<VaultEntity> {
+    override suspend fun getEditedDocuments(oid: String, doctorId: String?): List<VaultEntity> {
         return database.vaultDao().getEditedDocuments(oid = oid, doctorId = doctorId)
     }
 
@@ -108,8 +108,8 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
     }
 
     override suspend fun getAvailableDocTypes(
-        filterId: String,
-        ownerId: String
+        filterId: String?,
+        ownerId: String?
     ): List<AvailableDocTypes> {
         return database.vaultDao().getAvailableDocTypes(oid = filterId, doctorId = ownerId)
     }
@@ -117,7 +117,7 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
     override fun fetchDocuments(
         oid: String,
         docType: Int,
-        doctorId: String
+        doctorId: String?
     ): Flow<List<VaultEntity>> {
         return if (docType == -1) {
             database.vaultDao().fetchDocuments(oid = oid, doctorId = doctorId)
@@ -130,7 +130,7 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
     override fun fetchDocumentsByDocDate(
         oid: String,
         docType: Int,
-        doctorId: String
+        doctorId: String?
     ): Flow<List<VaultEntity>> {
         return if (docType == -1) {
             database.vaultDao().fetchDocumentsByDocDate(oid = oid)
@@ -164,8 +164,8 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
     }
 
     override suspend fun getDocumentsWithoutFilePath(
-        doctorId: String,
-        patientOid: String
+        doctorId: String?,
+        patientOid: String?
     ): List<VaultEntity> {
         return database.vaultDao()
             .fetchDocumentsWithoutFilePath(doctorId = doctorId, patientoid = patientOid)

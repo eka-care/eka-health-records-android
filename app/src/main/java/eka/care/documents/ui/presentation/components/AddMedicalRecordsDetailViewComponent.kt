@@ -90,7 +90,7 @@ fun AddMedicalRecordsDetailViewComponent(
     paramsModel: RecordParamsModel,
     editDocument: Boolean
 ) {
-    init(viewModel = viewModel, userId =  paramsModel.patientId, docId = viewModel.cardClickData.value?.documentId)
+    init(viewModel = viewModel, userId =  paramsModel.patientId, documentId = viewModel.cardClickData.value?.documentId)
     val context = LocalContext.current
     val compressedFiles by viewModel.compressedFiles.collectAsState(initial = emptyList())
     val initialSelectedDocType = viewModel.cardClickData.value?.documentType
@@ -377,9 +377,9 @@ fun AddMedicalRecordsDetailViewComponent(
     )
 }
 
-private fun init(viewModel: RecordsViewModel, docId : String?, userId : String){
-    if (docId != null) {
-        viewModel.getTags(docId = docId, userId = userId)
+private fun init(viewModel: RecordsViewModel, documentId : String?, userId : String){
+    if (documentId != null) {
+        viewModel.getTags(documentId = documentId, userId = userId)
     }
 }
 

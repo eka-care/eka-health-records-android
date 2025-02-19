@@ -15,10 +15,11 @@ import retrofit2.http.Url
 
 interface MyFileService {
 
-    @PATCH("api/d/v1/docs/{doc_id}")
+    // different body
+    @PATCH("api/d/v1/docs/{document_id}")
     suspend fun updateFileDetails(
-        @Path("doc_id") docId: String,
-        @Query("oid") oid: String,
+        @Path("document_id") documentId: String,
+        @Query("p_oid") filterId: String?,
         @Body updateFileDetailsRequest: UpdateFileDetailsRequest,
     ): NetworkResponse<Unit, NetworkResponse.ServerError<Unit>>
 
@@ -26,15 +27,15 @@ interface MyFileService {
     @GET
     suspend fun downloadFile(@Url url: String?): NetworkResponse<ResponseBody, ResponseBody>
 
-    @GET("api/v1/docs/{doc_id}")
+    @GET("api/v1/docs/{document_id}")
     suspend fun getDocument(
-        @Path("doc_id") docId: String,
-        @Query("oid") oid: String,
+        @Path("document_id") documentId: String,
+        @Query("p_oid") filterId: String?,
     ): NetworkResponse<Document, NetworkResponse.NetworkError>
 
-    @DELETE("api/v1/docs/{doc_id}")
+    @DELETE("api/v1/docs/{document_id}")
     suspend fun deleteDocument(
-        @Path("doc_id") docId: String,
-        @Query("oid") oid: String,
+        @Path("document_id") documentId: String,
+        @Query("p_oid") filterId: String?,
     ): NetworkResponse<Unit, NetworkResponse.ServerError<Unit>>
 }

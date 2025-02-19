@@ -5,19 +5,19 @@ import eka.care.documents.data.db.entity.UpdatedAtEntity
 
 class UpdatedAtRepositoryImpl(private val database: DocumentDatabase) : UpdatedAtRepository {
 
-    override suspend fun getUpdatedAtByOid(oid: String, doctorId: String): String? {
-        return database.updatedAtDao().getUpdatedAtByOid(oid = oid, doctorId = doctorId)
+    override suspend fun getUpdatedAtByOid(filterId: String?, ownerId :String?): String? {
+        return database.updatedAtDao().getUpdatedAtByOid(filterId = filterId, ownerId = ownerId)
     }
 
     override suspend fun insertUpdatedAtEntity(updatedAtEntity: UpdatedAtEntity) {
         database.updatedAtDao().insertUpdatedAtEntity(updatedAtEntity = updatedAtEntity)
     }
 
-    override suspend fun updateUpdatedAtByOid(oid: String, updatedAt: String, doctorId: String) {
-        database.updatedAtDao().updateUpdatedAtByOid(oid = oid, updatedAt = updatedAt, doctorId = doctorId)
+    override suspend fun updateUpdatedAtByOid(filterId: String?, updatedAt: String, ownerId :String?) {
+        database.updatedAtDao().updateUpdatedAtByOid(filterId = filterId, updatedAt = updatedAt, ownerId = ownerId)
     }
 
-    override suspend fun doesOidExist(oid: String, doctorId: String): Boolean {
-        return database.updatedAtDao().doesOidExist(oid = oid, doctorId = doctorId)
+    override suspend fun doesOidExist(filterId: String?, ownerId :String?): Boolean {
+        return database.updatedAtDao().doesOidExist(filterId = filterId, ownerId = ownerId)
     }
 }

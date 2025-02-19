@@ -85,7 +85,7 @@ class DocumentPreviewViewModel(val app: Application) : AndroidViewModel(app) {
                     )
                     return@launch
                 }
-                val response = myFileRepository.getDocument(docId = docId, userId = userId)
+                val response = myFileRepository.getDocument(documentId = docId, filterId = userId)
                 if (response == null) {
                     _document.value = DocumentPreviewState.Error("Something went wrong!")
                     return@launch
@@ -135,7 +135,7 @@ class DocumentPreviewViewModel(val app: Application) : AndroidViewModel(app) {
                     _documentSmart.value = DocumentSmartReportState.Success(smartReport)
                     return@launch
                 }
-                val response = myFileRepository.getDocument(docId = documentId, userId = filterId)
+                val response = myFileRepository.getDocument(documentId = documentId, filterId = filterId)
                 if (response?.smartReport != null) {
                     _documentSmart.value = DocumentSmartReportState.Success(response.smartReport)
 

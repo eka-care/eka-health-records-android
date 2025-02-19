@@ -14,5 +14,5 @@ interface DocumentsRepository {
         docDate: Long?,
         filterId: String?,
     )
-    suspend fun getAvailableDocTypes(filterId: String, ownerId: String): List<AvailableDocTypes>
+    suspend fun getAvailableDocTypes(filterId: String?, ownerId: String?): List<AvailableDocTypes>
 }
