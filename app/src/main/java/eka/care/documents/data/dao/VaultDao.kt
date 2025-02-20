@@ -109,10 +109,10 @@ interface VaultDao {
     @Query("SELECT local_id FROM vault_table WHERE doc_id=:docId")
     suspend fun getLocalId(docId: String?): String?
 
-    @Query("SELECT * FROM vault_table WHERE oid=:oid AND is_deleted=1 AND doctor_id =:doctorId")
+    @Query("SELECT * FROM vault_table WHERE (oid = :oid OR (:oid IS NULL AND oid IS NULL)) AND is_deleted=1 AND (doctor_id = :doctorId OR (:doctorId IS NULL AND doctor_id IS NULL))")
     suspend fun getDeletedDocuments(oid: String?, doctorId: String?): List<VaultEntity>
 
-    @Query("SELECT * FROM vault_table WHERE oid=:oid AND is_edited=1 AND doctor_id =:doctorId")
+    @Query("SELECT * FROM vault_table WHERE (oid = :oid OR (:oid IS NULL AND oid IS NULL)) AND is_edited=1 AND (doctor_id = :doctorId OR (:doctorId IS NULL AND doctor_id IS NULL))")
     suspend fun getEditedDocuments(oid: String?, doctorId: String?): List<VaultEntity>
 
     @Query("SELECT local_id FROM vault_table WHERE oid=:oid AND source=:source")

@@ -4,7 +4,6 @@ import android.app.Application
 import android.content.Context
 import android.content.Intent
 import android.util.Log
-import androidx.compose.runtime.Composable
 import androidx.work.Constraints
 import androidx.work.Data
 import androidx.work.ExistingWorkPolicy
@@ -19,16 +18,15 @@ import eka.care.documents.data.db.entity.VaultEntity
 import eka.care.documents.data.db.model.AvailableDocTypes
 import eka.care.documents.data.repository.DocumentsRepository
 import eka.care.documents.data.repository.VaultRepositoryImpl
+import eka.care.documents.sync.data.repository.MyFileRepository
 import eka.care.documents.sync.data.repository.SyncRecordsRepository
 import eka.care.documents.sync.workers.SyncFileWorker
 import eka.care.documents.ui.presentation.activity.DocumentViewActivity
 import eka.care.documents.ui.presentation.activity.SmartReportActivity
-import eka.care.documents.ui.presentation.components.DocumentFilter
+import eka.care.documents.ui.presentation.model.CTA
 import eka.care.documents.ui.presentation.model.RecordModel
 import eka.care.documents.ui.utility.RecordsUtility
 import kotlinx.coroutines.flow.Flow
-import eka.care.documents.ui.presentation.model.CTA
-import eka.care.documents.ui.presentation.screens.initData
 
 object Document {
     private var appContext: Context? = null

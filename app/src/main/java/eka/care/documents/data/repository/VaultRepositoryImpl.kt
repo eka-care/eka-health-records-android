@@ -95,11 +95,11 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
         return resp
     }
 
-    override suspend fun getDeletedDocuments(oid: String, doctorId: String?): List<VaultEntity> {
+    override suspend fun getDeletedDocuments(oid: String?, doctorId: String?): List<VaultEntity> {
         return database.vaultDao().getDeletedDocuments(oid = oid, doctorId = doctorId)
     }
 
-    override suspend fun getEditedDocuments(oid: String, doctorId: String?): List<VaultEntity> {
+    override suspend fun getEditedDocuments(oid: String?, doctorId: String?): List<VaultEntity> {
         return database.vaultDao().getEditedDocuments(oid = oid, doctorId = doctorId)
     }
 
@@ -158,7 +158,7 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
         return database.vaultDao().getDocumentById(id)
     }
 
-    override suspend fun removeDocument(localId: String, oid: String) {
+    override suspend fun removeDocument(localId: String, oid: String?) {
         database.vaultDao().removeDocument(localId = localId, oid = oid)
         return
     }

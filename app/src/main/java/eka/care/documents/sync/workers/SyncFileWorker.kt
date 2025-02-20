@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.util.Log
 import android.webkit.MimeTypeMap
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.google.gson.Gson
@@ -71,9 +72,36 @@ class SyncFileWorker(
                 doctorId = doctorId
             )
             updateFilePath(oid = oid, doctorId = doctorId)
+            syncDeletedAndEditedDocuments(oid = oid, doctorId = doctorId)
             Result.success()
         } catch (e: Exception) {
             Result.failure()
+        }
+    }
+
+    private suspend fun syncDeletedAndEditedDocuments(oid: String?, doctorId: String?) {
+        Log.d("SYNC_DELETE", "$oid $doctorId")
+        try {
+            vaultRepository.getEditedDocuments(oid = oid, doctorId = doctorId)
+        } catch (e: Exception) {
+            Log.e("SyncFileWorker", "Failed to sync edited documents", e)
+        }
+
+        try {
+            val vaultDocuments = vaultRepository.getDeletedDocuments(doctorId = doctorId, oid = oid)
+            Log.d("SYNC_DELETE", "$vaultDocuments")
+
+            vaultDocuments.forEach { vaultEntity ->
+                vaultEntity.documentId?.let {
+                    val resp = myFileRepository.deleteDocument(documentId = it, filterId = oid)
+                    Log.d("SYNC_DELETE", "$resp")
+                    if (resp in 200..299) {
+                        vaultRepository.removeDocument(localId = vaultEntity.localId, oid = oid)
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("SyncFileWorker", "Failed to sync deleted documents", e)
         }
     }
 
@@ -87,7 +115,6 @@ class SyncFileWorker(
                             documentId = it
                         )
                     }
-                    Log.d("FILE_PATH_DOCUMENT-3", response.toString())
                     response?.let {
                         val filePaths = it.files.map { file ->
                             downloadFile(file.assetUrl, file.fileType)
@@ -121,8 +148,16 @@ class SyncFileWorker(
 
     private suspend fun syncDocuments(oid: String?, uuid: String?, doctorId: String?) {
         try {
+            Log.d(
+                "SYNC_DOCUMENTS-3",
+                "$oid, $uuid $doctorId"
+            )
             val vaultDocuments =
                 vaultRepository.getUnSyncedDocuments(oid = oid, doctorId = doctorId)
+            Log.d(
+                "SYNC_DOCUMENTS-4",
+                vaultDocuments.toString()
+            )
             if (vaultDocuments.isEmpty()) return
 
             val tags = mutableListOf<String>()
@@ -160,7 +195,10 @@ class SyncFileWorker(
                 }
 
                 val batchResponses = uploadInitResponse?.batchResponse ?: emptyList()
-
+                Log.d(
+                    "SYNC_DOCUMENTS-2",
+                    batchResponses.toString()
+                )
                 if (isMultiFile) {
                     // Handle multi-file upload for the current document
                     val batchResponse = batchResponses.firstOrNull()
@@ -169,6 +207,10 @@ class SyncFileWorker(
                             awsRepository.uploadFile(batch = batchResponse, fileList = files)
                         if (response?.error == false) {
                             response.documentId?.let { docId ->
+                                Log.d(
+                                    "SYNC_DOCUMENTS-1",
+                                    docId
+                                )
                                 updateDocumentDetails(docId, oid, vaultEntity)
                             }
                         }
@@ -183,6 +225,10 @@ class SyncFileWorker(
                                 awsRepository.uploadFile(file = file, batch = batchResponse)
                             if (response?.error == false) {
                                 response.documentId?.let { docId ->
+                                    Log.d(
+                                        "SYNC_DOCUMENTS-2",
+                                        docId
+                                    )
                                     updateDocumentDetails(docId, oid, vaultEntity)
                                 }
                             }
@@ -339,8 +385,9 @@ class SyncFileWorker(
         recordsResponse: GetFilesResponse?
     ) {
         recordsResponse?.items?.forEach {
+            Log.d("THUMBNAIL-1", it.toString())
             val path = downloadThumbnail(it.record.item.metadata.thumbnail)
-
+            Log.d("THUMBNAIL-2", path)
             val documentId = it.record.item.documentId
             vaultRepository.setThumbnail(
                 path, vaultList.first { it.documentId == documentId }.documentId
@@ -355,6 +402,7 @@ class SyncFileWorker(
         val childPath = "image${UUID.randomUUID()}.jpg"
         withContext(Dispatchers.IO) {
             val resp = myFileRepository.downloadFile(assetUrl)
+            Log.d("THUMBNAIL-3", resp.toString())
             resp?.saveFile(File(directory, childPath))
         }
 
