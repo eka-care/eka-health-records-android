@@ -15,7 +15,7 @@ interface VaultDao {
     SELECT * FROM vault_table 
     WHERE is_deleted = 0 
     AND (
-        (:ownerId IS NULL AND :filterId IS NULL) 
+        (:ownerId IS NULL AND :filterId IS NULL)  
         OR (owner_id = :ownerId OR :ownerId IS NULL) 
         AND (filter_id = :filterId OR :filterId IS NULL)
     )
@@ -23,8 +23,21 @@ interface VaultDao {
 """)
     fun fetchDocumentsByOwnerId(ownerId: String?, filterId: String?): Flow<List<VaultEntity>>
 
-    @Query("SELECT * FROM vault_table WHERE owner_id = :ownerId AND (filter_id = :filterId OR :filterId IS NULL)  AND doc_type = :docType AND is_deleted=0 ORDER BY created_at DESC")
-    fun fetchDocuments(ownerId: String?, filterId: String?, docType: Int): Flow<List<VaultEntity>>
+
+    @Query("""
+    SELECT * FROM vault_table 
+    WHERE 
+        (:ownerId IS NULL AND :filterId IS NULL OR owner_id = :ownerId OR :ownerId IS NULL) 
+        AND (:filterId IS NULL OR filter_id = :filterId)
+        AND doc_type = :docType 
+        AND is_deleted = 0 
+    ORDER BY created_at DESC
+""")
+    fun fetchDocuments(
+        ownerId: String?,
+        filterId: String?,
+        docType: Int
+    ): Flow<List<VaultEntity>>
 
     @Query("SELECT smart_report_field FROM vault_table WHERE filter_id = :filterId AND owner_id = :ownerId AND doc_id = :documentId")
     fun getSmartReport(filterId: String, ownerId: String, documentId :String): String?
@@ -114,7 +127,7 @@ interface VaultDao {
     @Query("DELETE FROM vault_table WHERE oid=:oid AND local_id=:localId")
     suspend fun removeDocument(localId: String, oid: String?)
 
-    @Query("SELECT * FROM vault_table WHERE (doctor_id = :doctorId OR (:doctorId IS NULL AND doctor_id IS NULL)) AND oid = :patientoid and file_path is null")
+    @Query("SELECT * FROM vault_table WHERE (doctor_id = :doctorId OR (:doctorId IS NULL AND doctor_id IS NULL)) AND  (oid = :patientoid OR (:patientoid IS NULL AND oid IS NULL)) and file_path is null")
     fun fetchDocumentsWithoutFilePath(doctorId: String?, patientoid : String?): List<VaultEntity>
 
 }

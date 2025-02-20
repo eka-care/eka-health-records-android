@@ -59,7 +59,7 @@ class SyncFileWorker(
                             UpdatedAtEntity(
                                 filterId = oid ?: "",
                                 updatedAt = "0",
-                                ownerId =  doctorId
+                                ownerId = doctorId
                             )
                         )
                         "0"
@@ -88,12 +88,14 @@ class SyncFileWorker(
                             documentId = it
                         )
                     }
+                    Log.d("FILE_PATH_DOCUMENT-3", response.toString())
                     response?.let {
                         val filePaths = it.files.map { file ->
                             downloadFile(file.assetUrl, file.fileType)
                         }
                         val fileType = it.files.firstOrNull()?.fileType ?: ""
-                        val smartReportField = it.smartReport?.let { report -> Gson().toJson(report) }
+                        val smartReportField =
+                            it.smartReport?.let { report -> Gson().toJson(report) }
                         val updatedDocument = document.copy(
                             filePath = filePaths,
                             fileType = fileType,
@@ -252,7 +254,6 @@ class SyncFileWorker(
                 offset = offset,
                 oid = oid
             )
-
             // eka-uat of latest updated or inserted record
             val ekaUat = response?.headers()?.get("Eka-Uat")
             if (ekaUat != null) {
@@ -265,15 +266,13 @@ class SyncFileWorker(
 
             val records = response?.body()
 
-            if (!records?.items.isNullOrEmpty()) {
-                records?.let {
-                    storeRecords(
-                        recordsResponse = it,
-                        doctorId = doctorId,
-                        uuid = uuid,
-                        app_oid = oid
-                    )
-                }
+            if (records != null) {
+                storeRecords(
+                    recordsResponse = records,
+                    doctorId = doctorId,
+                    uuid = uuid,
+                    app_oid = oid
+                )
             }
 
             val newOffset = records?.nextToken
@@ -304,12 +303,12 @@ class SyncFileWorker(
         recordsResponse.items?.forEach {
             val recordItem = it.record.item
 
-          //  val recordCta = recordItem.metadata.cta
+            //  val recordCta = recordItem.metadata.cta
             val params = mutableMapOf<String, String>()
 //            recordCta.paramsMap.forEach { entry ->
 //                params[entry.key] = entry.value.stringValue
 //            }
-    //        val localCta = CTA(action = recordCta.action, pageId = recordCta.pid, params = params)
+            //        val localCta = CTA(action = recordCta.action, pageId = recordCta.pid, params = params)
             val localId = vaultRepository.getLocalId(recordItem.documentId)
             val documentDate =
                 if (recordItem.metadata.documentDate.toLong() == 0L) null else recordItem.metadata.documentDate.toLong()
@@ -326,29 +325,29 @@ class SyncFileWorker(
 //                    documentDate = documentDate,
 //                )
 //            } else if (recordItem.availableDocumentCase != Records.Record.Item.AvailableDocumentCase.IN_TRANSIT && recordItem.documentId != null) {
-                vaultList.add(
-                    VaultEntity(
-                        localId = localId ?: UUID.randomUUID().toString(),
-                        documentId = recordItem.documentId,
-                        ownerId = doctorId,
-                        filterId = app_oid,
-                        uuid = uuid,
-                        oid = app_oid,
-                        filePath = null,
-                        fileType = "",
-                        thumbnail = null,
-                        createdAt = recordItem.uploadDate.toLong(),
-                        source = null,
-                        documentType = docTypes.find { it.documentType == recordItem.documentType }?.idNew ?: -1,
-                        tags = recordItem.metadata.tags.joinToString(","),
-                        documentDate = documentDate,
-                        hashId = null,
-                        isAnalyzing = false,
-                        cta =  null,
-                        doctorId = doctorId
-                    )
+            vaultList.add(
+                VaultEntity(
+                    localId = localId ?: UUID.randomUUID().toString(),
+                    documentId = recordItem.documentId,
+                    ownerId = doctorId,
+                    filterId = app_oid,
+                    uuid = uuid,
+                    oid = app_oid,
+                    filePath = null,
+                    fileType = "",
+                    thumbnail = null,
+                    createdAt = recordItem.uploadDate.toLong(),
+                    source = null,
+                    documentType = docTypes.find { it.id == recordItem.documentType }?.idNew ?: -1,
+                    tags = recordItem.metadata?.tags?.joinToString(",") ?: "",
+                    documentDate = documentDate,
+                    hashId = null,
+                    isAnalyzing = false,
+                    cta = null,
+                    doctorId = doctorId
                 )
-          //  }
+            )
+            //  }
         }
 
         vaultRepository.storeDocuments(vaultList)
