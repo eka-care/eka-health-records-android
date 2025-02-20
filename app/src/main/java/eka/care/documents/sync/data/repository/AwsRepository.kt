@@ -1,5 +1,6 @@
 package eka.care.documents.sync.data.repository
 
+import android.util.Log
 import android.webkit.MimeTypeMap
 import com.eka.network.ConverterFactoryType
 import com.eka.network.Networking
@@ -30,7 +31,7 @@ class AwsRepository {
         isMultiFile: Boolean = false,
         isEncrypted: Boolean = false,
         patientUuid: String,
-        patientOid: String,
+        patientOid: String?,
         documentType : String,
         tags : List<String>
     ): FilesUploadInitResponse? {
@@ -44,6 +45,10 @@ class AwsRepository {
             }
         }
         val body = FilesUploadInitRequest(batchRequest = batch)
+        Log.d(
+            "SYNC_DOCUMENTS-3",
+            body.toString()
+        )
         return withContext(Dispatchers.IO) {
             val response =
                 when (val response = service.filesUploadInit(body)) {

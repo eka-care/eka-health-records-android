@@ -71,14 +71,12 @@ object Document {
         val constraints = Constraints.Builder()
             .setRequiredNetworkType(NetworkType.CONNECTED)
             .build()
-
-        val uniqueWorkName = "syncFileWorker_${patientUuid}_$oid$doctorId"
+        val uniqueWorkName = "syncFileWorker_${patientUuid}_${System.currentTimeMillis()}"
         val uniqueSyncWorkRequest =
             OneTimeWorkRequestBuilder<SyncFileWorker>()
                 .setInputData(inputData)
                 .setConstraints(constraints)
                 .build()
-
         WorkManager.getInstance(context)
             .enqueueUniqueWork(
                 uniqueWorkName,
@@ -103,7 +101,7 @@ object Document {
         documentRepository?.storeDocuments(vaultEntityList)
     }
 
-    suspend fun deleteDocument(filterId: String, localId: String) {
+    suspend fun deleteDocument(filterId: String?, localId: String) {
         documentRepository?.deleteDocument(filterId= filterId, localId = localId)
     }
 

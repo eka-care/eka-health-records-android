@@ -40,7 +40,7 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
         database.vaultDao().storeDocuments(vaultEntityList)
     }
 
-    override suspend fun deleteDocument(filterId: String, localId: String) {
+    override suspend fun deleteDocument(filterId: String?, localId: String) {
         database.vaultDao().deleteDocument(oid = filterId, localId = localId)
         return
     }

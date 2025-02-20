@@ -71,7 +71,7 @@ interface VaultDao {
     @Query("SELECT * FROM vault_table WHERE oid=:oid AND doc_type =:docType AND is_deleted=0 ORDER BY doc_date DESC")
     suspend fun fetchDocumentsByDocDateAndDocType(oid: String?, docType: Int): List<VaultEntity>
 
-    @Query("UPDATE vault_table SET doc_type = :docType,  doc_date = :docDate, is_edited = 1 WHERE local_id = :localId AND oid = :oid")
+    @Query("UPDATE vault_table SET doc_type = :docType,  doc_date = :docDate, is_edited = 1 WHERE local_id = :localId AND (filter_id = :oid OR (:oid IS NULL AND filter_id IS NULL))")
     suspend fun editDocument(
         localId: String,
         docType: Int?,
@@ -91,10 +91,10 @@ interface VaultDao {
         documentDate: Long?
     )
 
-    @Query("UPDATE vault_table SET is_deleted=1 WHERE oid=:oid AND local_id=:localId")
+    @Query("UPDATE vault_table SET is_deleted=1 WHERE (oid = :oid OR (:oid IS NULL AND oid IS NULL)) AND local_id=:localId")
     suspend fun deleteDocument(oid: String?, localId: String)
 
-    @Query("SELECT * FROM vault_table WHERE doc_id IS NULL AND oid = :oid AND is_deleted = 0 AND (doctor_id = :doctorId OR (:doctorId IS NULL AND doctor_id IS NULL))")
+    @Query("SELECT * FROM vault_table WHERE doc_id IS NULL AND (oid = :oid OR (:oid IS NULL AND oid IS NULL)) AND is_deleted = 0 AND (doctor_id = :doctorId OR (:doctorId IS NULL AND doctor_id IS NULL))")
     suspend fun getUnSyncedDocuments(oid: String?, doctorId: String?): List<VaultEntity>
 
     @Query("SELECT * FROM vault_table WHERE oid=:oid AND local_id=:localId")

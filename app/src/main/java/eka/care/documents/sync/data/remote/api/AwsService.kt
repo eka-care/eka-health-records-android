@@ -14,7 +14,7 @@ import retrofit2.http.Url
 
 interface AwsService {
 
-    @POST("/api/v1/docs")
+    @POST("api/v1/docs")
     suspend fun filesUploadInit(
         @Body request: FilesUploadInitRequest
     ): NetworkResponse<FilesUploadInitResponse, FilesUploadInitResponse>

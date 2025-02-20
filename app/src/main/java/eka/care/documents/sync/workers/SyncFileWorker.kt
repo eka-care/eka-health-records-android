@@ -15,7 +15,6 @@ import eka.care.documents.data.repository.UpdatedAtRepository
 import eka.care.documents.data.repository.UpdatedAtRepositoryImpl
 import eka.care.documents.data.repository.VaultRepository
 import eka.care.documents.data.repository.VaultRepositoryImpl
-import eka.care.documents.data.utility.DocumentUtility
 import eka.care.documents.data.utility.DocumentUtility.Companion.docTypes
 import eka.care.documents.sync.data.remote.dto.request.FileType
 import eka.care.documents.sync.data.remote.dto.request.UpdateFileDetailsRequest
@@ -129,39 +128,27 @@ class SyncFileWorker(
             val tags = mutableListOf<String>()
 
             vaultDocuments.forEach { vaultEntity ->
-                val tagList = vaultEntity.tags?.split(",") ?: emptyList()
-                // Process tags if needed, e.g., using:
-                // val tagNames = Tags().getTagNamesByIds(tagList)
-                // tags.addAll(tagNames)
-            }
-
-            vaultDocuments.forEach { vaultEntity ->
-                // Prepare file list and metadata for the current document
                 val files = vaultEntity.filePath?.map { File(it) }
                 val fileContentList = files?.map { file ->
                     FileType(contentType = file.getMimeType() ?: "", fileSize = file.length())
                 }
-                val isMultiFile =
-                    (files?.size ?: 0) > 1 // Determine if the document has multiple files
+                val isMultiFile = (files?.size ?: 0) > 1
                 val documentType = vaultEntity.documentType?.let { docType ->
                     docTypes.find { it.idNew == docType }?.id ?: "ot"
                 } ?: "ot"
 
-                // Initialize the upload for the current document
                 if (fileContentList.isNullOrEmpty()) {
                     return
                 }
-                val uploadInitResponse = oid?.let {
-                    uuid?.let {
-                        awsRepository.fileUploadInit(
-                            files = fileContentList,
-                            patientOid = it,
-                            patientUuid = uuid,
-                            isMultiFile = isMultiFile,
-                            tags = tags,
-                            documentType = documentType
-                        )
-                    }
+                val uploadInitResponse = uuid?.let {
+                    awsRepository.fileUploadInit(
+                        files = fileContentList,
+                        patientOid = oid,
+                        patientUuid = uuid,
+                        isMultiFile = isMultiFile,
+                        tags = tags,
+                        documentType = documentType
+                    )
                 }
 
                 if (uploadInitResponse?.error == true) {
@@ -250,7 +237,7 @@ class SyncFileWorker(
     ) {
         try {
             val response = recordsRepository.getRecords(
-                updatedAt = updatedAt,
+                updatedAt = null,
                 offset = offset,
                 oid = oid
             )
@@ -279,7 +266,7 @@ class SyncFileWorker(
             if (!newOffset.isNullOrEmpty()) {
                 fetchRecords(
                     offset = newOffset,
-                    updatedAt = updatedAt,
+                    updatedAt = null,
                     uuid = uuid,
                     oid = oid,
                     doctorId = doctorId
@@ -302,52 +289,45 @@ class SyncFileWorker(
         val vaultList = mutableListOf<VaultEntity>()
         recordsResponse.items?.forEach {
             val recordItem = it.record.item
-
-            //  val recordCta = recordItem.metadata.cta
-            val params = mutableMapOf<String, String>()
-//            recordCta.paramsMap.forEach { entry ->
-//                params[entry.key] = entry.value.stringValue
-//            }
-            //        val localCta = CTA(action = recordCta.action, pageId = recordCta.pid, params = params)
             val localId = vaultRepository.getLocalId(recordItem.documentId)
             val documentDate =
                 if (recordItem.metadata.documentDate.toLong() == 0L) null else recordItem.metadata.documentDate.toLong()
-//            if (!localId.isNullOrEmpty()) {
-//                vaultRepository.storeDocument(
-//                    localId = localId,
-//                    cta = if (localCta.pageId.isNullOrEmpty()) null
-//                    else Gson().toJson(localCta, CTA::class.java).toString(),
-//                    isAnalysing = recordItem.availableDocumentCase == Records.Record.Item.AvailableDocumentCase.IN_TRANSIT,
-//                    docId = recordItem.documentId,
-//                    hasId = it.record.hash.toString(),
-//                    oid = app_oid,
-//                    tags = recordItem.metadata.tagsValueList.joinToString(","),
-//                    documentDate = documentDate,
-//                )
-//            } else if (recordItem.availableDocumentCase != Records.Record.Item.AvailableDocumentCase.IN_TRANSIT && recordItem.documentId != null) {
-            vaultList.add(
-                VaultEntity(
-                    localId = localId ?: UUID.randomUUID().toString(),
-                    documentId = recordItem.documentId,
-                    ownerId = doctorId,
-                    filterId = app_oid,
-                    uuid = uuid,
-                    oid = app_oid,
-                    filePath = null,
-                    fileType = "",
-                    thumbnail = null,
-                    createdAt = recordItem.uploadDate.toLong(),
-                    source = null,
-                    documentType = docTypes.find { it.id == recordItem.documentType }?.idNew ?: -1,
-                    tags = recordItem.metadata?.tags?.joinToString(",") ?: "",
-                    documentDate = documentDate,
-                    hashId = null,
-                    isAnalyzing = false,
+            if (!localId.isNullOrEmpty()) {
+                vaultRepository.storeDocument(
+                    localId = localId,
                     cta = null,
-                    doctorId = doctorId
+                    isAnalysing = false,
+                    docId = recordItem.documentId,
+                    hasId = "",
+                    oid = app_oid,
+                    tags = recordItem.metadata.tags.joinToString(",") ?: "",
+                    documentDate = documentDate,
                 )
-            )
-            //  }
+            } else {
+                vaultList.add(
+                    VaultEntity(
+                        localId = localId ?: UUID.randomUUID().toString(),
+                        documentId = recordItem.documentId,
+                        ownerId = doctorId,
+                        filterId = app_oid,
+                        uuid = uuid,
+                        oid = app_oid,
+                        filePath = null,
+                        fileType = "",
+                        thumbnail = null,
+                        createdAt = recordItem.uploadDate.toLong(),
+                        source = null,
+                        documentType = docTypes.find { it.id == recordItem.documentType }?.idNew
+                            ?: -1,
+                        tags = recordItem.metadata?.tags?.joinToString(",") ?: "",
+                        documentDate = documentDate,
+                        hashId = null,
+                        isAnalyzing = false,
+                        cta = null,
+                        doctorId = doctorId
+                    )
+                )
+            }
         }
 
         vaultRepository.storeDocuments(vaultList)
@@ -370,7 +350,8 @@ class SyncFileWorker(
     }
 
     private suspend fun downloadThumbnail(assetUrl: String?): String {
-        val directory = ContextWrapper(applicationContext).getDir("imageDir", Context.MODE_PRIVATE)
+        val directory =
+            ContextWrapper(applicationContext).getDir("imageDir", Context.MODE_PRIVATE)
         val childPath = "image${UUID.randomUUID()}.jpg"
         withContext(Dispatchers.IO) {
             val resp = myFileRepository.downloadFile(assetUrl)
