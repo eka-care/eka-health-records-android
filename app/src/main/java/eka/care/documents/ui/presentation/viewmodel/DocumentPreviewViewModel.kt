@@ -72,7 +72,7 @@ class DocumentPreviewViewModel(val app: Application) : AndroidViewModel(app) {
         _selectedTab.value = newTab
     }
 
-    fun getDocument(docId: String, userId: String, localId: String) {
+    fun getDocument(docId: String, userId: String?, localId: String) {
         viewModelScope.launch {
             try {
                 val recordEntity = vaultRepository.getDocumentById(id = localId)
@@ -120,7 +120,7 @@ class DocumentPreviewViewModel(val app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun getSmartReport(ownerId: String, filterId: String, documentId: String) {
+    fun getSmartReport(ownerId: String?, filterId: String?, documentId: String) {
         viewModelScope.launch {
             _documentSmart.value = DocumentSmartReportState.Loading
             try {

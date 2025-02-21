@@ -39,11 +39,11 @@ interface VaultDao {
         docType: Int
     ): Flow<List<VaultEntity>>
 
-    @Query("SELECT smart_report_field FROM vault_table WHERE filter_id = :filterId AND owner_id = :ownerId AND doc_id = :documentId")
-    fun getSmartReport(filterId: String, ownerId: String, documentId :String): String?
+    @Query("SELECT smart_report_field FROM vault_table WHERE doc_id = :documentId")
+    suspend fun getSmartReport(documentId :String): String?
 
-    @Query("UPDATE vault_table SET smart_report_field = :smartReport WHERE filter_id = :filterId AND owner_id = :ownerId AND doc_id =:documentId")
-    suspend fun updateSmartReport(filterId: String, ownerId: String, documentId: String, smartReport: String)
+    @Query("UPDATE vault_table SET smart_report_field = :smartReport WHERE (filter_id = :filterId OR (:filterId IS NULL AND filter_id IS NULL)) AND (owner_id = :ownerId OR (:ownerId IS NULL AND owner_id IS NULL)) AND doc_id =:documentId")
+    suspend fun updateSmartReport(filterId: String?, ownerId: String?, documentId: String, smartReport: String)
 
     //OLD
     @Insert(onConflict = OnConflictStrategy.IGNORE)

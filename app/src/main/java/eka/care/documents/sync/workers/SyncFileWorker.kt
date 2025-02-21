@@ -80,21 +80,33 @@ class SyncFileWorker(
     }
 
     private suspend fun syncDeletedAndEditedDocuments(oid: String?, doctorId: String?) {
-        Log.d("SYNC_DELETE", "$oid $doctorId")
         try {
-            vaultRepository.getEditedDocuments(oid = oid, doctorId = doctorId)
+            val resp = vaultRepository.getEditedDocuments(oid = oid, doctorId = doctorId)
+            resp.forEach {vaultEntity->
+                vaultEntity.documentId?.let {
+                    val updateFileDetailsRequest = UpdateFileDetailsRequest(
+                        oid = vaultEntity.oid,
+                        documentType = docTypes.find { it.idNew == vaultEntity.documentType }?.id,
+                        documentDate = vaultEntity.documentDate.toString(),
+                        userTags = emptyList()
+                    )
+                    myFileRepository.updateFileDetails(
+                        documentId = it,
+                        oid = oid,
+                        updateFileDetailsRequest = updateFileDetailsRequest
+                    )
+                }
+            }
         } catch (e: Exception) {
             Log.e("SyncFileWorker", "Failed to sync edited documents", e)
         }
 
         try {
             val vaultDocuments = vaultRepository.getDeletedDocuments(doctorId = doctorId, oid = oid)
-            Log.d("SYNC_DELETE", "$vaultDocuments")
 
             vaultDocuments.forEach { vaultEntity ->
                 vaultEntity.documentId?.let {
                     val resp = myFileRepository.deleteDocument(documentId = it, filterId = oid)
-                    Log.d("SYNC_DELETE", "$resp")
                     if (resp in 200..299) {
                         vaultRepository.removeDocument(localId = vaultEntity.localId, oid = oid)
                     }

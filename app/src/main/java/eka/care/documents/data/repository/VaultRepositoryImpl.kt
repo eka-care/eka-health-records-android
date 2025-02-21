@@ -17,14 +17,14 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
         }
     }
 
-    override suspend fun getSmartReport(filterId: String, ownerId: String, documentId: String) : String?{
+    override suspend fun getSmartReport(filterId: String?, ownerId: String?, documentId: String) : String?{
         return withContext(Dispatchers.IO) {
-            val result = database.vaultDao().getSmartReport(filterId = filterId, ownerId = ownerId, documentId = documentId)
+            val result = database.vaultDao().getSmartReport(documentId = documentId)
             return@withContext result
         }
     }
 
-    override suspend fun updateSmartReport(filterId: String, ownerId: String, documentId: String, smartReport: String) {
+    override suspend fun updateSmartReport(filterId: String?, ownerId: String?, documentId: String, smartReport: String) {
         withContext(Dispatchers.IO) {
             database.vaultDao().updateSmartReport(filterId = filterId, ownerId = ownerId, documentId = documentId, smartReport = smartReport)
         }

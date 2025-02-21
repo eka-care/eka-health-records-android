@@ -121,7 +121,7 @@ object Document {
        return documentRepository?.getAvailableDocTypes(filterId = filterId, ownerId = ownerId)
     }
 
-    fun view(context: Context, model: RecordModel, oid: String){
+    fun view(context: Context, model: RecordModel, oid: String?){
         if (model.tags?.split(",")?.contains("1") == true) {
             val date = RecordsUtility.convertLongToDateString(model.documentDate ?: model.createdAt)
             Intent(context, SmartReportActivity::class.java)
