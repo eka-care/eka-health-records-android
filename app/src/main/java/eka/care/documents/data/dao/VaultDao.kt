@@ -39,6 +39,9 @@ interface VaultDao {
         docType: Int
     ): Flow<List<VaultEntity>>
 
+    @Query("SELECT 1 FROM vault_table WHERE doc_id = :documentId LIMIT 1")
+    suspend fun alreadyExistDocument(documentId: String): Int?
+
     @Query("SELECT smart_report_field FROM vault_table WHERE doc_id = :documentId")
     suspend fun getSmartReport(documentId :String): String?
 

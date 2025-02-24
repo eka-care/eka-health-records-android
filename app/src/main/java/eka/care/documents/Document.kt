@@ -18,7 +18,6 @@ import eka.care.documents.data.db.entity.VaultEntity
 import eka.care.documents.data.db.model.AvailableDocTypes
 import eka.care.documents.data.repository.DocumentsRepository
 import eka.care.documents.data.repository.VaultRepositoryImpl
-import eka.care.documents.sync.data.repository.MyFileRepository
 import eka.care.documents.sync.data.repository.SyncRecordsRepository
 import eka.care.documents.sync.workers.SyncFileWorker
 import eka.care.documents.ui.presentation.activity.DocumentViewActivity
@@ -34,6 +33,7 @@ object Document {
     private var db: DocumentDatabase? = null
     private var documentRepository: DocumentsRepository? = null
     private lateinit var recordsRepository: SyncRecordsRepository
+    private var vitalTrendsNavigation: ((SmartReportClickData) -> Unit)? = null
 
     fun init(context: Context, documentConfiguration: DocumentConfiguration) {
         appContext = context.applicationContext
@@ -54,6 +54,14 @@ object Document {
         } else {
             Log.e("Document", "Context is not an Application, cannot initialize SyncRecordsRepository")
         }
+    }
+
+    fun setVitalTrendsNavigation(callback: (SmartReportClickData) -> Unit) {
+        vitalTrendsNavigation = callback
+    }
+
+    fun navigateToVitalTrends(data: SmartReportClickData) {
+        vitalTrendsNavigation?.invoke(data)
     }
 
     fun getContext(): Context? {
@@ -81,6 +89,10 @@ object Document {
                 ExistingWorkPolicy.KEEP,
                 uniqueSyncWorkRequest
             )
+    }
+
+    suspend fun alreadyExistDocument(documentId : String) : Int?{
+       return documentRepository?.alreadyExistDocument(documentId = documentId)
     }
 
     fun getDocuments(

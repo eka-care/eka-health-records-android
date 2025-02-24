@@ -397,9 +397,7 @@ class SyncFileWorker(
         recordsResponse: GetFilesResponse?
     ) {
         recordsResponse?.items?.forEach {
-            Log.d("THUMBNAIL-1", it.toString())
             val path = downloadThumbnail(it.record.item.metadata.thumbnail)
-            Log.d("THUMBNAIL-2", path)
             val documentId = it.record.item.documentId
             vaultRepository.setThumbnail(
                 path, vaultList.first { it.documentId == documentId }.documentId
@@ -414,7 +412,6 @@ class SyncFileWorker(
         val childPath = "image${UUID.randomUUID()}.jpg"
         withContext(Dispatchers.IO) {
             val resp = myFileRepository.downloadFile(assetUrl)
-            Log.d("THUMBNAIL-3", resp.toString())
             resp?.saveFile(File(directory, childPath))
         }
 

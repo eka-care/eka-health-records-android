@@ -1,6 +1,5 @@
 package eka.care.documents.data.repository
 
-import android.util.Log
 import eka.care.documents.data.db.database.DocumentDatabase
 import eka.care.documents.data.db.entity.VaultEntity
 import eka.care.documents.data.db.model.AvailableDocTypes
@@ -27,6 +26,13 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
     override suspend fun updateSmartReport(filterId: String?, ownerId: String?, documentId: String, smartReport: String) {
         withContext(Dispatchers.IO) {
             database.vaultDao().updateSmartReport(filterId = filterId, ownerId = ownerId, documentId = documentId, smartReport = smartReport)
+        }
+    }
+
+    override suspend fun alreadyExistDocument(documentId: String): Int? {
+        return withContext(Dispatchers.IO) {
+            val isExist = database.vaultDao().alreadyExistDocument(documentId)
+            return@withContext isExist
         }
     }
 
