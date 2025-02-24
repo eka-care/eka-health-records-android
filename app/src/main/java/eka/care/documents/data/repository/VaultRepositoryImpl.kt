@@ -117,7 +117,7 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
         filterId: String?,
         ownerId: String?
     ): List<AvailableDocTypes> {
-        return database.vaultDao().getAvailableDocTypes(oid = filterId, doctorId = ownerId)
+        return database.vaultDao().getAvailableDocTypes(filterId = filterId, ownerId = ownerId)
     }
 
     override fun fetchDocuments(
