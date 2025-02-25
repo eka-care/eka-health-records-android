@@ -60,7 +60,7 @@ fun DocumentScreenContent(
     listState: LazyListState,
     isRefreshing: Boolean,
     mode: Mode,
-    isUploadEnabled: Boolean,
+    isUploadEnabled: Boolean?,
     selectedItems: SnapshotStateList<RecordModel>,
     onSelectedItemsChange: (List<RecordModel>) -> Unit,
     paramsModel: RecordParamsModel
@@ -157,7 +157,7 @@ fun DocumentScreenContent(
                         Spacer(modifier = Modifier.height(80.dp))
                     }
                 }
-                if(isUploadEnabled) {
+                if(isUploadEnabled == true) {
                     FloatingActionButton(
                         modifier = Modifier
                             .align(Alignment.BottomEnd)
