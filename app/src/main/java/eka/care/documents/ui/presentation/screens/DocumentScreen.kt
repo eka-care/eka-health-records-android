@@ -88,6 +88,7 @@ fun DocumentScreen(
     param: JsonObject,
     mode: Mode,
     selectedRecords: ((List<RecordModel>) -> Unit)? = null,
+    isUploadEnabled : Boolean,
     onBackClick: () -> Unit
 ) {
     val context = LocalContext.current
@@ -424,6 +425,7 @@ fun DocumentScreen(
                     isRefreshing = isRefreshing,
                     paramsModel = params,
                     mode = mode,
+                    isUploadEnabled = isUploadEnabled,
                     selectedItems = selectedItems,
                     onSelectedItemsChange = { items ->
                         selectedItems.clear()
