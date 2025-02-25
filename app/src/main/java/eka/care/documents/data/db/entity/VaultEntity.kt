@@ -3,7 +3,6 @@ package eka.care.documents.data.db.entity
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import androidx.room.TypeConverters
 
 @Entity(tableName = "vault_table")
 data class VaultEntity(
@@ -24,6 +23,7 @@ data class VaultEntity(
     @ColumnInfo(name = "doc_type") var documentType: Int?,
     @ColumnInfo(name = "doc_date") var documentDate: Long?,
     @ColumnInfo(name = "tags") var tags: String?,
+    @ColumnInfo(name = "auto_tags") var autoTags : String?,
     @ColumnInfo(name = "cta") var cta: String?,
     @ColumnInfo(name = "hash_id") var hashId: String?,
     @ColumnInfo(name = "is_analyzing") var isAnalyzing: Boolean,

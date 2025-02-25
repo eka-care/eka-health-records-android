@@ -39,8 +39,8 @@ interface VaultDao {
         docType: Int
     ): Flow<List<VaultEntity>>
 
-    @Query("SELECT 1 FROM vault_table WHERE doc_id = :documentId LIMIT 1")
-    suspend fun alreadyExistDocument(documentId: String): Int?
+    @Query("SELECT 1 FROM vault_table WHERE doc_id = :documentId AND (owner_id = :ownerId OR (:ownerId IS NULL AND owner_id IS NULL)) LIMIT 1")
+    suspend fun alreadyExistDocument(documentId: String, ownerId: String?): Int?
 
     @Query("SELECT smart_report_field FROM vault_table WHERE doc_id = :documentId")
     suspend fun getSmartReport(documentId :String): String?
@@ -82,7 +82,7 @@ interface VaultDao {
         oid: String?,
     )
 
-    @Query("UPDATE vault_table SET filter_id = :oid, doc_date = :documentDate ,tags = :tags, is_analyzing = :isAnalysing, hash_id = :hasId, cta = :cta WHERE local_id = :localId AND doc_id = :docId")
+    @Query("UPDATE vault_table SET filter_id = :oid, auto_tags = :autoTags, doc_date = :documentDate ,tags = :tags, is_analyzing = :isAnalysing, hash_id = :hasId, cta = :cta WHERE local_id = :localId AND doc_id = :docId")
     suspend fun storeDocument(
         localId: String,
         oid: String?,
@@ -91,6 +91,7 @@ interface VaultDao {
         hasId: String,
         cta: String?,
         tags: String,
+        autoTags : String,
         documentDate: Long?
     )
 

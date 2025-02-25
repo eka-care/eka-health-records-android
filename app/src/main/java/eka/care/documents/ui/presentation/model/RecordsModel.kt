@@ -18,6 +18,7 @@ data class RecordModel(
     val fileType: String?,
     val cta: CTA?,
     val tags: String?,
+    val autoTags : String?,
     val source: Int?,
     val isAnalyzing: Boolean = false
 ): Parcelable

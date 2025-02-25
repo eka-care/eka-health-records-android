@@ -29,9 +29,9 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
         }
     }
 
-    override suspend fun alreadyExistDocument(documentId: String): Int? {
+    override suspend fun alreadyExistDocument(documentId: String, ownerId: String?): Int? {
         return withContext(Dispatchers.IO) {
-            val isExist = database.vaultDao().alreadyExistDocument(documentId)
+            val isExist = database.vaultDao().alreadyExistDocument(documentId = documentId, ownerId = ownerId)
             return@withContext isExist
         }
     }
@@ -79,6 +79,7 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
         hasId: String,
         cta: String?,
         tags: String,
+        autoTags : String,
         documentDate: Long?
     ) {
         database.vaultDao().storeDocument(
@@ -89,6 +90,7 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
             hasId = hasId,
             cta = cta,
             tags = tags,
+            autoTags = autoTags,
             documentDate = documentDate
         )
     }

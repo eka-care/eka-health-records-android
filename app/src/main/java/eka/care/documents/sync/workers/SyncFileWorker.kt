@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.util.Log
 import android.webkit.MimeTypeMap
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.google.gson.Gson
@@ -23,7 +22,9 @@ import eka.care.documents.sync.data.remote.dto.response.GetFilesResponse
 import eka.care.documents.sync.data.repository.AwsRepository
 import eka.care.documents.sync.data.repository.MyFileRepository
 import eka.care.documents.sync.data.repository.SyncRecordsRepository
+import eka.care.documents.ui.utility.RecordsUtility
 import eka.care.documents.ui.utility.RecordsUtility.Companion.changeDateFormat
+import eka.care.documents.ui.utility.RecordsUtility.Companion.saveFile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
@@ -82,7 +83,7 @@ class SyncFileWorker(
     private suspend fun syncDeletedAndEditedDocuments(oid: String?, doctorId: String?) {
         try {
             val resp = vaultRepository.getEditedDocuments(oid = oid, doctorId = doctorId)
-            resp.forEach {vaultEntity->
+            resp.forEach { vaultEntity ->
                 vaultEntity.documentId?.let {
                     val updateFileDetailsRequest = UpdateFileDetailsRequest(
                         oid = vaultEntity.oid,
@@ -129,7 +130,11 @@ class SyncFileWorker(
                     }
                     response?.let {
                         val filePaths = it.files.map { file ->
-                            downloadFile(file.assetUrl, file.fileType)
+                            RecordsUtility.downloadFile(
+                                file.assetUrl,
+                                context = applicationContext,
+                                type = file.fileType
+                            )
                         }
                         val fileType = it.files.firstOrNull()?.fileType ?: ""
                         val smartReportField =
@@ -144,18 +149,6 @@ class SyncFileWorker(
                 }
         } catch (_: Exception) {
         }
-    }
-
-    private suspend fun downloadFile(assetUrl: String?, type: String): String {
-        val directory = ContextWrapper(applicationContext).getDir("cache", Context.MODE_PRIVATE)
-        val ext = if (type.trim().lowercase() == "pdf") "pdf" else "jpg"
-        val childPath = "${UUID.randomUUID()}.$ext"
-        withContext(Dispatchers.IO) {
-            val resp = myFileRepository.downloadFile(assetUrl)
-            resp?.saveFile(File(directory, childPath))
-        }
-
-        return "${directory.path}/$childPath"
     }
 
     private suspend fun syncDocuments(oid: String?, uuid: String?, doctorId: String?) {
@@ -359,6 +352,7 @@ class SyncFileWorker(
                     hasId = "",
                     oid = app_oid,
                     tags = recordItem.metadata.tags.joinToString(",") ?: "",
+                    autoTags = recordItem.metadata.autoTags.joinToString(",") ?: "",
                     documentDate = documentDate,
                 )
             } else {
@@ -382,7 +376,8 @@ class SyncFileWorker(
                         hashId = null,
                         isAnalyzing = false,
                         cta = null,
-                        doctorId = doctorId
+                        doctorId = doctorId,
+                        autoTags = recordItem.metadata?.autoTags?.joinToString(",") ?: ""
                     )
                 )
             }
@@ -416,14 +411,6 @@ class SyncFileWorker(
         }
 
         return "${directory.path}/$childPath"
-    }
-
-    private fun ResponseBody.saveFile(destFile: File) {
-        byteStream().use { inputStream ->
-            destFile.outputStream().use { outputStream ->
-                inputStream.copyTo(outputStream)
-            }
-        }
     }
 
 }

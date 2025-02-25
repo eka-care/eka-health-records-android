@@ -15,5 +15,5 @@ interface DocumentsRepository {
         filterId: String?,
     )
     suspend fun getAvailableDocTypes(filterId: String?, ownerId: String?): List<AvailableDocTypes>
-    suspend fun alreadyExistDocument(documentId: String): Int?
+    suspend fun alreadyExistDocument(documentId: String, ownerId : String?): Int?
 }

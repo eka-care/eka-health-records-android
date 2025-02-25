@@ -26,6 +26,7 @@ import eka.care.documents.ui.presentation.model.CTA
 import eka.care.documents.ui.presentation.model.RecordModel
 import eka.care.documents.ui.utility.RecordsUtility
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.runBlocking
 
 object Document {
     private var appContext: Context? = null
@@ -91,8 +92,16 @@ object Document {
             )
     }
 
-    suspend fun alreadyExistDocument(documentId : String) : Int?{
-       return documentRepository?.alreadyExistDocument(documentId = documentId)
+    suspend fun alreadyExistDocument(documentId : String, ownerId : String?) : Int?{
+       return documentRepository?.alreadyExistDocument(documentId = documentId, ownerId = ownerId)
+    }
+
+    fun downloadFileFromTheAssetUrl(url : String?, context: Context, type: String?) : String{
+        var filePath = ""
+        runBlocking {
+            filePath = RecordsUtility.downloadFile(url, context, type ?: "")
+        }
+        return filePath
     }
 
     fun getDocuments(
@@ -134,7 +143,7 @@ object Document {
     }
 
     fun view(context: Context, model: RecordModel, oid: String?){
-        if (model.tags?.split(",")?.contains("1") == true) {
+        if (model.autoTags?.split(",")?.contains("1") == true) {
             val date = RecordsUtility.convertLongToDateString(model.documentDate ?: model.createdAt)
             Intent(context, SmartReportActivity::class.java)
                 .also {
@@ -183,6 +192,7 @@ fun VaultEntity.toRecordModel(): RecordModel {
         cta = Gson().fromJson(this.cta, CTA::class.java),
         tags = this.tags,
         source = this.source,
+        autoTags = this.autoTags,
         isAnalyzing = this.isAnalyzing
     )
 }

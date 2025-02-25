@@ -196,6 +196,7 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
                                 fileType = vaultEntity.fileType,
                                 cta = Gson().fromJson(vaultEntity.cta, CTA::class.java),
                                 tags = vaultEntity.tags,
+                                autoTags = vaultEntity.autoTags,
                                 source = vaultEntity.source,
                                 isAnalyzing = vaultEntity.isAnalyzing
                             )

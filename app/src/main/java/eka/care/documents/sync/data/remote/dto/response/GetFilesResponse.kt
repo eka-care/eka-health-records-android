@@ -20,10 +20,10 @@ data class Item(
 )
 @Keep
 data class Record(
-    val item: ItemX
+    val item: ItemData
 )
 @Keep
-data class ItemX(
+data class ItemData(
     @SerializedName("document_id")
     val documentId: String,
     @SerializedName("document_type")
@@ -39,6 +39,8 @@ data class Metadata(
     val abha: Abha,
     @SerializedName("document_date")
     val documentDate: Int,
+    @SerializedName("auto_tags")
+    val autoTags: List<String>,
     val tags: List<String>,
     val thumbnail: String,
     val title: String

@@ -20,6 +20,7 @@ interface VaultRepository: DocumentsRepository {
         hasId: String,
         cta: String?,
         tags: String,
+        autoTags : String,
         documentDate : Long?
     )
     suspend fun getUnSyncedDocuments(oid : String?, doctorId: String?): List<VaultEntity>
