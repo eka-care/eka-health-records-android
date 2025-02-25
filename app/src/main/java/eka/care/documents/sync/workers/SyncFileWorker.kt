@@ -392,8 +392,11 @@ class SyncFileWorker(
         recordsResponse: GetFilesResponse?
     ) {
         recordsResponse?.items?.forEach {
+            Log.d("AYUSHI", it.record.item.metadata.thumbnail)
             val path = downloadThumbnail(it.record.item.metadata.thumbnail)
+            Log.d("AYUSHI-1", path)
             val documentId = it.record.item.documentId
+            Log.d("AYUSHI-2", documentId)
             vaultRepository.setThumbnail(
                 path, vaultList.first { it.documentId == documentId }.documentId
             )

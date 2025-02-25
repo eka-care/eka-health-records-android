@@ -1,5 +1,6 @@
 package eka.care.documents.data.repository
 
+import android.util.Log
 import eka.care.documents.data.db.database.DocumentDatabase
 import eka.care.documents.data.db.entity.VaultEntity
 import eka.care.documents.data.db.model.AvailableDocTypes
@@ -68,6 +69,7 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
     // OLD
 
     override suspend fun setThumbnail(thumbnail: String, documentId: String?) {
+        Log.d("AYUSHI-3", thumbnail)
         database.vaultDao().setThumbnail(thumbnail = thumbnail, docId = documentId)
     }
 
