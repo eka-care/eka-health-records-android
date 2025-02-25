@@ -53,9 +53,13 @@ class DocumentActivity : AppCompatActivity() {
                 context = context,
                 patientUuid = params[MedicalRecordParams.PATIENT_UUID.key]?.asString ?: ""
             )
-            DocumentScreen(param = params, onBackClick = {
+            DocumentScreen(
+                param = params, onBackClick = {
 
-            }, mode = Mode.VIEW)
+                },
+                mode = Mode.VIEW,
+                isUploadEnabled = false
+            )
         }
     }
 }
