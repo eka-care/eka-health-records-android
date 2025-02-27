@@ -45,10 +45,6 @@ class AwsRepository {
             }
         }
         val body = FilesUploadInitRequest(batchRequest = batch)
-        Log.d(
-            "SYNC_DOCUMENTS-3",
-            body.toString()
-        )
         return withContext(Dispatchers.IO) {
             val response =
                 when (val response = service.filesUploadInit(body)) {

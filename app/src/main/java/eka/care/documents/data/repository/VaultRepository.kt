@@ -11,7 +11,7 @@ interface VaultRepository: DocumentsRepository {
 
     // OLD
     suspend fun updateDocuments(vaultEntityList: List<VaultEntity>)
-    suspend fun setThumbnail(thumbnail: String, documentId: String?)
+    suspend fun setThumbnail(thumbnail: String, documentId: String)
     suspend fun storeDocument(
         localId: String,
         oid: String?,

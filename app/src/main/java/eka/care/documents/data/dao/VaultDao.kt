@@ -56,7 +56,7 @@ interface VaultDao {
     suspend fun updateDocuments(vaultEntityList: List<VaultEntity>)
 
     @Query("UPDATE vault_table SET thumbnail=:thumbnail WHERE doc_id=:docId")
-    suspend fun setThumbnail(thumbnail: String, docId: String?)
+    suspend fun setThumbnail(thumbnail: String, docId: String)
 
     @Query("SELECT * FROM vault_table WHERE (filter_id = :oid OR (:oid IS NULL AND filter_id IS NULL)) AND is_deleted=0 AND (owner_id = :doctorId OR (:doctorId IS NULL AND owner_id IS NULL)) ORDER BY created_at DESC")
     fun fetchDocuments(oid: String?, doctorId: String?): Flow<List<VaultEntity>>

@@ -68,8 +68,7 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
 
     // OLD
 
-    override suspend fun setThumbnail(thumbnail: String, documentId: String?) {
-        Log.d("AYUSHI-3", thumbnail)
+    override suspend fun setThumbnail(thumbnail: String, documentId: String) {
         database.vaultDao().setThumbnail(thumbnail = thumbnail, docId = documentId)
     }
 

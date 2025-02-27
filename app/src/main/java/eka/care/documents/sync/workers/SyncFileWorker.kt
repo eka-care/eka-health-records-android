@@ -153,16 +153,8 @@ class SyncFileWorker(
 
     private suspend fun syncDocuments(oid: String?, uuid: String?, doctorId: String?) {
         try {
-            Log.d(
-                "SYNC_DOCUMENTS-3",
-                "$oid, $uuid $doctorId"
-            )
             val vaultDocuments =
                 vaultRepository.getUnSyncedDocuments(oid = oid, doctorId = doctorId)
-            Log.d(
-                "SYNC_DOCUMENTS-4",
-                vaultDocuments.toString()
-            )
             if (vaultDocuments.isEmpty()) return
 
             val tags = mutableListOf<String>()
@@ -200,10 +192,6 @@ class SyncFileWorker(
                 }
 
                 val batchResponses = uploadInitResponse?.batchResponse ?: emptyList()
-                Log.d(
-                    "SYNC_DOCUMENTS-2",
-                    batchResponses.toString()
-                )
                 if (isMultiFile) {
                     // Handle multi-file upload for the current document
                     val batchResponse = batchResponses.firstOrNull()
@@ -212,10 +200,6 @@ class SyncFileWorker(
                             awsRepository.uploadFile(batch = batchResponse, fileList = files)
                         if (response?.error == false) {
                             response.documentId?.let { docId ->
-                                Log.d(
-                                    "SYNC_DOCUMENTS-1",
-                                    docId
-                                )
                                 updateDocumentDetails(docId, oid, vaultEntity)
                             }
                         }
@@ -230,10 +214,6 @@ class SyncFileWorker(
                                 awsRepository.uploadFile(file = file, batch = batchResponse)
                             if (response?.error == false) {
                                 response.documentId?.let { docId ->
-                                    Log.d(
-                                        "SYNC_DOCUMENTS-2",
-                                        docId
-                                    )
                                     updateDocumentDetails(docId, oid, vaultEntity)
                                 }
                             }
@@ -392,14 +372,11 @@ class SyncFileWorker(
         recordsResponse: GetFilesResponse?
     ) {
         recordsResponse?.items?.forEach {
-            Log.d("AYUSHI", it.record.item.metadata.thumbnail)
             val path = downloadThumbnail(it.record.item.metadata.thumbnail)
-            Log.d("AYUSHI-1", path)
             val documentId = it.record.item.documentId
-            Log.d("AYUSHI-2", documentId)
-            vaultRepository.setThumbnail(
-                path, vaultList.first { it.documentId == documentId }.documentId
-            )
+            vaultList.find { it.documentId == documentId }?.documentId?.let { vaultDocId ->
+                vaultRepository.setThumbnail(path, vaultDocId)
+            }
         }
         return
     }
