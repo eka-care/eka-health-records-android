@@ -143,8 +143,6 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     implementation(libs.google.accompanist.pager)
     implementation(libs.google.accompanist.pager.indicators)
-//    api(libs.protobuf.kotlin.lite)
-//    api(libs.protobuf.javalite)
     implementation(libs.accompanist.permissions)
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.1")
 }

@@ -2,7 +2,6 @@ package eka.care.documents.sync.workers
 
 import android.app.Application
 import android.content.Context
-import android.content.ContextWrapper
 import android.util.Log
 import android.webkit.MimeTypeMap
 import androidx.work.CoroutineWorker
@@ -25,10 +24,7 @@ import eka.care.documents.sync.data.repository.SyncRecordsRepository
 import eka.care.documents.ui.utility.RecordsUtility
 import eka.care.documents.ui.utility.RecordsUtility.Companion.changeDateFormat
 import eka.care.documents.ui.utility.RecordsUtility.Companion.downloadThumbnail
-import eka.care.documents.ui.utility.RecordsUtility.Companion.saveFile
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.withContext
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -59,8 +55,8 @@ class SyncFileWorker(
                         updatedAtRepository.insertUpdatedAtEntity(
                             UpdatedAtEntity(
                                 filterId = oid ?: "",
-                                updatedAt = "0",
-                                ownerId = doctorId
+                                updatedAt = null,
+                                ownerId = doctorId ?: ""
                             )
                         )
                         "0"
@@ -269,7 +265,7 @@ class SyncFileWorker(
     ) {
         try {
             val response = recordsRepository.getRecords(
-                updatedAt = null,
+                updatedAt = updatedAt,
                 offset = offset,
                 oid = oid
             )
@@ -299,7 +295,7 @@ class SyncFileWorker(
             if (!newOffset.isNullOrEmpty()) {
                 fetchRecords(
                     offset = newOffset,
-                    updatedAt = null,
+                    updatedAt = updatedAt,
                     uuid = uuid,
                     oid = oid,
                     doctorId = doctorId

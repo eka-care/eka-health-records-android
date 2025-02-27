@@ -127,7 +127,7 @@ interface VaultDao {
     @Query("UPDATE vault_table SET file_path=:filePath WHERE doc_id=:docId")
     suspend fun updateFilePath(docId: String?, filePath: String)
 
-    @Query("DELETE FROM vault_table WHERE filter_id=:filterId AND local_id=:localId")
+    @Query("DELETE FROM vault_table WHERE (filter_id = :filterId OR (:filterId IS NULL AND filter_id IS NULL)) AND local_id=:localId")
     suspend fun removeDocument(localId: String, filterId:String?)
 
     @Query("SELECT * FROM vault_table WHERE (owner_id = :ownerId OR (:ownerId IS NULL AND owner_id IS NULL)) AND  (filter_id = :filterId OR (:filterId IS NULL AND filter_id IS NULL)) and file_path is null")
