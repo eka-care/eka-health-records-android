@@ -136,12 +136,12 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
     }
 
     override fun fetchDocumentsByDocDate(
-        filterId: String,
+        filterId: String?,
         docType: Int,
         ownerId: String?
     ): Flow<List<VaultEntity>> {
         return if (docType == -1) {
-            database.vaultDao().fetchDocumentsByDocDate(filterId = filterId)
+            database.vaultDao().fetchDocumentsByDocDate(filterId = filterId, ownerId = ownerId)
         } else {
             database.vaultDao()
                 .fetchDocumentsByDocType(filterId = filterId, docType = docType, ownerId = ownerId)

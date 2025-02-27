@@ -63,7 +63,7 @@ class SyncFileWorker(
                     }
             fetchRecords(
                 offset = null,
-                updatedAt = updatedAt,
+                updatedAt = null,
                 uuid = uuid,
                 oid = oid,
                 doctorId = doctorId
@@ -317,11 +317,11 @@ class SyncFileWorker(
         context: Context
     ) {
         val vaultList = mutableListOf<VaultEntity>()
-        recordsResponse.items?.forEach {
+        recordsResponse.items.forEach {
             val recordItem = it.record.item
             val localId = vaultRepository.getLocalId(recordItem.documentId)
             val documentDate =
-                if (recordItem.metadata.documentDate.toLong() == 0L) null else recordItem.metadata.documentDate.toLong()
+                if (recordItem.metadata?.documentDate?.toLong() == 0L) null else recordItem.metadata?.documentDate?.toLong()
             if (!localId.isNullOrEmpty()) {
                 vaultRepository.storeDocument(
                     localId = localId,
@@ -370,7 +370,7 @@ class SyncFileWorker(
         context: Context
     ) {
         recordsResponse?.items?.forEach {
-            val path = downloadThumbnail(it.record.item.metadata.thumbnail, context = context)
+            val path = downloadThumbnail(it.record.item.metadata?.thumbnail, context = context)
             val documentId = it.record.item.documentId
             vaultList.find { it.documentId == documentId }?.documentId?.let { vaultDocId ->
                 vaultRepository.setThumbnail(path, vaultDocId)

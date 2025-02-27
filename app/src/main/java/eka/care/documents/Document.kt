@@ -24,6 +24,7 @@ import eka.care.documents.ui.presentation.activity.DocumentViewActivity
 import eka.care.documents.ui.presentation.activity.SmartReportActivity
 import eka.care.documents.ui.presentation.model.CTA
 import eka.care.documents.ui.presentation.model.RecordModel
+import eka.care.documents.ui.presentation.screens.DocumentSortEnum
 import eka.care.documents.ui.utility.RecordsUtility
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.runBlocking
@@ -115,13 +116,22 @@ object Document {
     fun getDocuments(
         ownerId: String?,
         filterId: String?,
-        docType: Int = -1
+        docType: Int = -1,
+        sortBy : DocumentSortEnum
     ): Flow<List<VaultEntity>>? {
-        return documentRepository?.fetchDocuments(
-            ownerId = ownerId,
-            filterId = filterId,
-            docType = docType
-        )
+        return if (sortBy == DocumentSortEnum.UPLOAD_DATE) {
+            documentRepository?.fetchDocuments(
+                ownerId = ownerId,
+                filterId = filterId,
+                docType = docType
+            )
+        } else {
+            documentRepository?.fetchDocumentsByDocDate(
+                ownerId = ownerId,
+                filterId = filterId,
+                docType = docType
+            )
+        }
     }
 
     suspend fun storeDocuments(vaultEntityList: List<VaultEntity>) {

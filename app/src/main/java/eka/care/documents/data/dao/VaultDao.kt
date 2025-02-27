@@ -67,8 +67,8 @@ interface VaultDao {
         ownerId: String?
     ): Flow<List<VaultEntity>>
 
-    @Query("SELECT * FROM vault_table WHERE (filter_id = :filterId OR (:filterId IS NULL AND filter_id IS NULL)) AND is_deleted=0 ORDER BY doc_date DESC")
-    fun fetchDocumentsByDocDate(filterId:String?,): Flow<List<VaultEntity>>
+    @Query("SELECT * FROM vault_table WHERE (filter_id = :filterId OR (:filterId IS NULL AND filter_id IS NULL)) AND (owner_id = :ownerId OR (:ownerId IS NULL AND owner_id IS NULL)) AND is_deleted=0 ORDER BY doc_date DESC")
+    fun fetchDocumentsByDocDate(filterId:String?, ownerId: String?): Flow<List<VaultEntity>>
 
     @Query("SELECT * FROM vault_table WHERE filter_id=:filterId AND doc_type =:docType AND is_deleted=0 ORDER BY doc_date DESC")
     suspend fun fetchDocumentsByDocDateAndDocType(filterId:String?, docType: Int): List<VaultEntity>

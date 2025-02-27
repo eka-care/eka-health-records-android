@@ -4,29 +4,29 @@ import androidx.annotation.Keep
 import com.google.gson.annotations.SerializedName
 @Keep
 data class GetFilesResponse(
-    val items: List<Item>? = null,
+    val items: List<Item>,
     @SerializedName("next_token")
-    val nextToken: String? = null
+    val nextToken: String
 )
 @Keep
 data class Item(
-    val record: Record? = null
+    val record: Record
 )
 @Keep
 data class Record(
-    val item: ItemData? = null
+    val item: ItemData
 )
 @Keep
 data class ItemData(
     @SerializedName("document_id")
-    val documentId: String? = null,
+    val documentId: String,
     @SerializedName("document_type")
     val documentType: String? = null,
     val metadata: Metadata? = null,
     @SerializedName("patient_id")
     val patientId: String? = null,
     @SerializedName("upload_date")
-    val uploadDate: Int? = null
+    val uploadDate: Int
 )
 @Keep
 data class Metadata(
