@@ -1,5 +1,7 @@
 package eka.care.documents.ui.presentation.components
 
+import android.content.Context
+import android.content.Intent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -56,6 +58,7 @@ fun DocumentScreenContent(
     listState: LazyListState,
     isRefreshing: Boolean,
     mode: Mode,
+    isUploadEnabled: Boolean?,
     selectedItems: SnapshotStateList<RecordModel>,
     onSelectedItemsChange: (List<RecordModel>) -> Unit,
     paramsModel: RecordParamsModel
@@ -152,45 +155,46 @@ fun DocumentScreenContent(
                         Spacer(modifier = Modifier.height(80.dp))
                     }
                 }
-                FloatingActionButton(
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(end = 20.dp, bottom = 20.dp),
-                    onClick = {
-                        openSheet()
-                        viewModel.documentBottomSheetType =
-                            DocumentBottomSheetType.DocumentUpload
-                    },
-                    shape = RoundedCornerShape(16.dp),
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                ) {
-                    Row(
+                if(isUploadEnabled == true) {
+                    FloatingActionButton(
                         modifier = Modifier
-                            .background(
-                                color = MaterialTheme.colorScheme.surfaceVariant,
-                                shape = RoundedCornerShape(16.dp)
-                            )
-                            .padding(horizontal = 16.dp),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
+                            .align(Alignment.BottomEnd)
+                            .padding(end = 20.dp, bottom = 20.dp),
+                        onClick = {
+                            openSheet()
+                            viewModel.documentBottomSheetType =
+                                DocumentBottomSheetType.DocumentUpload
+                        },
+                        shape = RoundedCornerShape(16.dp),
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
                     ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.ic_plus_brand),
-                            contentDescription = "",
-                            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary),
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(
-                            text = stringResource(id = R.string.upload),
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.primary
-                        )
+                        Row(
+                            modifier = Modifier
+                                .background(
+                                    color = MaterialTheme.colorScheme.surfaceVariant,
+                                    shape = RoundedCornerShape(16.dp)
+                                )
+                                .padding(horizontal = 16.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Image(
+                                painter = painterResource(id = R.drawable.ic_plus_brand),
+                                contentDescription = "",
+                                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary),
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = stringResource(id = R.string.upload),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
                     }
                 }
             }
         }
-
         PullRefreshIndicator(
             modifier = Modifier.align(Alignment.TopCenter),
             refreshing = isRefreshing,
@@ -198,5 +202,6 @@ fun DocumentScreenContent(
             contentColor = DarwinTouchNeutral1000,
             scale = true
         )
+
     }
 }
