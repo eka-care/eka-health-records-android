@@ -149,7 +149,7 @@ object Document {
                 .also {
                     it.putExtra("doc_id", model.documentId)
                     it.putExtra("local_id", model.localId)
-                    it.putExtra("doctor_id", model.doctorId)
+                    it.putExtra("doctor_id", model.ownerId)
                     it.putExtra("user_id", oid)
                     it.putExtra("doc_date", date)
                     context.startActivity(it)
@@ -182,7 +182,7 @@ fun VaultEntity.toRecordModel(): RecordModel {
     return RecordModel(
         localId = this.localId,
         documentId = this.documentId,
-        doctorId = this.doctorId,
+        ownerId = this.ownerId,
         documentType = this.documentType,
         documentDate = this.documentDate,
         createdAt = this.createdAt,

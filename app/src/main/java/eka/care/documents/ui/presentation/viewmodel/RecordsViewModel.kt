@@ -120,7 +120,8 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
     fun getTags(documentId: String, userId: String) {
         viewModelScope.launch {
             _selectedTags.value = emptyList()
-            val response = myFileRepository.getDocument(documentId = documentId, filterId = userId)?.tags
+            val response =
+                myFileRepository.getDocument(documentId = documentId, filterId = userId)?.tags
             //   val apiTags = response?.let { Tags().getTagIdByNames(it) } ?: emptyList()
             val cardTags = cardClickData.value?.tags?.split(",")?.map { it.trim() } ?: emptyList()
             val allTags = (cardTags).distinct()
@@ -168,15 +169,15 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
             try {
                 val documentsFlowResp = if (sortBy.value == DocumentSortEnum.UPLOAD_DATE) {
                     vaultRepository.fetchDocuments(
-                        oid = oid,
+                        filterId = oid,
                         docType = documentType.intValue,
-                        doctorId = doctorId
+                        ownerId = doctorId
                     )
                 } else {
                     vaultRepository.fetchDocumentsByDocDate(
-                        oid = oid,
+                        filterId = oid,
                         docType = documentType.intValue,
-                        doctorId = doctorId
+                        ownerId = doctorId
                     )
                 }
 
@@ -187,7 +188,7 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
                             RecordModel(
                                 localId = vaultEntity.localId,
                                 documentId = vaultEntity.documentId,
-                                doctorId = doctorId,
+                                ownerId = doctorId,
                                 documentType = vaultEntity.documentType,
                                 documentDate = vaultEntity.documentDate,
                                 createdAt = vaultEntity.createdAt,
@@ -208,8 +209,7 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
                             GetRecordsState.Success(resp = records)
                         }
                     }
-            }
-            catch (ex: Exception) {
+            } catch (ex: Exception) {
             }
         }
     }
@@ -222,6 +222,7 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
         } catch (_: Exception) {
         }
     }
+
     fun editDocument(
         localId: String,
         docType: Int?,
@@ -234,7 +235,7 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
             viewModelScope.launch {
                 vaultRepository.editDocument(localId, docType, docDate, filterId = oid)
                 val tagList = tags.split(",")
-              //  val tagNames = Tags().getTagNamesByIds(tagList)
+                //  val tagNames = Tags().getTagNamesByIds(tagList)
                 val updateFileDetailsRequest = UpdateFileDetailsRequest(
                     oid = oid,
                     documentType = docTypes.find { it.idNew == docType }?.id,
@@ -269,7 +270,7 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
     fun syncEditedDocuments(oid: String, doctorId: String?) {
         try {
             viewModelScope.launch {
-                vaultRepository.getEditedDocuments(oid = oid, doctorId = doctorId)
+                vaultRepository.getEditedDocuments(filterId = oid, ownerId = doctorId)
             }
         } catch (_: Exception) {
         }
@@ -279,14 +280,14 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
         try {
             viewModelScope.launch {
                 val vaultDocuments =
-                    vaultRepository.getDeletedDocuments(doctorId = doctorId, oid = oid)
+                    vaultRepository.getDeletedDocuments(ownerId = doctorId, filterId = oid)
 
                 vaultDocuments.forEach { vaultEntity ->
                     vaultEntity.documentId?.let {
                         val resp = myFileRepository.deleteDocument(documentId = it, filterId = oid)
 
                         if (resp in 200..299) {
-                            vaultRepository.removeDocument(localId = vaultEntity.localId, oid = oid)
+                            vaultRepository.removeDocument(localId = vaultEntity.localId, filterId = oid)
                         }
                     }
 

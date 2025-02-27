@@ -1,6 +1,5 @@
 package eka.care.documents.data.repository
 
-import android.util.Log
 import eka.care.documents.data.db.database.DocumentDatabase
 import eka.care.documents.data.db.entity.VaultEntity
 import eka.care.documents.data.db.model.AvailableDocTypes
@@ -48,7 +47,7 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
     }
 
     override suspend fun deleteDocument(filterId: String?, localId: String) {
-        database.vaultDao().deleteDocument(oid = filterId, localId = localId)
+        database.vaultDao().deleteDocument(filterId = filterId, localId = localId)
         return
     }
 
@@ -62,7 +61,7 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
             localId = localId,
             docType = docType,
             docDate = docDate,
-            oid = filterId
+            filterId = filterId
         )
     }
 
@@ -74,7 +73,7 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
 
     override suspend fun storeDocument(
         localId: String,
-        oid: String?,
+        filterId: String?,
         docId: String,
         isAnalysing: Boolean,
         hasId: String,
@@ -85,7 +84,7 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
     ) {
         database.vaultDao().storeDocument(
             localId = localId,
-            oid = oid,
+            filterId = filterId,
             docId = docId,
             isAnalysing = isAnalysing,
             hasId = hasId,
@@ -96,24 +95,24 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
         )
     }
 
-    override suspend fun getUnSyncedDocuments(oid: String?, doctorId: String?): List<VaultEntity> {
+    override suspend fun getUnSyncedDocuments(filterId: String?, ownerId: String?): List<VaultEntity> {
         val resp = database.vaultDao().getUnSyncedDocuments(
-            oid = oid,
-            doctorId = doctorId
+            filterId = filterId,
+            ownerId = ownerId
         )
         return resp
     }
 
-    override suspend fun getDeletedDocuments(oid: String?, doctorId: String?): List<VaultEntity> {
-        return database.vaultDao().getDeletedDocuments(oid = oid, doctorId = doctorId)
+    override suspend fun getDeletedDocuments(filterId: String?, ownerId: String?): List<VaultEntity> {
+        return database.vaultDao().getDeletedDocuments(filterId = filterId, ownerId = ownerId)
     }
 
-    override suspend fun getEditedDocuments(oid: String?, doctorId: String?): List<VaultEntity> {
-        return database.vaultDao().getEditedDocuments(oid = oid, doctorId = doctorId)
+    override suspend fun getEditedDocuments(filterId: String?, ownerId: String?): List<VaultEntity> {
+        return database.vaultDao().getEditedDocuments(filterId = filterId, ownerId = ownerId)
     }
 
-    override suspend fun fetchDocumentData(oid: String, localId: String): VaultEntity {
-        return database.vaultDao().getDocumentData(oid = oid, localId = localId)
+    override suspend fun fetchDocumentData(filterId: String, localId: String): VaultEntity {
+        return database.vaultDao().getDocumentData(filterId = filterId, localId = localId)
     }
 
     override suspend fun getAvailableDocTypes(
@@ -124,28 +123,28 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
     }
 
     override fun fetchDocuments(
-        oid: String,
+        filterId: String,
         docType: Int,
-        doctorId: String?
+        ownerId : String?
     ): Flow<List<VaultEntity>> {
         return if (docType == -1) {
-            database.vaultDao().fetchDocuments(oid = oid, doctorId = doctorId)
+            database.vaultDao().fetchDocuments(filterId = filterId, ownerId = ownerId)
         } else {
             database.vaultDao()
-                .fetchDocumentsByDocType(oid = oid, docType = docType, doctorId = doctorId)
+                .fetchDocumentsByDocType(filterId = filterId, docType = docType, ownerId = ownerId)
         }
     }
 
     override fun fetchDocumentsByDocDate(
-        oid: String,
+        filterId: String,
         docType: Int,
-        doctorId: String?
+        ownerId: String?
     ): Flow<List<VaultEntity>> {
         return if (docType == -1) {
-            database.vaultDao().fetchDocumentsByDocDate(oid = oid)
+            database.vaultDao().fetchDocumentsByDocDate(filterId = filterId)
         } else {
             database.vaultDao()
-                .fetchDocumentsByDocType(oid = oid, docType = docType, doctorId = doctorId)
+                .fetchDocumentsByDocType(filterId = filterId, docType = docType, ownerId = ownerId)
         }
     }
 
@@ -154,9 +153,9 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
         database.vaultDao().updateDocumentId(documentId, localId)
     }
 
-    override suspend fun getLocalIdBySource(source: Int, oid: String): List<String> {
+    override suspend fun getLocalIdBySource(source: Int, filterId: String): List<String> {
 
-        return database.vaultDao().getLocalIdBySource(oid, source)
+        return database.vaultDao().getLocalIdBySource(filterId = filterId, source)
     }
 
     override suspend fun getLocalId(docId: String): String? {
@@ -167,16 +166,16 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
         return database.vaultDao().getDocumentById(id)
     }
 
-    override suspend fun removeDocument(localId: String, oid: String?) {
-        database.vaultDao().removeDocument(localId = localId, oid = oid)
+    override suspend fun removeDocument(localId: String, filterId: String?) {
+        database.vaultDao().removeDocument(localId = localId, filterId = filterId)
         return
     }
 
     override suspend fun getDocumentsWithoutFilePath(
-        doctorId: String?,
-        patientOid: String?
+        ownerId: String?,
+        filterId: String?
     ): List<VaultEntity> {
         return database.vaultDao()
-            .fetchDocumentsWithoutFilePath(doctorId = doctorId, patientoid = patientOid)
+            .fetchDocumentsWithoutFilePath(ownerId = ownerId, filterId = filterId)
     }
 }

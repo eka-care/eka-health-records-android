@@ -14,7 +14,7 @@ interface VaultRepository: DocumentsRepository {
     suspend fun setThumbnail(thumbnail: String, documentId: String)
     suspend fun storeDocument(
         localId: String,
-        oid: String?,
+        filterId: String?,
         docId: String,
         isAnalysing: Boolean,
         hasId: String,
@@ -23,16 +23,16 @@ interface VaultRepository: DocumentsRepository {
         autoTags : String,
         documentDate : Long?
     )
-    suspend fun getUnSyncedDocuments(oid : String?, doctorId: String?): List<VaultEntity>
-    suspend fun getDeletedDocuments(oid: String? , doctorId: String?): List<VaultEntity>
-    suspend fun getEditedDocuments(oid: String?, doctorId: String?): List<VaultEntity>
-    suspend fun fetchDocumentData(oid: String, localId: String): VaultEntity
-    fun fetchDocuments(oid: String, docType: Int, doctorId: String?): Flow<List<VaultEntity>>
-    fun fetchDocumentsByDocDate(oid: String, docType: Int, doctorId: String?): Flow<List<VaultEntity>>
+    suspend fun getUnSyncedDocuments(filterId: String?, ownerId: String?): List<VaultEntity>
+    suspend fun getDeletedDocuments(filterId: String? , ownerId: String?): List<VaultEntity>
+    suspend fun getEditedDocuments(filterId: String?, ownerId: String?): List<VaultEntity>
+    suspend fun fetchDocumentData(filterId: String, localId: String): VaultEntity
+    fun fetchDocuments(filterId: String, docType: Int, ownerId: String?): Flow<List<VaultEntity>>
+    fun fetchDocumentsByDocDate(filterId: String, docType: Int, ownerId: String?): Flow<List<VaultEntity>>
     suspend fun updateDocumentId(documentId: String, localId: String)
-    suspend fun getLocalIdBySource(source: Int, oid: String): List<String>
+    suspend fun getLocalIdBySource(source: Int, filterId: String): List<String>
     suspend fun getLocalId(docId: String): String?
     suspend fun getDocumentById(id: String) : VaultEntity?
-    suspend fun removeDocument(localId: String, oid: String?)
-    suspend fun getDocumentsWithoutFilePath(doctorId: String?, patientOid : String?) : List<VaultEntity>
+    suspend fun removeDocument(localId: String, filterId: String?)
+    suspend fun getDocumentsWithoutFilePath(ownerId: String?, filterId: String?) : List<VaultEntity>
 }

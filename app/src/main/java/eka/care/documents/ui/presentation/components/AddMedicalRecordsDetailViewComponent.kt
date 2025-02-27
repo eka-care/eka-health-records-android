@@ -142,7 +142,6 @@ fun AddMedicalRecordsDetailViewComponent(
                     localId = UUID.randomUUID().toString(),
                     documentId = null,
                     uuid = paramsModel.uuid,
-                    oid = paramsModel.patientId,
                     ownerId = paramsModel.doctorId,
                     filterId = paramsModel.patientId,
                     filePath = if (fileType == FileType.IMAGE.ordinal) compressedFiles.map { it.path } else fileList.map { it.path },
@@ -163,7 +162,6 @@ fun AddMedicalRecordsDetailViewComponent(
                     autoTags = selectedTags.joinToString(",").trimStart(','),
                     hashId = null,
                     cta = null,
-                    doctorId = paramsModel.doctorId,
                     isAnalyzing = false
                 )
 

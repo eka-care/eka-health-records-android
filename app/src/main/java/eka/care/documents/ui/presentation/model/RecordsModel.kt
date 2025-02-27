@@ -9,7 +9,7 @@ import kotlinx.parcelize.Parcelize
 data class RecordModel(
     val localId: String?,
     val documentId: String?,
-    val doctorId : String?,
+    val ownerId : String?,
     val documentType: Int?,
     val documentDate: Long?,
     val createdAt : Long?,

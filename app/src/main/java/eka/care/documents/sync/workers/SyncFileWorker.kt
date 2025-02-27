@@ -28,7 +28,6 @@ import eka.care.documents.ui.utility.RecordsUtility.Companion.saveFile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
-import okhttp3.ResponseBody
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -82,11 +81,11 @@ class SyncFileWorker(
 
     private suspend fun syncDeletedAndEditedDocuments(oid: String?, doctorId: String?) {
         try {
-            val resp = vaultRepository.getEditedDocuments(oid = oid, doctorId = doctorId)
+            val resp = vaultRepository.getEditedDocuments(filterId = oid, ownerId = doctorId)
             resp.forEach { vaultEntity ->
                 vaultEntity.documentId?.let {
                     val updateFileDetailsRequest = UpdateFileDetailsRequest(
-                        oid = vaultEntity.oid,
+                        oid = vaultEntity.filterId,
                         documentType = docTypes.find { it.idNew == vaultEntity.documentType }?.id,
                         documentDate = vaultEntity.documentDate.toString(),
                         userTags = emptyList()
@@ -103,13 +102,13 @@ class SyncFileWorker(
         }
 
         try {
-            val vaultDocuments = vaultRepository.getDeletedDocuments(doctorId = doctorId, oid = oid)
+            val vaultDocuments = vaultRepository.getDeletedDocuments(ownerId = doctorId, filterId = oid)
 
             vaultDocuments.forEach { vaultEntity ->
                 vaultEntity.documentId?.let {
                     val resp = myFileRepository.deleteDocument(documentId = it, filterId = oid)
                     if (resp in 200..299) {
-                        vaultRepository.removeDocument(localId = vaultEntity.localId, oid = oid)
+                        vaultRepository.removeDocument(localId = vaultEntity.localId, filterId = oid)
                     }
                 }
             }
@@ -120,7 +119,7 @@ class SyncFileWorker(
 
     private suspend fun updateFilePath(doctorId: String?, oid: String?) {
         try {
-            vaultRepository.getDocumentsWithoutFilePath(doctorId = doctorId, patientOid = oid)
+            vaultRepository.getDocumentsWithoutFilePath(ownerId = doctorId, filterId = oid)
                 .forEach { document ->
                     val response = document.documentId?.let {
                         myFileRepository.getDocument(
@@ -154,7 +153,8 @@ class SyncFileWorker(
     private suspend fun syncDocuments(oid: String?, uuid: String?, doctorId: String?) {
         try {
             val vaultDocuments =
-                vaultRepository.getUnSyncedDocuments(oid = oid, doctorId = doctorId)
+                vaultRepository.getUnSyncedDocuments(filterId = oid, ownerId = doctorId)
+            Log.d("AYUSHI-3", vaultDocuments.toString())
             if (vaultDocuments.isEmpty()) return
 
             val tags = mutableListOf<String>()
@@ -192,6 +192,7 @@ class SyncFileWorker(
                 }
 
                 val batchResponses = uploadInitResponse?.batchResponse ?: emptyList()
+
                 if (isMultiFile) {
                     // Handle multi-file upload for the current document
                     val batchResponse = batchResponses.firstOrNull()
@@ -240,7 +241,7 @@ class SyncFileWorker(
             } ?: ""
 
             val updateFileDetailsRequest = UpdateFileDetailsRequest(
-                oid = vaultEntity.oid,
+                oid = vaultEntity.filterId,
                 documentType = docTypes.find { it.idNew == vaultEntity.documentType }?.id,
                 documentDate = if (documentDate.isNotEmpty()) changeDateFormat(documentDate) else null,
                 userTags = emptyList()
@@ -330,9 +331,9 @@ class SyncFileWorker(
                     isAnalysing = false,
                     docId = recordItem.documentId,
                     hasId = "",
-                    oid = app_oid,
-                    tags = recordItem.metadata.tags.joinToString(",") ?: "",
-                    autoTags = recordItem.metadata.autoTags.joinToString(",") ?: "",
+                    filterId = app_oid,
+                    tags = recordItem.metadata?.tags?.joinToString(",") ?: "",
+                    autoTags = recordItem.metadata?.autoTags?.joinToString(",") ?: "",
                     documentDate = documentDate,
                 )
             } else {
@@ -343,7 +344,6 @@ class SyncFileWorker(
                         ownerId = doctorId,
                         filterId = app_oid,
                         uuid = uuid,
-                        oid = app_oid,
                         filePath = null,
                         fileType = "",
                         thumbnail = null,
@@ -356,7 +356,6 @@ class SyncFileWorker(
                         hashId = null,
                         isAnalyzing = false,
                         cta = null,
-                        doctorId = doctorId,
                         autoTags = recordItem.metadata?.autoTags?.joinToString(",") ?: ""
                     )
                 )
