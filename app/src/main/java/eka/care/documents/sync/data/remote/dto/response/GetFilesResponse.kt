@@ -2,12 +2,6 @@ package eka.care.documents.sync.data.remote.dto.response
 
 import androidx.annotation.Keep
 import com.google.gson.annotations.SerializedName
-
-// cta nhi h
-// no isAnalysing
-// no hash id
-// no source
-// tags nhi aa re h
 @Keep
 data class GetFilesResponse(
     val items: List<Item>,
@@ -30,7 +24,7 @@ data class ItemData(
     val documentType: String,
     val metadata: Metadata,
     @SerializedName("patient_id")
-    val patientId: Long,
+    val patientId: String,
     @SerializedName("upload_date")
     val uploadDate: Int
 )

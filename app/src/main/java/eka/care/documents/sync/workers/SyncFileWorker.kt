@@ -24,6 +24,7 @@ import eka.care.documents.sync.data.repository.MyFileRepository
 import eka.care.documents.sync.data.repository.SyncRecordsRepository
 import eka.care.documents.ui.utility.RecordsUtility
 import eka.care.documents.ui.utility.RecordsUtility.Companion.changeDateFormat
+import eka.care.documents.ui.utility.RecordsUtility.Companion.downloadThumbnail
 import eka.care.documents.ui.utility.RecordsUtility.Companion.saveFile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
@@ -154,7 +155,6 @@ class SyncFileWorker(
         try {
             val vaultDocuments =
                 vaultRepository.getUnSyncedDocuments(filterId = oid, ownerId = doctorId)
-            Log.d("AYUSHI-3", vaultDocuments.toString())
             if (vaultDocuments.isEmpty()) return
 
             val tags = mutableListOf<String>()
@@ -290,7 +290,8 @@ class SyncFileWorker(
                     recordsResponse = records,
                     doctorId = doctorId,
                     uuid = uuid,
-                    app_oid = oid
+                    app_oid = oid,
+                    context = applicationContext
                 )
             }
 
@@ -316,7 +317,8 @@ class SyncFileWorker(
         recordsResponse: GetFilesResponse,
         doctorId: String?,
         uuid: String?,
-        app_oid: String?
+        app_oid: String?,
+        context: Context
     ) {
         val vaultList = mutableListOf<VaultEntity>()
         recordsResponse.items?.forEach {
@@ -341,7 +343,7 @@ class SyncFileWorker(
                     VaultEntity(
                         localId = localId ?: UUID.randomUUID().toString(),
                         documentId = recordItem.documentId,
-                        ownerId = doctorId,
+                        ownerId = recordItem.patientId,
                         filterId = app_oid,
                         uuid = uuid,
                         filePath = null,
@@ -363,33 +365,22 @@ class SyncFileWorker(
         }
 
         vaultRepository.storeDocuments(vaultList)
-        storeThumbnails(vaultList, recordsResponse)
+        storeThumbnails(vaultList = vaultList, recordsResponse =  recordsResponse, context = context)
     }
 
     private suspend fun storeThumbnails(
         vaultList: List<VaultEntity>,
-        recordsResponse: GetFilesResponse?
+        recordsResponse: GetFilesResponse?,
+        context: Context
     ) {
         recordsResponse?.items?.forEach {
-            val path = downloadThumbnail(it.record.item.metadata.thumbnail)
+            val path = downloadThumbnail(it.record.item.metadata.thumbnail, context = context)
             val documentId = it.record.item.documentId
             vaultList.find { it.documentId == documentId }?.documentId?.let { vaultDocId ->
                 vaultRepository.setThumbnail(path, vaultDocId)
             }
         }
         return
-    }
-
-    private suspend fun downloadThumbnail(assetUrl: String?): String {
-        val directory =
-            ContextWrapper(applicationContext).getDir("imageDir", Context.MODE_PRIVATE)
-        val childPath = "image${UUID.randomUUID()}.jpg"
-        withContext(Dispatchers.IO) {
-            val resp = myFileRepository.downloadFile(assetUrl)
-            resp?.saveFile(File(directory, childPath))
-        }
-
-        return "${directory.path}/$childPath"
     }
 
 }

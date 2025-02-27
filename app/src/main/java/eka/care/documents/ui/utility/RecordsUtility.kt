@@ -11,6 +11,7 @@ import android.os.Build
 import android.provider.MediaStore
 import android.util.Log
 import eka.care.documents.sync.data.repository.MyFileRepository
+import eka.care.documents.ui.utility.RecordsUtility.Companion.saveFile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.ResponseBody
@@ -86,6 +87,19 @@ class RecordsUtility {
             withContext(Dispatchers.IO) {
                 val myFileRepository = MyFileRepository()
                 val resp = myFileRepository.downloadFile(url)
+                resp?.saveFile(File(directory, childPath))
+            }
+
+            return "${directory.path}/$childPath"
+        }
+
+        suspend fun downloadThumbnail(assetUrl: String?, context: Context): String {
+            val directory =
+                ContextWrapper(context).getDir("imageDir", Context.MODE_PRIVATE)
+            val childPath = "image${UUID.randomUUID()}.jpg"
+            withContext(Dispatchers.IO) {
+                val myFileRepository = MyFileRepository()
+                val resp = myFileRepository.downloadFile(assetUrl)
                 resp?.saveFile(File(directory, childPath))
             }
 

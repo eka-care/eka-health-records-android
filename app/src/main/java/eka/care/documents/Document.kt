@@ -104,6 +104,14 @@ object Document {
         return filePath
     }
 
+    fun downloadThumbNailFromAssetUrl(url : String?, context: Context) : String{
+        var thumbnail = ""
+        runBlocking {
+            thumbnail = RecordsUtility.downloadThumbnail(url, context)
+        }
+        return thumbnail
+    }
+
     fun getDocuments(
         ownerId: String?,
         filterId: String?,
