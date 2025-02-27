@@ -3,7 +3,9 @@ package eka.care.documents.sync.data.remote.api
 import com.haroldadmin.cnradapter.NetworkResponse
 import eka.care.documents.sync.data.remote.dto.request.UpdateFileDetailsRequest
 import eka.care.documents.sync.data.remote.dto.response.Document
+import eka.care.documents.sync.data.remote.dto.response.GetFilesResponse
 import okhttp3.ResponseBody
+import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -14,7 +16,12 @@ import retrofit2.http.Streaming
 import retrofit2.http.Url
 
 interface MyFileService {
-
+    @GET("api/v1/docs")
+    suspend fun getFiles(
+        @Query("u_at__gt") updatedAt: String?,
+        @Query("offset") offset: String?,
+        @Query("patient_oid") filterId : String?
+    ): Response<GetFilesResponse>
     // different body
     @PATCH("api/d/v1/docs/{document_id}")
     suspend fun updateFileDetails(

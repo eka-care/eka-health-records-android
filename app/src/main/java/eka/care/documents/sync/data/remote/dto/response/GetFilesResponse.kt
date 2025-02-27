@@ -4,45 +4,45 @@ import androidx.annotation.Keep
 import com.google.gson.annotations.SerializedName
 @Keep
 data class GetFilesResponse(
-    val items: List<Item>,
+    val items: List<Item>? = null,
     @SerializedName("next_token")
-    val nextToken: String
+    val nextToken: String? = null
 )
 @Keep
 data class Item(
-    val record: Record
+    val record: Record? = null
 )
 @Keep
 data class Record(
-    val item: ItemData
+    val item: ItemData? = null
 )
 @Keep
 data class ItemData(
     @SerializedName("document_id")
-    val documentId: String,
+    val documentId: String? = null,
     @SerializedName("document_type")
-    val documentType: String,
-    val metadata: Metadata,
+    val documentType: String? = null,
+    val metadata: Metadata? = null,
     @SerializedName("patient_id")
-    val patientId: String,
+    val patientId: String? = null,
     @SerializedName("upload_date")
-    val uploadDate: Int
+    val uploadDate: Int? = null
 )
 @Keep
 data class Metadata(
-    val abha: Abha,
+    val abha: Abha? = null,
     @SerializedName("document_date")
-    val documentDate: Int,
+    val documentDate: Int? = null,
     @SerializedName("auto_tags")
-    val autoTags: List<String>,
-    val tags: List<String>,
-    val thumbnail: String,
-    val title: String
+    val autoTags: List<String>? = null,
+    val tags: List<String>? = null,
+    val thumbnail: String? = null,
+    val title: String? = null
 )
 @Keep
 data class Abha(
     @SerializedName("health_id")
-    val healthId: String,
+    val healthId: String? = null,
     @SerializedName("link_status")
-    val linkStatus: String
+    val linkStatus: String? = null
 )
