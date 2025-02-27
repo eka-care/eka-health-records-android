@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import eka.care.documents.Document
 import eka.care.documents.ui.presentation.components.SmartReportViewComponent
 import eka.care.documents.ui.presentation.viewmodel.DocumentPreviewViewModel
 
@@ -19,9 +20,9 @@ class SmartReportActivity : ComponentActivity() {
                 doctorId = intent.getStringExtra("doctor_id") ?: "",
                 documentDate = intent.getStringExtra("doc_date") ?: "",
                 localId = intent.getStringExtra("local_id") ?: "",
-                onClick = {
-                    if (it?.action == "on_back_click") {
-                        finish()
+                onClick = { action ->
+                    when (action?.action) {
+                        "on_back_click" -> finish()
                     }
                 }
             )

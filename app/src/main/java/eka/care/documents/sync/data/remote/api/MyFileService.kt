@@ -3,7 +3,9 @@ package eka.care.documents.sync.data.remote.api
 import com.haroldadmin.cnradapter.NetworkResponse
 import eka.care.documents.sync.data.remote.dto.request.UpdateFileDetailsRequest
 import eka.care.documents.sync.data.remote.dto.response.Document
+import eka.care.documents.sync.data.remote.dto.response.GetFilesResponse
 import okhttp3.ResponseBody
+import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -14,11 +16,17 @@ import retrofit2.http.Streaming
 import retrofit2.http.Url
 
 interface MyFileService {
-
-    @PATCH("api/d/v1/docs/{doc_id}")
+    @GET("api/v1/docs")
+    suspend fun getFiles(
+        @Query("u_at__gt") updatedAt: String?,
+        @Query("offset") offset: String?,
+        @Query("patient_oid") filterId : String?
+    ): Response<GetFilesResponse>
+    // different body
+    @PATCH("api/d/v1/docs/{document_id}")
     suspend fun updateFileDetails(
-        @Path("doc_id") docId: String,
-        @Query("oid") oid: String,
+        @Path("document_id") documentId: String,
+        @Query("p_oid") filterId: String?,
         @Body updateFileDetailsRequest: UpdateFileDetailsRequest,
     ): NetworkResponse<Unit, NetworkResponse.ServerError<Unit>>
 
@@ -26,15 +34,15 @@ interface MyFileService {
     @GET
     suspend fun downloadFile(@Url url: String?): NetworkResponse<ResponseBody, ResponseBody>
 
-    @GET("api/v1/docs/{doc_id}")
+    @GET("api/v1/docs/{document_id}")
     suspend fun getDocument(
-        @Path("doc_id") docId: String,
-        @Query("oid") oid: String,
+        @Path("document_id") documentId: String,
+        @Query("p_oid") filterId: String?,
     ): NetworkResponse<Document, NetworkResponse.NetworkError>
 
-    @DELETE("api/v1/docs/{doc_id}")
+    @DELETE("api/v1/docs/{document_id}")
     suspend fun deleteDocument(
-        @Path("doc_id") docId: String,
-        @Query("oid") oid: String,
+        @Path("document_id") documentId: String,
+        @Query("p_oid") filterId: String?,
     ): NetworkResponse<Unit, NetworkResponse.ServerError<Unit>>
 }

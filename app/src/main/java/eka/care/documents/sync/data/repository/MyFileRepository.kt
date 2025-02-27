@@ -17,17 +17,17 @@ class MyFileRepository {
     }
 
     suspend fun updateFileDetails(
-        docId: String,
-        oid: String,
+        documentId: String,
+        oid: String?,
         updateFileDetailsRequest: UpdateFileDetailsRequest,
     ): Int? {
         return withContext(Dispatchers.IO) {
             val errorCode = when (
                 val response =
                     myFileService.updateFileDetails(
-                        docId,
+                        documentId = documentId,
                         updateFileDetailsRequest = updateFileDetailsRequest,
-                        oid = oid
+                         filterId =  oid
                     )) {
                 is NetworkResponse.Success -> response.code
                 is NetworkResponse.ServerError -> response.code // handleServerError(response.code)
@@ -50,10 +50,10 @@ class MyFileRepository {
         }
     }
 
-    suspend fun getDocument(docId: String, userId: String): Document? {
+    suspend fun getDocument(documentId: String, filterId: String?): Document? {
         return withContext(Dispatchers.IO) {
             val myDocument =
-                when (val response = myFileService.getDocument(docId = docId, oid = userId)) {
+                when (val response = myFileService.getDocument(documentId = documentId,filterId = filterId)) {
                     is NetworkResponse.Success -> response.body
                     is NetworkResponse.ServerError -> null // handleServerError(response.code)
                     is NetworkResponse.NetworkError -> null //handleNetworkError(response.error)
@@ -63,10 +63,10 @@ class MyFileRepository {
         }
     }
 
-    suspend fun deleteDocument(docId: String, oid: String): Int? {
+    suspend fun deleteDocument(documentId: String, filterId: String?): Int? {
         return withContext(Dispatchers.IO) {
             val errorCode =
-                when (val response = myFileService.deleteDocument(docId = docId, oid = oid)) {
+                when (val response = myFileService.deleteDocument(documentId = documentId, filterId = filterId)) {
                     is NetworkResponse.Success -> response.code
                     is NetworkResponse.ServerError -> response.code // handleServerError(response.code)
                     is NetworkResponse.NetworkError -> null //handleNetworkError(response.error)

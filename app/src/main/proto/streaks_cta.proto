@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package vitals.commons.cta;
+
+option go_package = "github.com/eka-care/vitals/proto-generated/go/vitals/commons/cta";
+
+/* CTA represents data for any click through action */
+message CTAV1 {
+  string pid = 1; // pid of the destination screen.
+
+  // Stringified json of the Params Map.
+  // Opting for string Json as Javalite runtime doesn't support the Map/Reflection.
+  // UnMarshal to
+  // Java Map<string, object>
+  // Golang Map[string]interface{}
+  optional string params = 6;
+
+  optional string title = 3;  // Title of the source click block.
+  optional string id = 5; // ID required to send mixpanel event.
+}

@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package vitals.commons.error;
+
+option go_package = "github.com/eka-care/vitals/proto-generated/go/vitals/commons/error";
+
+message SimpleError {
+  int32 code = 1;
+  string message = 2;
+}

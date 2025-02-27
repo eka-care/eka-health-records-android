@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+package insurance;
+import "cta.proto";
+import "insurance.proto";
+import "value.proto";
+import "policy.proto";
+
+option go_package = "github.com/eka-care/proto-contracts/go/insurance";
+
+message CoverageInfo {
+  Value start_value = 1;
+  Value end_value = 2;
+  Type type = 3;
+  string display_value = 4;
+
+  enum Type {
+    TYPE_UNSPECIFIED = 0;
+    TYPE_BASE = 1;
+    TYPE_SUPER_TOP_UP = 2;
+    TYPE_MISSING = 3;
+    TYPE_RECOMMENDED = 4;
+  }
+}
+
+message PoliciesSummary {
+  Value total_coverage = 1;
+  ValueFloat total_premium = 2;
+  CoverageDetails coverage_info = 3;
+
+  message CoverageDetails {
+    Coverage coverage = 1;
+    repeated CoverageInfo breakup = 2;
+  }
+}
+
+message ExpiredPolicies {}
+
+message InsuranceSummaryData {
+  PoliciesSummary policies_summary = 1;
+  repeated Policy policies = 2;
+  repeated SuperTopUpCard plans = 3;
+  optional ExpiredPolicies expired_policies = 4;
+}
+
+message InsuranceSummaryAPIResponse {
+  /* ErrorCode represents list of errors */
+  enum ErrorCode {
+    ERROR_UNSPECIFIED = 0; // Error -> Unspecified.
+  }
+
+  /* Error represents error resonse of API */
+  message Error {
+    ErrorCode code = 1; // Error Code.
+    string message = 2; // Error Message.
+  }
+
+  message EmptyState {
+    repeated SuperTopUpCard plans = 1;
+    vault.common.CTA sell_cta = 2;
+    optional ExpiredPolicies expired_policies = 3;
+  }
+
+  oneof result {
+    InsuranceSummaryData response = 1;
+    EmptyState empty_state_data = 3;
+    Error error = 2;
+  }
+}

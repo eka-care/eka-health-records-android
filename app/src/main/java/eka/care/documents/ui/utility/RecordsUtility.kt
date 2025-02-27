@@ -1,6 +1,7 @@
 package eka.care.documents.ui.utility
 
 import android.content.Context
+import android.content.ContextWrapper
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import android.net.ConnectivityManager
@@ -9,10 +10,17 @@ import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import android.util.Log
+import eka.care.documents.sync.data.repository.MyFileRepository
+import eka.care.documents.ui.utility.RecordsUtility.Companion.saveFile
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import okhttp3.ResponseBody
+import java.io.File
 import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.UUID
 
 class RecordsUtility {
     companion object{
@@ -67,6 +75,43 @@ class RecordsUtility {
             val date = Date(time * 1000)
             val format = SimpleDateFormat("dd EEE yyyy", Locale.getDefault())
             return format.format(date)
+        }
+
+        suspend fun downloadFile(url: String?, context: Context, type: String?): String {
+            if (url == null) return ""
+
+            val directory = ContextWrapper(context).getDir("cache", Context.MODE_PRIVATE)
+            val ext = if (type?.trim()?.lowercase() == "pdf") "pdf" else "jpg"
+            val childPath = "${UUID.randomUUID()}.$ext"
+
+            withContext(Dispatchers.IO) {
+                val myFileRepository = MyFileRepository()
+                val resp = myFileRepository.downloadFile(url)
+                resp?.saveFile(File(directory, childPath))
+            }
+
+            return "${directory.path}/$childPath"
+        }
+
+        suspend fun downloadThumbnail(assetUrl: String?, context: Context): String {
+            val directory =
+                ContextWrapper(context).getDir("imageDir", Context.MODE_PRIVATE)
+            val childPath = "image${UUID.randomUUID()}.jpg"
+            withContext(Dispatchers.IO) {
+                val myFileRepository = MyFileRepository()
+                val resp = myFileRepository.downloadFile(assetUrl)
+                resp?.saveFile(File(directory, childPath))
+            }
+
+            return "${directory.path}/$childPath"
+        }
+
+        fun ResponseBody.saveFile(destFile: File) {
+            byteStream().use { inputStream ->
+                destFile.outputStream().use { outputStream ->
+                    inputStream.copyTo(outputStream)
+                }
+            }
         }
     }
 }

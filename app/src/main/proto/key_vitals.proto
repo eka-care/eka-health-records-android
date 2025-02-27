@@ -4,6 +4,7 @@ package vault.keyvitals;
 
 import "interpretation.proto";
 
+option go_package = "github.com/eka-care/proto-contracts/go/vault/keyvitals";
 
 /* KeyVitalsAPIResponse represent API response of key vitals */
 message KeyVitalsAPIResponse {

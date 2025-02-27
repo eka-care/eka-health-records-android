@@ -9,7 +9,7 @@ import kotlinx.parcelize.Parcelize
 data class RecordModel(
     val localId: String?,
     val documentId: String?,
-    val doctorId : String?,
+    val ownerId : String?,
     val documentType: Int?,
     val documentDate: Long?,
     val createdAt : Long?,
@@ -18,6 +18,7 @@ data class RecordModel(
     val fileType: String?,
     val cta: CTA?,
     val tags: String?,
+    val autoTags : String?,
     val source: Int?,
-    val isAnalyzing: Boolean,
+    val isAnalyzing: Boolean = false
 ): Parcelable

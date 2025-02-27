@@ -90,7 +90,7 @@ fun AddMedicalRecordsDetailViewComponent(
     paramsModel: RecordParamsModel,
     editDocument: Boolean
 ) {
-    init(viewModel = viewModel, userId =  paramsModel.patientId, docId = viewModel.cardClickData.value?.documentId)
+    init(viewModel = viewModel, userId =  paramsModel.patientId, documentId = viewModel.cardClickData.value?.documentId)
     val context = LocalContext.current
     val compressedFiles by viewModel.compressedFiles.collectAsState(initial = emptyList())
     val initialSelectedDocType = viewModel.cardClickData.value?.documentType
@@ -126,7 +126,7 @@ fun AddMedicalRecordsDetailViewComponent(
                 oid = paramsModel.patientId,
                 docDate = timestampToLong(date),
                 tags = selectedTags.joinToString(separator = ","),
-                doctorId = paramsModel.doctorId
+                doctorId = paramsModel.doctorId,
             )
             onClick(CTA(action = "onBackClick"))
         } else {
@@ -142,7 +142,8 @@ fun AddMedicalRecordsDetailViewComponent(
                     localId = UUID.randomUUID().toString(),
                     documentId = null,
                     uuid = paramsModel.uuid,
-                    oid = paramsModel.patientId,
+                    ownerId = paramsModel.doctorId,
+                    filterId = paramsModel.patientId,
                     filePath = if (fileType == FileType.IMAGE.ordinal) compressedFiles.map { it.path } else fileList.map { it.path },
                     fileType = if (fileType == FileType.IMAGE.ordinal) "img" else "pdf",
                     thumbnail = if (fileType == FileType.IMAGE.ordinal) {
@@ -158,12 +159,9 @@ fun AddMedicalRecordsDetailViewComponent(
                     documentType = selectedChipId,
                     documentDate = unixTimestamp,
                     tags = selectedTags.joinToString(",").trimStart(','),
-                    isABHALinked = false,
+                    autoTags = selectedTags.joinToString(",").trimStart(','),
                     hashId = null,
                     cta = null,
-                    filterId = paramsModel.patientId,
-                    ownerId = paramsModel.doctorId,
-                    doctorId = paramsModel.doctorId,
                     isAnalyzing = false
                 )
 
@@ -378,9 +376,9 @@ fun AddMedicalRecordsDetailViewComponent(
     )
 }
 
-private fun init(viewModel: RecordsViewModel, docId : String?, userId : String){
-    if (docId != null) {
-        viewModel.getTags(docId = docId, userId = userId)
+private fun init(viewModel: RecordsViewModel, documentId : String?, userId : String){
+    if (documentId != null) {
+        viewModel.getTags(documentId = documentId, userId = userId)
     }
 }
 

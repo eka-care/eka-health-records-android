@@ -7,6 +7,16 @@
 # Ignore Gradle files
 .gradle/
 .gradle/**
+build/
+**/build/
+.gradle/**/buildOutputCleanup/
+.gradle/**/buildOutput/
+.gradle/**/classes/
+.gradle/**/*.lock
+.gradle/**/*.bin
+gradle-wrapper.jar
+gradlew
+gradlew.bat
 
 # Ignore Build directories
 /build/

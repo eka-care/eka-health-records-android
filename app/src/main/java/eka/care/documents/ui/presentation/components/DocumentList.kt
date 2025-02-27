@@ -107,7 +107,7 @@ fun DocumentList(
         }
         Row {
             if (recordModel.fileType.equals("pdf", ignoreCase = true)) {
-                if (recordModel.tags?.split(",")?.contains("1") == true) {
+                if (recordModel.autoTags?.split(",")?.contains("1") == true) {
                     SmartChip()
                 }
             }

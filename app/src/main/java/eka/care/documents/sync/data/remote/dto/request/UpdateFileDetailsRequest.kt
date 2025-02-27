@@ -11,7 +11,7 @@ data class UpdateFileDetailsRequest(
     @SerializedName("dt")
     val documentType: String? = null,
 
-    @SerializedName("dd")
+    @SerializedName("dd_e")
     val documentDate: String? = null,
 
     @SerializedName("tg")

@@ -1,3 +1,5 @@
+import com.google.protobuf.gradle.proto
+
 plugins {
     id("com.google.protobuf")
     id("com.android.library")
@@ -68,7 +70,7 @@ afterEvaluate {
 
                 groupId = "com.eka.records"
                 artifactId = "eka-records"
-                version = "3.1.3"
+                version = "3.1.5"
             }
         }
     }
@@ -121,8 +123,8 @@ dependencies {
     implementation("com.github.eka-care:eka-network-android:1.0.3") {
         exclude(group = "com.google.protobuf", module = "protobuf-java")
     }
-    implementation(libs.protobuf.kotlin.lite)
-    implementation("com.google.protobuf:protobuf-javalite:4.26.1") {
+    api(libs.protobuf.kotlin.lite)
+    api("com.google.protobuf:protobuf-javalite:4.26.1") {
         exclude(module = "protobuf-java")
     }
     implementation(libs.androidx.core.ktx)
@@ -141,8 +143,6 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     implementation(libs.google.accompanist.pager)
     implementation(libs.google.accompanist.pager.indicators)
-    implementation(libs.protobuf.kotlin.lite)
-    implementation(libs.protobuf.javalite)
     implementation(libs.accompanist.permissions)
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.1")
 }

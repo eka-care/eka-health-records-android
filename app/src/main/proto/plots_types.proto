@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package vitals.commons.plots;
+
+option go_package = "github.com/eka-care/vitals/proto-generated/go/vitals/commons/plots/types";
+
+/* PlotType is an enum used to represent the type of the plot */
+enum PlotType {
+  PLOT_UNSPECIFIED = 0;  // Unhandled plot type.
+  PLOT_SCATTER = 1;      // Scatter plot.
+  PLOT_COLUMN_RANGE = 2; // Column range plot.
+  PLOT_COLUMN = 3;       // Column plot.
+  PLOT_AREA = 4;         // Area plot.
+  PLOT_LINE = 5;         // Line plot.
+  PLOT_X_RANGE = 6;      // X-Range plot.
+}

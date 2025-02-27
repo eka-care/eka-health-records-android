@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package vitals.commons.plots;
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/eka-care/vitals/proto-generated/go/vitals/commons/plots/range";
+
+/* ValueRange represent value range */
+message ValueRangeWithAverage {
+  optional double low = 1;  // low of the range.
+  optional double high = 2; // high of the range.
+  optional double average = 3; // Mean value for the given period
+}
+
+/* TimeRange represent time range */
+message TimeRangeCommons {
+  optional google.protobuf.Timestamp start = 1; // Start of the time.
+  optional google.protobuf.Timestamp end = 2;   // End of the time.
+}

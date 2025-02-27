@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package vault.records;
 
+option go_package = "github.com/eka-care/proto-contracts/go/vault/records";
+
 enum DocumentType {
   TYPE_UNSPECIFIED = 0; // Unspecified.
   TYPE_LAB_REPORT = 1;

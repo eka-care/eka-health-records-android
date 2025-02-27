@@ -31,15 +31,12 @@ import eka.care.documents.ui.presentation.state.GetAvailableDocTypesState
 import eka.care.documents.ui.presentation.state.GetRecordsState
 import eka.care.documents.ui.utility.RecordsUtility.Companion.convertLongToFormattedDate
 import id.zelory.compressor.Compressor
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.cancellable
-import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -120,10 +117,11 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
         _isOnline.value = activeNetwork?.isConnected == true
     }
 
-    fun getTags(docId: String, userId: String) {
+    fun getTags(documentId: String, userId: String) {
         viewModelScope.launch {
             _selectedTags.value = emptyList()
-            val response = myFileRepository.getDocument(docId = docId, userId = userId)?.tags
+            val response =
+                myFileRepository.getDocument(documentId = documentId, filterId = userId)?.tags
             //   val apiTags = response?.let { Tags().getTagIdByNames(it) } ?: emptyList()
             val cardTags = cardClickData.value?.tags?.split(",")?.map { it.trim() } ?: emptyList()
             val allTags = (cardTags).distinct()
@@ -162,7 +160,7 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun getLocalRecords(oid: String, docType: Int = -1, doctorId: String) {
+    fun getLocalRecords(oid: String, docType: Int = -1, doctorId: String?) {
         documentType.intValue = docType
         if (::launch.isInitialized) {
             launch.cancel()
@@ -171,15 +169,15 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
             try {
                 val documentsFlowResp = if (sortBy.value == DocumentSortEnum.UPLOAD_DATE) {
                     vaultRepository.fetchDocuments(
-                        oid = oid,
+                        filterId = oid,
                         docType = documentType.intValue,
-                        doctorId = doctorId
+                        ownerId = doctorId
                     )
                 } else {
                     vaultRepository.fetchDocumentsByDocDate(
-                        oid = oid,
+                        filterId = oid,
                         docType = documentType.intValue,
-                        doctorId = doctorId
+                        ownerId = doctorId
                     )
                 }
 
@@ -190,7 +188,7 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
                             RecordModel(
                                 localId = vaultEntity.localId,
                                 documentId = vaultEntity.documentId,
-                                doctorId = doctorId,
+                                ownerId = doctorId,
                                 documentType = vaultEntity.documentType,
                                 documentDate = vaultEntity.documentDate,
                                 createdAt = vaultEntity.createdAt,
@@ -199,6 +197,7 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
                                 fileType = vaultEntity.fileType,
                                 cta = Gson().fromJson(vaultEntity.cta, CTA::class.java),
                                 tags = vaultEntity.tags,
+                                autoTags = vaultEntity.autoTags,
                                 source = vaultEntity.source,
                                 isAnalyzing = vaultEntity.isAnalyzing
                             )
@@ -210,8 +209,7 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
                             GetRecordsState.Success(resp = records)
                         }
                     }
-            }
-            catch (ex: Exception) {
+            } catch (ex: Exception) {
             }
         }
     }
@@ -224,6 +222,7 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
         } catch (_: Exception) {
         }
     }
+
     fun editDocument(
         localId: String,
         docType: Int?,
@@ -234,9 +233,9 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
     ) {
         try {
             viewModelScope.launch {
-                vaultRepository.editDocument(localId, docType, docDate, tags, patientId = oid)
+                vaultRepository.editDocument(localId, docType, docDate, filterId = oid)
                 val tagList = tags.split(",")
-              //  val tagNames = Tags().getTagNamesByIds(tagList)
+                //  val tagNames = Tags().getTagNamesByIds(tagList)
                 val updateFileDetailsRequest = UpdateFileDetailsRequest(
                     oid = oid,
                     documentType = docTypes.find { it.idNew == docType }?.id,
@@ -247,7 +246,7 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
 
                 cardClickData.value?.documentId?.let {
                     myFileRepository.updateFileDetails(
-                        docId = it,
+                        documentId = it,
                         oid = oid,
                         updateFileDetailsRequest = updateFileDetailsRequest
                     )
@@ -261,34 +260,34 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
     fun deleteDocument(localId: String, oid: String, doctorId: String) {
         try {
             viewModelScope.launch {
-                vaultRepository.deleteDocument(oid = oid, localId = localId)
+                vaultRepository.deleteDocument(filterId = oid, localId = localId)
                 getLocalRecords(oid, doctorId = doctorId)
             }
         } catch (_: Exception) {
         }
     }
 
-    fun syncEditedDocuments(oid: String, doctorId: String) {
+    fun syncEditedDocuments(oid: String, doctorId: String?) {
         try {
             viewModelScope.launch {
-                vaultRepository.getEditedDocuments(oid = oid, doctorId = doctorId)
+                vaultRepository.getEditedDocuments(filterId = oid, ownerId = doctorId)
             }
         } catch (_: Exception) {
         }
     }
 
-    fun syncDeletedDocuments(oid: String, doctorId: String) {
+    fun syncDeletedDocuments(oid: String, doctorId: String?) {
         try {
             viewModelScope.launch {
                 val vaultDocuments =
-                    vaultRepository.getDeletedDocuments(doctorId = doctorId, oid = oid)
+                    vaultRepository.getDeletedDocuments(ownerId = doctorId, filterId = oid)
 
                 vaultDocuments.forEach { vaultEntity ->
                     vaultEntity.documentId?.let {
-                        val resp = myFileRepository.deleteDocument(docId = it, oid = oid)
+                        val resp = myFileRepository.deleteDocument(documentId = it, filterId = oid)
 
                         if (resp in 200..299) {
-                            vaultRepository.removeDocument(localId = vaultEntity.localId, oid = oid)
+                            vaultRepository.removeDocument(localId = vaultEntity.localId, filterId = oid)
                         }
                     }
 
@@ -298,14 +297,14 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun getAvailableDocTypes(oid: String, doctorId: String) {
+    fun getAvailableDocTypes(oid: String, doctorId: String?) {
         try {
             viewModelScope.launch {
                 _getAvailableDocTypes.value =
                     GetAvailableDocTypesState(
                         resp = vaultRepository.getAvailableDocTypes(
-                            oid = oid,
-                            doctorId = doctorId
+                            filterId = oid,
+                            ownerId = doctorId
                         )
                     )
             }

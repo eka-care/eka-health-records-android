@@ -4,6 +4,8 @@ package vault.common;
 
 import "google/protobuf/struct.proto";
 
+option go_package = "github.com/eka-care/proto-contracts/go/vault/cta";
+
 /* CTA represents data for any click through action */
 message CTA {
   string pid = 1; // pid of the destination screen.

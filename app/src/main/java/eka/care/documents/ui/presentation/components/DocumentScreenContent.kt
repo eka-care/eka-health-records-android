@@ -35,18 +35,16 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import eka.care.documents.Document.view
 import eka.care.documents.R
 import eka.care.documents.ui.DarwinTouchNeutral0
 import eka.care.documents.ui.DarwinTouchNeutral1000
-import eka.care.documents.ui.presentation.activity.DocumentViewActivity
-import eka.care.documents.ui.presentation.activity.SmartReportActivity
 import eka.care.documents.ui.presentation.model.RecordModel
 import eka.care.documents.ui.presentation.model.RecordParamsModel
 import eka.care.documents.ui.presentation.screens.DocumentEmptyStateScreen
 import eka.care.documents.ui.presentation.screens.Mode
 import eka.care.documents.ui.presentation.state.GetRecordsState
 import eka.care.documents.ui.presentation.viewmodel.RecordsViewModel
-import eka.care.documents.ui.utility.RecordsUtility.Companion.convertLongToDateString
 import kotlinx.coroutines.Job
 
 @Composable
@@ -112,7 +110,7 @@ fun DocumentScreenContent(
                                     if (mode == Mode.VIEW) {
                                         viewModel.cardClickData.value = model
                                         if (cta?.action == "open_deepThought") {
-                                            navigate(
+                                            view(
                                                 context = context,
                                                 model = model,
                                                 oid = paramsModel.patientId,
@@ -137,7 +135,7 @@ fun DocumentScreenContent(
                                     if (mode == Mode.VIEW) {
                                         viewModel.cardClickData.value = model
                                         if (cta?.action == "open_deepThought") {
-                                            navigate(
+                                            view(
                                                 context = context,
                                                 model = model,
                                                 oid = paramsModel.patientId,
@@ -205,29 +203,5 @@ fun DocumentScreenContent(
             scale = true
         )
 
-    }
-}
-
-private fun navigate(context: Context, model: RecordModel, oid: String) {
-    if (model.tags?.split(",")?.contains("1") == false) {
-        Intent(context, DocumentViewActivity::class.java).also {
-            it.putExtra("local_id", model.localId)
-            it.putExtra("doc_id", model.documentId)
-            it.putExtra("user_id", oid)
-            context.startActivity(it)
-        }
-        return
-    } else {
-        val date = convertLongToDateString(model.documentDate ?: model.createdAt)
-        Intent(context, SmartReportActivity::class.java)
-            .also {
-                it.putExtra("doc_id", model.documentId)
-                it.putExtra("local_id", model.localId)
-                it.putExtra("doctor_id", model.doctorId)
-                it.putExtra("user_id", oid)
-                it.putExtra("doc_date", date)
-                context.startActivity(it)
-            }
-        return
     }
 }

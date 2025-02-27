@@ -4,6 +4,7 @@ package vault.common;
 
 import "google/protobuf/timestamp.proto";
 
+option go_package = "github.com/eka-care/proto-contracts/go/vault/range";
 
 /* ValueRange represent value range */
 message ValueRange {

@@ -29,17 +29,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import eka.care.documents.Document
 import eka.care.documents.R
+import eka.care.documents.SmartReportClickData
 import eka.care.documents.data.db.model.CTA
 import eka.care.documents.sync.data.remote.dto.response.SmartReport
 import eka.care.documents.sync.data.remote.dto.response.SmartReportField
 import eka.care.documents.ui.BgWarning03
 import eka.care.documents.ui.Border03
 import eka.care.documents.ui.DarwinTouchNeutral0
+import eka.care.documents.ui.DarwinTouchNeutral800
 import eka.care.documents.ui.Gray800
 import eka.care.documents.ui.Icon01
 import eka.care.documents.ui.Icon03
@@ -110,7 +114,6 @@ fun SmartReportList(viewModel: DocumentPreviewViewModel) {
 @Composable
 fun SmartReportListComponent(smartReport: SmartReportField) {
     val resultEnum = LabParamResult.values().find { it.value == smartReport.resultId }
-
     val resultColor = when (resultEnum) {
         LabParamResult.NORMAL -> TextSuccess
         LabParamResult.HIGH, LabParamResult.VERY_HIGH, LabParamResult.CRITICALLY_HIGH -> TextError
@@ -121,6 +124,22 @@ fun SmartReportListComponent(smartReport: SmartReportField) {
         modifier = Modifier
             .fillMaxWidth()
             .background(Color.White)
+            .let { modifier ->
+                if (Document.getConfiguration()?.vitalsEnabled == true && smartReport.ekaId != null) {
+                    modifier.clickable {
+                        smartReport.ekaId?.let { ekaId ->
+                            Document.navigateToVitalTrends(
+                                SmartReportClickData(
+                                    ekaId = ekaId,
+                                    name = smartReport.name
+                                )
+                            )
+                        }
+                    }
+                } else {
+                    modifier
+                }
+            }
             .padding(vertical = 12.dp, horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Start
@@ -160,6 +179,14 @@ fun SmartReportListComponent(smartReport: SmartReportField) {
                 text = smartReport.value ?: "",
                 style = touchBodyBold,
                 color = Text01
+            )
+        }
+        if (Document.getConfiguration()?.vitalsEnabled == true && smartReport.ekaId != null) {
+            Spacer(modifier = Modifier.width(16.dp))
+            Icon(
+                painter = painterResource(id = R.drawable.ic_right),
+                contentDescription = null,
+                tint = DarwinTouchNeutral800
             )
         }
     }
@@ -211,7 +238,7 @@ fun SmartReportFilter(smartReport: SmartReport?, viewModel: DocumentPreviewViewM
 }
 
 @Composable
-fun SmartReportTopBar(onClick: (CTA?) -> Unit, documentDate: String, onDownloadClick : ()-> Unit) {
+fun SmartReportTopBar(onClick: (CTA?) -> Unit, documentDate: String, onDownloadClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
