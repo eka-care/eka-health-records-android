@@ -22,6 +22,15 @@ android {
     }
 
     buildTypes {
+        create("staging") {
+            isMinifyEnabled = false
+            isJniDebuggable = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
+
         release {
             isMinifyEnabled = true
             isDebuggable = true

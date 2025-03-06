@@ -10,6 +10,7 @@ import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import android.util.Log
+import android.webkit.MimeTypeMap
 import eka.care.documents.sync.data.repository.MyFileRepository
 import eka.care.documents.ui.utility.RecordsUtility.Companion.saveFile
 import kotlinx.coroutines.Dispatchers
@@ -113,5 +114,7 @@ class RecordsUtility {
                 }
             }
         }
+        fun File.getMimeType(): String? =
+            MimeTypeMap.getSingleton().getMimeTypeFromExtension(this.extension)
     }
 }

@@ -59,9 +59,7 @@ class DocumentInstrumentedTest {
         val testRecord = VaultEntity(
             localId = "123",
             documentId = "doc123",
-            doctorId = "doc456",
             uuid = "uuid123",
-            oid = "oid123",
             filePath = listOf("path1", "path2"),
             fileType = "pdf",
             thumbnail = "thumbnail_url",
@@ -74,9 +72,7 @@ class DocumentInstrumentedTest {
             tags = "tag1,tag2",
             cta = Gson().toJson(CTA(action = "view", title = "View Document")),
             hashId = "hash123",
-            isABHALinked = false,
-            shareWithDoctor = false,
-            isAnalyzing = false
+            isAnalyzing = false,
         )
         val repository = VaultRepositoryImpl(DocumentDatabase.getInstance(context))
         repository.storeDocuments(listOf( testRecord))

@@ -5,8 +5,18 @@ import eka.care.documents.data.db.model.AvailableDocTypes
 import kotlinx.coroutines.flow.Flow
 
 interface DocumentsRepository {
-    fun fetchDocuments(ownerId: String?, filterId: String?, docType: Int): Flow<List<VaultEntity>>
-    fun fetchDocumentsByDocDate(filterId: String?, docType: Int, ownerId: String?): Flow<List<VaultEntity>>
+    fun fetchDocuments(
+        ownerId: String,
+        filterIds: List<String>?,
+        docType: Int
+    ): Flow<List<VaultEntity>>
+
+    fun fetchDocumentsByDocDate(
+        filterIds: List<String>?,
+        docType: Int,
+        ownerId: String
+    ): Flow<List<VaultEntity>>
+
     suspend fun storeDocuments(vaultEntityList: List<VaultEntity>)
     suspend fun deleteDocument(filterId: String?, localId: String)
     suspend fun editDocument(
@@ -15,6 +25,11 @@ interface DocumentsRepository {
         docDate: Long?,
         filterId: String?,
     )
-    suspend fun getAvailableDocTypes(filterId: String?, ownerId: String?): List<AvailableDocTypes>
-    suspend fun alreadyExistDocument(documentId: String, ownerId : String?): Int?
+
+    suspend fun getAvailableDocTypes(
+        filterIds: List<String>?,
+        ownerId: String?
+    ): List<AvailableDocTypes>
+
+    suspend fun alreadyExistDocument(documentId: String, ownerId: String?): Int?
 }

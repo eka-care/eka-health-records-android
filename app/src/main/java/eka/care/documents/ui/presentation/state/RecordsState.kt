@@ -18,10 +18,3 @@ data class GetAvailableDocTypesState(
     val resp: List<AvailableDocTypes>? = null,
     val error: String? = null,
 )
-
-@Keep
-data class FetchDocumentDataState(
-    val isLoading: Boolean = false,
-    val resp: VaultEntity? = null,
-    val error: String? = null,
-)

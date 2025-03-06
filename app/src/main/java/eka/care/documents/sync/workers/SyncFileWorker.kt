@@ -3,12 +3,10 @@ package eka.care.documents.sync.workers
 import android.app.Application
 import android.content.Context
 import android.util.Log
-import android.webkit.MimeTypeMap
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.google.gson.Gson
 import eka.care.documents.data.db.database.DocumentDatabase
-import eka.care.documents.data.db.entity.UpdatedAtEntity
 import eka.care.documents.data.db.entity.VaultEntity
 import eka.care.documents.data.repository.UpdatedAtRepository
 import eka.care.documents.data.repository.UpdatedAtRepositoryImpl
@@ -24,6 +22,7 @@ import eka.care.documents.sync.data.repository.SyncRecordsRepository
 import eka.care.documents.ui.utility.RecordsUtility
 import eka.care.documents.ui.utility.RecordsUtility.Companion.changeDateFormat
 import eka.care.documents.ui.utility.RecordsUtility.Companion.downloadThumbnail
+import eka.care.documents.ui.utility.RecordsUtility.Companion.getMimeType
 import kotlinx.coroutines.coroutineScope
 import java.io.File
 import java.text.SimpleDateFormat
@@ -46,50 +45,55 @@ class SyncFileWorker(
     override suspend fun doWork(): Result = coroutineScope {
         try {
             val uuid = inputData.getString("p_uuid")
-            val oid = inputData.getString("oid")
-            val doctorId = inputData.getString("doctorId")
-            syncDocuments(oid = oid, uuid = uuid, doctorId = doctorId)
-            val updatedAt =
-                updatedAtRepository.getUpdatedAtByOid(filterId = oid, ownerId = doctorId)
-                    ?: run {
-                        updatedAtRepository.insertUpdatedAtEntity(
-                            UpdatedAtEntity(
-                                filterId = oid ?: "",
-                                updatedAt = null,
-                                ownerId = doctorId ?: ""
-                            )
-                        )
-                        "0"
-                    }
-            fetchRecords(
-                offset = null,
-                updatedAt = null,
-                uuid = uuid,
-                oid = oid,
-                doctorId = doctorId
-            )
-            updateFilePath(oid = oid, doctorId = doctorId)
-            syncDeletedAndEditedDocuments(oid = oid, doctorId = doctorId)
+            val ownerId = inputData.getString("ownerId")
+            val filterIdsString = inputData.getString("filterIds")
+            val filterIds = filterIdsString?.split(",") ?: emptyList()
+            syncDocuments(filterIds = filterIds, uuid = uuid, ownerId = ownerId)
+//            val updatedAt = updatedAtRepository.getUpdatedAtByOid(
+//                filterId = filterIds[0],
+//                ownerId = ownerId
+//            ) ?: run {
+//                updatedAtRepository.insertUpdatedAtEntity(
+//                    UpdatedAtEntity(
+//                        filterId = currentFilterId,
+//                        updatedAt = null,
+//                        ownerId = ownerId ?: ""
+//                    )
+//                )
+//                "0"
+//            }
+            filterIds.forEach { filterId ->
+                fetchRecords(
+                    uuid = uuid,
+                    filterId = filterId,
+                    ownerId = ownerId
+                )
+            }
+            if (ownerId != null) {
+                updateFilePath(filterIds = filterIds, ownerId = ownerId)
+            }
+            syncDeletedAndEditedDocuments(filterIds = filterIds, ownerId = ownerId)
+
             Result.success()
         } catch (e: Exception) {
             Result.failure()
         }
     }
 
-    private suspend fun syncDeletedAndEditedDocuments(oid: String?, doctorId: String?) {
+    private suspend fun syncDeletedAndEditedDocuments(filterIds: List<String>?, ownerId: String?) {
         try {
-            val resp = vaultRepository.getEditedDocuments(filterId = oid, ownerId = doctorId)
+            val resp = vaultRepository.getEditedDocuments(filterIds = filterIds, ownerId = ownerId)
             resp.forEach { vaultEntity ->
                 vaultEntity.documentId?.let {
                     val updateFileDetailsRequest = UpdateFileDetailsRequest(
-                        oid = vaultEntity.filterId,
+                        filterId = vaultEntity.filterId,
                         documentType = docTypes.find { it.idNew == vaultEntity.documentType }?.id,
                         documentDate = vaultEntity.documentDate.toString(),
                         userTags = emptyList()
                     )
                     myFileRepository.updateFileDetails(
                         documentId = it,
-                        oid = oid,
+                        oid = vaultEntity.filterId,
                         updateFileDetailsRequest = updateFileDetailsRequest
                     )
                 }
@@ -99,13 +103,20 @@ class SyncFileWorker(
         }
 
         try {
-            val vaultDocuments = vaultRepository.getDeletedDocuments(ownerId = doctorId, filterId = oid)
+            val vaultDocuments =
+                vaultRepository.getDeletedDocuments(ownerId = ownerId, filterIds = filterIds)
 
             vaultDocuments.forEach { vaultEntity ->
                 vaultEntity.documentId?.let {
-                    val resp = myFileRepository.deleteDocument(documentId = it, filterId = oid)
+                    val resp = myFileRepository.deleteDocument(
+                        documentId = it,
+                        filterId = vaultEntity.filterId
+                    )
                     if (resp in 200..299) {
-                        vaultRepository.removeDocument(localId = vaultEntity.localId, filterId = oid)
+                        vaultRepository.removeDocument(
+                            localId = vaultEntity.localId,
+                            filterId = vaultEntity.filterId
+                        )
                     }
                 }
             }
@@ -114,43 +125,55 @@ class SyncFileWorker(
         }
     }
 
-    private suspend fun updateFilePath(doctorId: String?, oid: String?) {
+    private suspend fun updateFilePath(ownerId: String, filterIds: List<String>?) {
         try {
-            vaultRepository.getDocumentsWithoutFilePath(ownerId = doctorId, filterId = oid)
-                .forEach { document ->
-                    val response = document.documentId?.let {
-                        myFileRepository.getDocument(
-                            filterId = oid,
-                            documentId = it
+            val documentsWithoutPath = vaultRepository.getDocumentsWithoutFilePath(
+                ownerId = ownerId,
+                filterIds = filterIds
+            )
+            Log.d("AYUSHI", documentsWithoutPath.toString())
+            for (document in documentsWithoutPath) {
+                val documentId = document.documentId ?: continue
+                val response = myFileRepository.getDocument(
+                    filterId = document.filterId,
+                    documentId = documentId
+                )
+
+                if (response != null) {
+                    val filePaths = ArrayList<String>(response.files.size)
+                    val fileType = response.files.firstOrNull()?.fileType ?: ""
+
+                    for (file in response.files) {
+                        val filePath = RecordsUtility.downloadFile(
+                            file.assetUrl,
+                            context = applicationContext,
+                            type = file.fileType
                         )
+                        filePaths.add(filePath)
                     }
-                    response?.let {
-                        val filePaths = it.files.map { file ->
-                            RecordsUtility.downloadFile(
-                                file.assetUrl,
-                                context = applicationContext,
-                                type = file.fileType
-                            )
-                        }
-                        val fileType = it.files.firstOrNull()?.fileType ?: ""
-                        val smartReportField =
-                            it.smartReport?.let { report -> Gson().toJson(report) }
-                        val updatedDocument = document.copy(
-                            filePath = filePaths,
-                            fileType = fileType,
-                            smartReportField = smartReportField
-                        )
-                        vaultRepository.updateDocuments(listOf(updatedDocument))
+
+                    val smartReportField = response.smartReport?.let {
+                        Gson().toJson(it)
                     }
+
+                    val updatedDocument = document.copy(
+                        filePath = filePaths,
+                        fileType = fileType,
+                        smartReportField = smartReportField
+                    )
+
+                    vaultRepository.updateDocuments(listOf(updatedDocument))
                 }
-        } catch (_: Exception) {
+            }
+        } catch (e: Exception) {
+            Log.e("UpdateFilePath", "Error updating file paths", e)
         }
     }
 
-    private suspend fun syncDocuments(oid: String?, uuid: String?, doctorId: String?) {
+    private suspend fun syncDocuments(filterIds: List<String>?, uuid: String?, ownerId: String?) {
         try {
             val vaultDocuments =
-                vaultRepository.getUnSyncedDocuments(filterId = oid, ownerId = doctorId)
+                vaultRepository.getUnSyncedDocuments(filterIds = filterIds, ownerId = ownerId)
             if (vaultDocuments.isEmpty()) return
 
             val tags = mutableListOf<String>()
@@ -171,7 +194,7 @@ class SyncFileWorker(
                 val uploadInitResponse = uuid?.let {
                     awsRepository.fileUploadInit(
                         files = fileContentList,
-                        patientOid = oid,
+                        patientOid = vaultEntity.filterId,
                         patientUuid = uuid,
                         isMultiFile = isMultiFile,
                         tags = tags,
@@ -197,7 +220,7 @@ class SyncFileWorker(
                             awsRepository.uploadFile(batch = batchResponse, fileList = files)
                         if (response?.error == false) {
                             response.documentId?.let { docId ->
-                                updateDocumentDetails(docId, oid, vaultEntity)
+                                updateDocumentDetails(docId, vaultEntity.filterId, vaultEntity)
                             }
                         }
                     }
@@ -211,7 +234,7 @@ class SyncFileWorker(
                                 awsRepository.uploadFile(file = file, batch = batchResponse)
                             if (response?.error == false) {
                                 response.documentId?.let { docId ->
-                                    updateDocumentDetails(docId, oid, vaultEntity)
+                                    updateDocumentDetails(docId, vaultEntity.filterId, vaultEntity)
                                 }
                             }
                         }
@@ -223,10 +246,9 @@ class SyncFileWorker(
         }
     }
 
-
     private suspend fun updateDocumentDetails(
         documentId: String,
-        oid: String?,
+        filterId: String?,
         vaultEntity: VaultEntity
     ) {
         vaultRepository.updateDocumentId(documentId, vaultEntity.localId)
@@ -237,7 +259,7 @@ class SyncFileWorker(
             } ?: ""
 
             val updateFileDetailsRequest = UpdateFileDetailsRequest(
-                oid = vaultEntity.filterId,
+                filterId = vaultEntity.filterId,
                 documentType = docTypes.find { it.idNew == vaultEntity.documentType }?.id,
                 documentDate = if (documentDate.isNotEmpty()) changeDateFormat(documentDate) else null,
                 userTags = emptyList()
@@ -245,7 +267,7 @@ class SyncFileWorker(
 
             myFileRepository.updateFileDetails(
                 documentId = documentId,
-                oid = oid,
+                oid = filterId,
                 updateFileDetailsRequest = updateFileDetailsRequest
             )
         } catch (e: Exception) {
@@ -257,61 +279,62 @@ class SyncFileWorker(
     }
 
     private suspend fun fetchRecords(
-        offset: String?,
-        updatedAt: String?,
+        offset: String? = null,
+        updatedAt: String? = null,
         uuid: String?,
-        oid: String?,
-        doctorId: String?
+        filterId: String?,
+        ownerId: String?
     ) {
-        try {
-            val response = recordsRepository.getRecords(
-                updatedAt = updatedAt,
-                offset = offset,
-                oid = oid
-            )
-            // eka-uat of latest updated or inserted record
-            val ekaUat = response?.headers()?.get("Eka-Uat")
-            if (ekaUat != null) {
-                updatedAtRepository.updateUpdatedAtByOid(
-                    filterId = oid,
-                    updatedAt = ekaUat,
-                    ownerId = doctorId
-                )
-            }
+        var currentOffset = offset
 
-            val records = response?.body()
-
-            if (records != null) {
-                storeRecords(
-                    recordsResponse = records,
-                    doctorId = doctorId,
-                    uuid = uuid,
-                    app_oid = oid,
-                    context = applicationContext
-                )
-            }
-
-            val newOffset = records?.nextToken
-            if (!newOffset.isNullOrEmpty()) {
-                fetchRecords(
-                    offset = newOffset,
+        do {
+            try {
+                val response = recordsRepository.getRecords(
                     updatedAt = updatedAt,
-                    uuid = uuid,
-                    oid = oid,
-                    doctorId = doctorId
+                    offset = currentOffset,
+                    oid = filterId
                 )
+
+                // Break the loop if no response
+                if (response == null) {
+                    Log.w("SYNC_DOCUMENTS", "No response for filterId: $filterId")
+                    break
+                }
+
+                // Extract Eka-Uat header
+                val ekaUat = response.headers()?.get("Eka-Uat")
+                if (ekaUat != null) {
+                    updatedAtRepository.updateUpdatedAtByOid(
+                        filterId = filterId,
+                        updatedAt = ekaUat,
+                        ownerId = ownerId
+                    )
+                }
+
+                val records = response.body()
+
+                if (records != null) {
+                    storeRecords(
+                        recordsResponse = records,
+                        ownerId = ownerId,
+                        uuid = uuid,
+                        app_oid = filterId,
+                        context = applicationContext
+                    )
+                }
+
+                currentOffset = records?.nextToken
+
+            } catch (e: Exception) {
+                Log.e("SYNC_DOCUMENTS", "Error fetching documents for filterId: $filterId, error: ${e.message}", e)
+                break
             }
-
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Log.e("SYNC_DOCUMENTS", "Error fetching documents: ${e.message}", e)
-        }
+        } while (!currentOffset.isNullOrEmpty())
     }
-
 
     private suspend fun storeRecords(
         recordsResponse: GetFilesResponse,
-        doctorId: String?,
+        ownerId: String?,
         uuid: String?,
         app_oid: String?,
         context: Context
@@ -339,7 +362,7 @@ class SyncFileWorker(
                     VaultEntity(
                         localId = localId ?: UUID.randomUUID().toString(),
                         documentId = recordItem.documentId,
-                        ownerId = recordItem.patientId,
+                        ownerId = ownerId,
                         filterId = app_oid,
                         uuid = uuid,
                         filePath = null,
@@ -380,6 +403,3 @@ class SyncFileWorker(
     }
 
 }
-
-fun File.getMimeType(): String? =
-    MimeTypeMap.getSingleton().getMimeTypeFromExtension(this.extension)

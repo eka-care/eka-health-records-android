@@ -88,7 +88,7 @@ fun DocumentScreen(
     param: JsonObject,
     mode: Mode,
     selectedRecords: ((List<RecordModel>) -> Unit)? = null,
-    isUploadEnabled : Boolean? = true,
+    isUploadEnabled: Boolean? = true,
     onBackClick: () -> Unit
 ) {
     val context = LocalContext.current
@@ -100,24 +100,40 @@ fun DocumentScreen(
     val photoUri by viewModel.photoUri.collectAsState()
     val params = remember(param) {
         RecordParamsModel(
-            patientId = param.get(MedicalRecordParams.PATIENT_ID.key)?.asString ?: "",
-            doctorId = param.get(MedicalRecordParams.DOCTOR_ID.key)?.asString ?: "",
+            filterId = param.get(MedicalRecordParams.FILTER_ID.key)?.asString ?: "",
+            ownerId = param.get(MedicalRecordParams.OWNER_ID.key)?.asString ?: "",
             name = param.get(MedicalRecordParams.PATIENT_NAME.key)?.asString,
             uuid = param.get(MedicalRecordParams.PATIENT_UUID.key)?.asString ?: "",
             age = param.get(MedicalRecordParams.PATIENT_AGE.key)?.asInt,
-            gender = param.get(MedicalRecordParams.PATIENT_GENDER.key)?.asString
+            gender = param.get(MedicalRecordParams.PATIENT_GENDER.key)?.asString,
+            links = param.get(MedicalRecordParams.LINKS.key)?.asString
         )
     }
-
+    val filterIdsToProcess = mutableListOf<String>().apply {
+        if (params.filterId.isNotEmpty()) {
+            add(params.filterId)
+        }
+        if (!params.links.isNullOrBlank()) {
+            params.links.split(",")
+                .map { it.trim() }
+                .filter { it.isNotEmpty() && it != params.filterId }
+                .forEach { add(it) }
+        }
+    }
     val selectedItems = remember { mutableStateListOf<RecordModel>() }
 
     LaunchedEffect(Unit) {
         initData(
-            oid = params.patientId,
-            doctorId = params.doctorId,
+            filterIds = filterIdsToProcess,
+            ownerId = params.ownerId,
             viewModel = viewModel,
             context = context,
             patientUuid = params.uuid
+        )
+        viewModel.getLocalRecords(
+            filterIds = filterIdsToProcess,
+            ownerId = params.ownerId,
+            docType = viewModel.documentType.intValue,
         )
         viewModel.observeNetworkStatus(context)
     }
@@ -141,8 +157,8 @@ fun DocumentScreen(
         rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
                 initData(
-                    oid = params.patientId,
-                    doctorId = params.doctorId,
+                    filterIds = filterIdsToProcess,
+                    ownerId = params.ownerId,
                     viewModel = viewModel,
                     context = context,
                     patientUuid = params.uuid
@@ -254,8 +270,8 @@ fun DocumentScreen(
         refreshing = isRefreshing,
         onRefresh = {
             initData(
-                oid = params.patientId,
-                doctorId = params.doctorId,
+                filterIds = filterIdsToProcess,
+                ownerId = params.ownerId,
                 viewModel = viewModel,
                 context = context,
                 patientUuid = params.uuid
@@ -266,8 +282,8 @@ fun DocumentScreen(
     LaunchedEffect(isOnline) {
         if (isOnline) {
             initData(
-                oid = params.patientId,
-                doctorId = params.doctorId,
+                filterIds = filterIdsToProcess,
+                ownerId = params.ownerId,
                 viewModel = viewModel,
                 context = context,
                 patientUuid = params.uuid
@@ -276,10 +292,13 @@ fun DocumentScreen(
     }
 
     LaunchedEffect(key1 = viewModel.documentType.intValue) {
-        viewModel.getAvailableDocTypes(oid = params.patientId, doctorId = params.doctorId)
+        viewModel.getAvailableDocTypes(
+            filterIds = filterIdsToProcess,
+            ownerId = params.ownerId
+        )
         viewModel.getLocalRecords(
-            oid = params.patientId,
-            doctorId = params.doctorId,
+            filterIds = filterIdsToProcess,
+            ownerId = params.ownerId,
             docType = viewModel.documentType.intValue
         )
     }
@@ -313,8 +332,9 @@ fun DocumentScreen(
                     onClick = {
                         viewModel.deleteDocument(
                             localId = viewModel.cardClickData.value?.localId ?: "",
-                            oid = params.patientId,
-                            doctorId = params.doctorId
+                            filterId = params.filterId,
+                            ownerId = params.ownerId,
+                            allFilterIds = filterIdsToProcess
                         )
                         showDeleteDialog = false
                     }) {
@@ -355,7 +375,8 @@ fun DocumentScreen(
                 cameraLauncher = cameraLauncher,
                 viewModel = viewModel,
                 params = params,
-                galleryLauncher = pickMultipleMedia
+                galleryLauncher = pickMultipleMedia,
+                allFilterIds = filterIdsToProcess
             )
             Spacer(modifier = Modifier.height(16.dp))
         },
@@ -387,7 +408,7 @@ fun DocumentScreen(
                         trailingText = if (mode == Mode.SELECTION) stringResource(id = R.string.done) else "",
                         onTrailingTextClick = {
                             onBackClick()
-                            if(mode == Mode.SELECTION){
+                            if (mode == Mode.SELECTION) {
                                 viewModel.documentBottomSheetType = null
                                 selectedRecords?.invoke(selectedItems.toList())
                             }
@@ -398,8 +419,8 @@ fun DocumentScreen(
                             viewModel = viewModel,
                             onClick = {
                                 viewModel.getLocalRecords(
-                                    oid = params.patientId,
-                                    doctorId = params.doctorId,
+                                    filterIds = filterIdsToProcess,
+                                    ownerId = params.ownerId,
                                     docType = it
                                 )
                             }
@@ -439,22 +460,22 @@ fun DocumentScreen(
 
 fun initData(
     patientUuid: String,
-    oid: String,
-    doctorId: String?,
+    filterIds: List<String>,
+    ownerId: String,
     viewModel: RecordsViewModel,
     context: Context,
 ) {
     val inputData = Data.Builder()
         .putString("p_uuid", patientUuid)
-        .putString("oid", oid)
-        .putString("doctorId", doctorId)
+        .putString("ownerId", ownerId)
+        .putString("filterIds", filterIds.joinToString(","))
         .build()
 
     val constraints = Constraints.Builder()
         .setRequiredNetworkType(NetworkType.CONNECTED)
         .build()
 
-    val uniqueWorkName = "syncFileWorker_${patientUuid}_$oid$doctorId"
+    val uniqueWorkName = "syncFileWorker_${patientUuid}_$filterIds$ownerId"
     val uniqueSyncWorkRequest =
         OneTimeWorkRequestBuilder<SyncFileWorker>()
             .setInputData(inputData)
@@ -467,12 +488,6 @@ fun initData(
             ExistingWorkPolicy.KEEP,
             uniqueSyncWorkRequest
         )
-
-    viewModel.getLocalRecords(
-        oid = oid,
-        doctorId = doctorId,
-        docType = viewModel.documentType.intValue
-    )
-    viewModel.syncDeletedDocuments(oid = oid, doctorId = doctorId)
-    viewModel.syncEditedDocuments(oid = oid, doctorId = doctorId)
+    viewModel.syncDeletedDocuments(filterIds = filterIds, ownerId = ownerId)
+    viewModel.syncEditedDocuments(filterIds = filterIds, ownerId = ownerId)
 }

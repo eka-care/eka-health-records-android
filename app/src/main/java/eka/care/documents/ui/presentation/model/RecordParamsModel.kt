@@ -7,10 +7,11 @@ import kotlinx.parcelize.Parcelize
 @Keep
 @Parcelize
 data class RecordParamsModel(
-    val patientId : String,
-    val doctorId : String,
+    val filterId : String,
+    val ownerId : String,
     val name : String?,
     val uuid : String,
     val gender : String?,
-    val age : Int?
+    val age : Int?,
+    val links : String?
 ):Parcelable

@@ -113,7 +113,7 @@ fun DocumentScreenContent(
                                             view(
                                                 context = context,
                                                 model = model,
-                                                oid = paramsModel.patientId,
+                                                filterId = paramsModel.filterId,
                                             )
                                         } else {
                                             openSheet()
@@ -138,7 +138,7 @@ fun DocumentScreenContent(
                                             view(
                                                 context = context,
                                                 model = model,
-                                                oid = paramsModel.patientId,
+                                                filterId = paramsModel.filterId,
                                             )
                                         } else {
                                             viewModel.localId.value = model.localId ?: ""
