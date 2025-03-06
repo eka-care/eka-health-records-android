@@ -246,7 +246,6 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
                     userTags = emptyList(),
                     linkAbha = false
                 )
-
                 cardClickData.value?.documentId?.let {
                     myFileRepository.updateFileDetails(
                         documentId = it,
@@ -262,20 +261,19 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
 
     fun deleteDocument(
         localId: String,
-        filterId: String,
         ownerId: String,
         allFilterIds: List<String>
     ) {
         try {
             viewModelScope.launch {
-                vaultRepository.deleteDocument(filterId = filterId, localId = localId)
+                vaultRepository.deleteDocument(localId = localId)
                 getLocalRecords(filterIds = allFilterIds, ownerId = ownerId)
             }
         } catch (_: Exception) {
         }
     }
 
-    fun syncEditedDocuments(filterIds: List<String>, ownerId: String?) {
+    fun syncEditedDocuments(filterIds: List<String>, ownerId: String) {
         try {
             viewModelScope.launch {
                 vaultRepository.getEditedDocuments(filterIds = filterIds, ownerId = ownerId)
@@ -284,19 +282,19 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun syncDeletedDocuments(filterIds: List<String>, ownerId: String?) {
+    fun syncDeletedDocuments(filterIds: List<String>, ownerId: String) {
         try {
             viewModelScope.launch {
                 val vaultDocuments =
                     vaultRepository.getDeletedDocuments(ownerId = ownerId, filterIds = filterIds)
-
+                Log.d("AYUSHI-2", vaultDocuments.toString())
                 vaultDocuments.forEach { vaultEntity ->
                     vaultEntity.documentId?.let {
                         val resp = myFileRepository.deleteDocument(
                             documentId = it,
                             filterId = vaultEntity.filterId
                         )
-
+                        Log.d("AYUSHI-3", vaultDocuments.toString())
                         if (resp in 200..299) {
                             vaultRepository.removeDocument(
                                 localId = vaultEntity.localId,

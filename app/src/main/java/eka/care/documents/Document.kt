@@ -139,8 +139,8 @@ object Document {
         documentRepository?.storeDocuments(vaultEntityList)
     }
 
-    suspend fun deleteDocument(filterId: String?, localId: String) {
-        documentRepository?.deleteDocument(filterId= filterId, localId = localId)
+    suspend fun deleteDocument(localId: String) {
+        documentRepository?.deleteDocument(localId = localId)
     }
 
     suspend fun editDocument(

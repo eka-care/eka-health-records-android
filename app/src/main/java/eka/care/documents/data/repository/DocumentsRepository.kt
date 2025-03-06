@@ -18,7 +18,7 @@ interface DocumentsRepository {
     ): Flow<List<VaultEntity>>
 
     suspend fun storeDocuments(vaultEntityList: List<VaultEntity>)
-    suspend fun deleteDocument(filterId: String?, localId: String)
+    suspend fun deleteDocument(localId: String)
     suspend fun editDocument(
         localId: String,
         docType: Int?,

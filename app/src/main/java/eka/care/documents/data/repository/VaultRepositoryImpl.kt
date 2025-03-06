@@ -1,5 +1,6 @@
 package eka.care.documents.data.repository
 
+import android.util.Log
 import eka.care.documents.data.db.database.DocumentDatabase
 import eka.care.documents.data.db.entity.VaultEntity
 import eka.care.documents.data.db.model.AvailableDocTypes
@@ -90,8 +91,8 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
         database.vaultDao().storeDocuments(vaultEntityList)
     }
 
-    override suspend fun deleteDocument(filterId: String?, localId: String) {
-        database.vaultDao().deleteDocument(filterId = filterId, localId = localId)
+    override suspend fun deleteDocument(localId: String) {
+        database.vaultDao().deleteDocument(localId = localId)
         return
     }
 
@@ -139,10 +140,10 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
 
     override suspend fun getUnSyncedDocuments(
         filterIds: List<String>?,
-        ownerId: String?
+        ownerId: String
     ): List<VaultEntity> {
         val resp = database.vaultDao().getUnSyncedDocuments(
-            filterId = filterIds,
+            filterIds = filterIds,
             ownerId = ownerId
         )
         return resp
@@ -150,16 +151,16 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
 
     override suspend fun getDeletedDocuments(
         filterIds: List<String>?,
-        ownerId: String?
+        ownerId: String
     ): List<VaultEntity> {
-        return database.vaultDao().getDeletedDocuments(filterId = filterIds, ownerId = ownerId)
+        return database.vaultDao().getDeletedDocuments(filterIds = filterIds, ownerId = ownerId)
     }
 
     override suspend fun getEditedDocuments(
         filterIds: List<String>?,
-        ownerId: String?
+        ownerId: String
     ): List<VaultEntity> {
-        return database.vaultDao().getEditedDocuments(filterId = filterIds, ownerId = ownerId)
+        return database.vaultDao().getEditedDocuments(filterIds = filterIds, ownerId = ownerId)
     }
 
     override suspend fun getAvailableDocTypes(
@@ -182,6 +183,7 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
     }
 
     override suspend fun removeDocument(localId: String, filterId: String?) {
+        Log.d("AYUSHI-3", "$localId $filterId")
         database.vaultDao().removeDocument(localId = localId, filterId = filterId)
         return
     }

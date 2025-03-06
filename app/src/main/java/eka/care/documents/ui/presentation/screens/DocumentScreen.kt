@@ -332,7 +332,6 @@ fun DocumentScreen(
                     onClick = {
                         viewModel.deleteDocument(
                             localId = viewModel.cardClickData.value?.localId ?: "",
-                            filterId = params.filterId,
                             ownerId = params.ownerId,
                             allFilterIds = filterIdsToProcess
                         )

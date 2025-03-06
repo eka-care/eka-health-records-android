@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface VaultDao {
+    // getting documents
     @Query("""
     SELECT * FROM vault_table 
     WHERE is_deleted = 0 
@@ -59,56 +60,15 @@ interface VaultDao {
         docType: Int
     ): Flow<List<VaultEntity>>
 
-    @Query("""
-    SELECT 1 FROM vault_table 
-    WHERE doc_id = :documentId 
-    AND (owner_id = :ownerId OR (owner_id IS NULL AND :ownerId IS NULL)) 
-    LIMIT 1
-""")
-    suspend fun alreadyExistDocument(documentId: String, ownerId: String?): Int?
+    @Query("SELECT * FROM vault_table WHERE doc_id=:id OR local_id=:id")
+    suspend fun getDocumentById(id: String): VaultEntity
 
-    @Query("SELECT smart_report_field FROM vault_table WHERE doc_id = :documentId")
-    suspend fun getSmartReport(documentId :String): String?
+    @Query("SELECT local_id FROM vault_table WHERE doc_id = :docId")
+    suspend fun getLocalId(docId: String?): String?
 
-    //    If filterId is NULL, it updates records where filter_id IS NULL
-   //    If ownerId is NULL, it updates records where owner_id IS NULL
-    @Query("""
-    UPDATE vault_table 
-    SET smart_report_field = :smartReport 
-    WHERE doc_id = :documentId 
-    AND (filter_id IS :filterId OR filter_id IS NULL AND :filterId IS NULL) 
-    AND (owner_id IS :ownerId OR owner_id IS NULL AND :ownerId IS NULL)
-""")
-    suspend fun updateSmartReport(
-        filterId: String?,
-        ownerId: String?,
-        documentId: String,
-        smartReport: String
-    )
-
-    //OLD
+    // storing records and updating
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun storeDocuments(vaultEntityList: List<VaultEntity>)
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun updateDocuments(vaultEntityList: List<VaultEntity>)
-
-    @Query("UPDATE vault_table SET thumbnail=:thumbnail WHERE doc_id=:docId")
-    suspend fun setThumbnail(thumbnail: String, docId: String)
-
-    @Query("""
-    UPDATE vault_table 
-    SET doc_type = :docType, doc_date = :docDate, is_edited = 1 
-    WHERE local_id = :localId 
-    AND (:filterId IS NULL OR filter_id = :filterId)
-""")
-    suspend fun editDocument(
-        localId: String,
-        docType: Int?,
-        docDate: Long?,
-        filterId: String?
-    )
-
     @Query("""
     UPDATE vault_table 
     SET filter_id = :filterId, 
@@ -133,22 +93,102 @@ interface VaultDao {
         documentDate: Long?
     )
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun updateDocuments(vaultEntityList: List<VaultEntity>)
+
+    @Query("UPDATE vault_table SET thumbnail=:thumbnail WHERE doc_id=:docId")
+    suspend fun setThumbnail(thumbnail: String, docId: String)
+
+    // smart Report
+    @Query("SELECT smart_report_field FROM vault_table WHERE doc_id = :documentId")
+    suspend fun getSmartReport(documentId :String): String?
+
     @Query("""
     UPDATE vault_table 
-    SET is_deleted = 1 
+    SET smart_report_field = :smartReport 
+    WHERE doc_id = :documentId 
+    AND (filter_id IS :filterId OR filter_id IS NULL AND :filterId IS NULL) 
+    AND (owner_id IS :ownerId OR owner_id IS NULL AND :ownerId IS NULL)
+""")
+    suspend fun updateSmartReport(
+        filterId: String?,
+        ownerId: String?,
+        documentId: String,
+        smartReport: String
+    )
+
+    // edit
+
+    @Query("""
+    UPDATE vault_table 
+    SET doc_type = :docType, doc_date = :docDate, is_edited = 1 
     WHERE local_id = :localId 
     AND (:filterId IS NULL OR filter_id = :filterId)
 """)
-    suspend fun deleteDocument(filterId: String?, localId: String)
+    suspend fun editDocument(
+        localId: String,
+        docType: Int?,
+        docDate: Long?,
+        filterId: String?
+    )
+    @Query("""
+    SELECT * FROM vault_table 
+    WHERE is_edited = 1 
+    AND owner_id = :ownerId 
+    AND (filter_id IN (:filterIds) OR filter_id IS NULL)
+""")
+    suspend fun getEditedDocuments(filterIds: List<String>?, ownerId: String): List<VaultEntity>
+
+    // delete
+    @Query("""
+    UPDATE vault_table 
+    SET is_deleted = 1 
+    WHERE local_id = :localId
+""")
+    suspend fun deleteDocument(localId: String)
+    @Query("""
+    SELECT * FROM vault_table 
+    WHERE is_deleted = 1 
+    AND owner_id = :ownerId 
+    AND (filter_id IN (:filterIds) OR filter_id IS NULL)
+""")
+    suspend fun getDeletedDocuments(filterIds: List<String>?, ownerId: String): List<VaultEntity>
+    @Query("""
+    DELETE FROM vault_table 
+    WHERE local_id = :localId 
+    AND (:filterId IS NULL OR filter_id = :filterId)
+""")
+    suspend fun removeDocument(localId: String, filterId: String?)
+
+    // filePath
+    @Query("""
+    SELECT * FROM vault_table 
+    WHERE file_path IS NULL 
+    AND owner_id = :ownerId 
+    AND (filter_id IN (:filterIds) OR filter_id IS NULL)
+""")
+    fun fetchDocumentsWithoutFilePath(ownerId: String, filterIds: List<String>?): List<VaultEntity>
+
+    @Query("UPDATE vault_table SET file_path=:filePath WHERE doc_id=:docId")
+    suspend fun updateFilePath(docId: String?, filePath: String)
+
+    // other operations
+    @Query("""
+    SELECT 1 FROM vault_table 
+    WHERE doc_id = :documentId 
+    AND (owner_id = :ownerId OR (owner_id IS NULL AND :ownerId IS NULL)) 
+    LIMIT 1
+""")
+    suspend fun alreadyExistDocument(documentId: String, ownerId: String?): Int?
 
     @Query("""
     SELECT * FROM vault_table 
     WHERE doc_id IS NULL 
     AND is_deleted = 0 
-    AND (:ownerId IS NULL OR owner_id = :ownerId) 
-    AND (:filterId IS NULL OR filter_id IN (:filterId))
+    AND owner_id = :ownerId 
+    AND (filter_id IN (:filterIds) OR filter_id IS NULL)
 """)
-    suspend fun getUnSyncedDocuments(filterId: List<String>?, ownerId: String?): List<VaultEntity>
+    suspend fun getUnSyncedDocuments(filterIds: List<String>?, ownerId: String): List<VaultEntity>
 
     @Query("""
     SELECT * FROM vault_table 
@@ -169,43 +209,4 @@ interface VaultDao {
 
     @Query("UPDATE vault_table SET doc_id = :docId WHERE local_id = :localId")
     suspend fun updateDocumentId(docId: String, localId: String)
-
-    @Query("SELECT local_id FROM vault_table WHERE doc_id = :docId")
-    suspend fun getLocalId(docId: String?): String?
-
-    @Query("""
-    SELECT * FROM vault_table 
-    WHERE is_deleted = 1 
-    AND (:ownerId IS NULL OR owner_id = :ownerId) 
-    AND (:filterId IS NULL OR filter_id IN (:filterId))
-""")
-    suspend fun getDeletedDocuments(filterId: List<String>?, ownerId: String?): List<VaultEntity>
-    @Query("""
-    SELECT * FROM vault_table 
-    WHERE is_edited = 1 
-    AND (:ownerId IS NULL OR owner_id = :ownerId) 
-    AND (:filterId IS NULL OR filter_id IN (:filterId))
-""")
-    suspend fun getEditedDocuments(filterId: List<String>?, ownerId: String?): List<VaultEntity>
-
-    @Query("SELECT * FROM vault_table WHERE doc_id=:id OR local_id=:id")
-    suspend fun getDocumentById(id: String): VaultEntity
-
-    @Query("UPDATE vault_table SET file_path=:filePath WHERE doc_id=:docId")
-    suspend fun updateFilePath(docId: String?, filePath: String)
-
-    @Query("""
-    DELETE FROM vault_table 
-    WHERE local_id = :localId 
-    AND (:filterId IS NULL OR filter_id = :filterId)
-""")
-    suspend fun removeDocument(localId: String, filterId: String?)
-
-    @Query("""
-    SELECT * FROM vault_table 
-    WHERE file_path IS NULL 
-    AND (:ownerId IS NULL OR owner_id = :ownerId) 
-    AND (filter_id IN (:filterIds) OR filter_id IS NULL)
-""")
-    fun fetchDocumentsWithoutFilePath(ownerId: String, filterIds: List<String>?): List<VaultEntity>
 }

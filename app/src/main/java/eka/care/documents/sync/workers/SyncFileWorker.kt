@@ -48,7 +48,6 @@ class SyncFileWorker(
             val ownerId = inputData.getString("ownerId")
             val filterIdsString = inputData.getString("filterIds")
             val filterIds = filterIdsString?.split(",") ?: emptyList()
-            syncDocuments(filterIds = filterIds, uuid = uuid, ownerId = ownerId)
 //            val updatedAt = updatedAtRepository.getUpdatedAtByOid(
 //                filterId = filterIds[0],
 //                ownerId = ownerId
@@ -70,107 +69,17 @@ class SyncFileWorker(
                 )
             }
             if (ownerId != null) {
+                syncDocuments(filterIds = filterIds, uuid = uuid, ownerId = ownerId)
                 updateFilePath(filterIds = filterIds, ownerId = ownerId)
+                syncDeletedAndEditedDocuments(filterIds = filterIds, ownerId = ownerId)
             }
-            syncDeletedAndEditedDocuments(filterIds = filterIds, ownerId = ownerId)
-
             Result.success()
         } catch (e: Exception) {
             Result.failure()
         }
     }
 
-    private suspend fun syncDeletedAndEditedDocuments(filterIds: List<String>?, ownerId: String?) {
-        try {
-            val resp = vaultRepository.getEditedDocuments(filterIds = filterIds, ownerId = ownerId)
-            resp.forEach { vaultEntity ->
-                vaultEntity.documentId?.let {
-                    val updateFileDetailsRequest = UpdateFileDetailsRequest(
-                        filterId = vaultEntity.filterId,
-                        documentType = docTypes.find { it.idNew == vaultEntity.documentType }?.id,
-                        documentDate = vaultEntity.documentDate.toString(),
-                        userTags = emptyList()
-                    )
-                    myFileRepository.updateFileDetails(
-                        documentId = it,
-                        oid = vaultEntity.filterId,
-                        updateFileDetailsRequest = updateFileDetailsRequest
-                    )
-                }
-            }
-        } catch (e: Exception) {
-            Log.e("SyncFileWorker", "Failed to sync edited documents", e)
-        }
-
-        try {
-            val vaultDocuments =
-                vaultRepository.getDeletedDocuments(ownerId = ownerId, filterIds = filterIds)
-
-            vaultDocuments.forEach { vaultEntity ->
-                vaultEntity.documentId?.let {
-                    val resp = myFileRepository.deleteDocument(
-                        documentId = it,
-                        filterId = vaultEntity.filterId
-                    )
-                    if (resp in 200..299) {
-                        vaultRepository.removeDocument(
-                            localId = vaultEntity.localId,
-                            filterId = vaultEntity.filterId
-                        )
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            Log.e("SyncFileWorker", "Failed to sync deleted documents", e)
-        }
-    }
-
-    private suspend fun updateFilePath(ownerId: String, filterIds: List<String>?) {
-        try {
-            val documentsWithoutPath = vaultRepository.getDocumentsWithoutFilePath(
-                ownerId = ownerId,
-                filterIds = filterIds
-            )
-            Log.d("AYUSHI", documentsWithoutPath.toString())
-            for (document in documentsWithoutPath) {
-                val documentId = document.documentId ?: continue
-                val response = myFileRepository.getDocument(
-                    filterId = document.filterId,
-                    documentId = documentId
-                )
-
-                if (response != null) {
-                    val filePaths = ArrayList<String>(response.files.size)
-                    val fileType = response.files.firstOrNull()?.fileType ?: ""
-
-                    for (file in response.files) {
-                        val filePath = RecordsUtility.downloadFile(
-                            file.assetUrl,
-                            context = applicationContext,
-                            type = file.fileType
-                        )
-                        filePaths.add(filePath)
-                    }
-
-                    val smartReportField = response.smartReport?.let {
-                        Gson().toJson(it)
-                    }
-
-                    val updatedDocument = document.copy(
-                        filePath = filePaths,
-                        fileType = fileType,
-                        smartReportField = smartReportField
-                    )
-
-                    vaultRepository.updateDocuments(listOf(updatedDocument))
-                }
-            }
-        } catch (e: Exception) {
-            Log.e("UpdateFilePath", "Error updating file paths", e)
-        }
-    }
-
-    private suspend fun syncDocuments(filterIds: List<String>?, uuid: String?, ownerId: String?) {
+    private suspend fun syncDocuments(filterIds: List<String>?, uuid: String?, ownerId: String) {
         try {
             val vaultDocuments =
                 vaultRepository.getUnSyncedDocuments(filterIds = filterIds, ownerId = ownerId)
@@ -201,7 +110,6 @@ class SyncFileWorker(
                         documentType = documentType
                     )
                 }
-
                 if (uploadInitResponse?.error == true) {
                     Log.d(
                         "SYNC_DOCUMENTS",
@@ -243,6 +151,51 @@ class SyncFileWorker(
             }
         } catch (e: Exception) {
             Log.e("SYNC_DOCUMENTS", "Error syncing documents: ${e.message}", e)
+        }
+    }
+
+    private suspend fun syncDeletedAndEditedDocuments(filterIds: List<String>?, ownerId: String) {
+        try {
+            val resp = vaultRepository.getEditedDocuments(filterIds = filterIds, ownerId = ownerId)
+            resp.forEach { vaultEntity ->
+                vaultEntity.documentId?.let {
+                    val updateFileDetailsRequest = UpdateFileDetailsRequest(
+                        filterId = vaultEntity.filterId,
+                        documentType = docTypes.find { it.idNew == vaultEntity.documentType }?.id,
+                        documentDate = vaultEntity.documentDate.toString(),
+                        userTags = emptyList()
+                    )
+                    myFileRepository.updateFileDetails(
+                        documentId = it,
+                        oid = vaultEntity.filterId,
+                        updateFileDetailsRequest = updateFileDetailsRequest
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("SyncFileWorker", "Failed to sync edited documents", e)
+        }
+
+        try {
+            val vaultDocuments =
+                vaultRepository.getDeletedDocuments(ownerId = ownerId, filterIds = filterIds)
+
+            vaultDocuments.forEach { vaultEntity ->
+                vaultEntity.documentId?.let {
+                    val resp = myFileRepository.deleteDocument(
+                        documentId = it,
+                        filterId = vaultEntity.filterId
+                    )
+                    if (resp in 200..299) {
+                        vaultRepository.removeDocument(
+                            localId = vaultEntity.localId,
+                            filterId = vaultEntity.filterId
+                        )
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("SyncFileWorker", "Failed to sync deleted documents", e)
         }
     }
 
@@ -326,7 +279,11 @@ class SyncFileWorker(
                 currentOffset = records?.nextToken
 
             } catch (e: Exception) {
-                Log.e("SYNC_DOCUMENTS", "Error fetching documents for filterId: $filterId, error: ${e.message}", e)
+                Log.e(
+                    "SYNC_DOCUMENTS",
+                    "Error fetching documents for filterId: $filterId, error: ${e.message}",
+                    e
+                )
                 break
             }
         } while (!currentOffset.isNullOrEmpty())
@@ -384,7 +341,51 @@ class SyncFileWorker(
         }
 
         vaultRepository.storeDocuments(vaultList)
-        storeThumbnails(vaultList = vaultList, recordsResponse =  recordsResponse, context = context)
+        storeThumbnails(vaultList = vaultList, recordsResponse = recordsResponse, context = context)
+    }
+
+    private suspend fun updateFilePath(ownerId: String, filterIds: List<String>?) {
+        try {
+            val documentsWithoutPath = vaultRepository.getDocumentsWithoutFilePath(
+                ownerId = ownerId,
+                filterIds = filterIds
+            )
+            for (document in documentsWithoutPath) {
+                val documentId = document.documentId ?: continue
+                val response = myFileRepository.getDocument(
+                    filterId = document.filterId,
+                    documentId = documentId
+                )
+
+                if (response != null) {
+                    val filePaths = ArrayList<String>(response.files.size)
+                    val fileType = response.files.firstOrNull()?.fileType ?: ""
+
+                    for (file in response.files) {
+                        val filePath = RecordsUtility.downloadFile(
+                            file.assetUrl,
+                            context = applicationContext,
+                            type = file.fileType
+                        )
+                        filePaths.add(filePath)
+                    }
+
+                    val smartReportField = response.smartReport?.let {
+                        Gson().toJson(it)
+                    }
+
+                    val updatedDocument = document.copy(
+                        filePath = filePaths,
+                        fileType = fileType,
+                        smartReportField = smartReportField
+                    )
+
+                    vaultRepository.updateDocuments(listOf(updatedDocument))
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("UpdateFilePath", "Error updating file paths", e)
+        }
     }
 
     private suspend fun storeThumbnails(

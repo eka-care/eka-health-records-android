@@ -23,9 +23,9 @@ interface VaultRepository: DocumentsRepository {
         autoTags : String,
         documentDate : Long?
     )
-    suspend fun getUnSyncedDocuments(filterIds: List<String>?, ownerId: String?): List<VaultEntity>
-    suspend fun getDeletedDocuments(filterIds: List<String>? , ownerId: String?): List<VaultEntity>
-    suspend fun getEditedDocuments(filterIds: List<String>?, ownerId: String?): List<VaultEntity>
+    suspend fun getUnSyncedDocuments(filterIds: List<String>?, ownerId: String): List<VaultEntity>
+    suspend fun getDeletedDocuments(filterIds: List<String>? , ownerId: String): List<VaultEntity>
+    suspend fun getEditedDocuments(filterIds: List<String>?, ownerId: String): List<VaultEntity>
     suspend fun updateDocumentId(documentId: String, localId: String)
     suspend fun getLocalId(docId: String): String?
     suspend fun getDocumentById(id: String) : VaultEntity?
