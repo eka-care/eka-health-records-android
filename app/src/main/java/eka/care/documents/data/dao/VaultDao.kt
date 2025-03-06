@@ -18,7 +18,7 @@ interface VaultDao {
     AND (filter_id IN (:filterIds) OR filter_id IS NULL)
     ORDER BY created_at DESC
 """)
-    fun fetchDocumentsByOwnerId(ownerId: String, filterIds: List<String>?): Flow<List<VaultEntity>>
+    fun fetchDocuments(ownerId: String, filterIds: List<String>?): Flow<List<VaultEntity>>
 
     @Query("""
     SELECT * FROM vault_table 
@@ -28,7 +28,7 @@ interface VaultDao {
     AND doc_type = :docType 
     ORDER BY created_at DESC
 """)
-    fun fetchDocuments(
+    fun fetchDocumentsByDocType(
         ownerId: String,
         filterIds: List<String>?,
         docType: Int

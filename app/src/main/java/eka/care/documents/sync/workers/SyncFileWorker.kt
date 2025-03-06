@@ -47,32 +47,26 @@ class SyncFileWorker(
         try {
             val uuid = inputData.getString("p_uuid")
             val ownerId = inputData.getString("ownerId") ?: return@coroutineScope Result.failure()
-            val filterIdsString = inputData.getString("filterIds")
-            val filterIds = filterIdsString?.split(",") ?: emptyList()
-            filterIds.forEach { filterId ->
-                val updatedAt = updatedAtRepository.getUpdatedAtByOid(
-                    filterId = filterIds[0],
-                    ownerId = ownerId
-                ) ?: run {
-                    updatedAtRepository.insertUpdatedAtEntity(
-                        UpdatedAtEntity(
-                            filterId = filterId,
-                            updatedAt = null,
-                            ownerId = ownerId ?: ""
-                        )
-                    )
-                    "0"
+            val filterIds = inputData.getString("filterIds")?.split(",") ?: emptyList()
+
+            if (filterIds.isNotEmpty()) {
+                filterIds.forEach { filterId ->
+                    val updatedAt = updatedAtRepository.getUpdatedAtByOid(filterId, ownerId)
+                        ?: run {
+                            updatedAtRepository.insertUpdatedAtEntity(
+                                UpdatedAtEntity(filterId, ownerId = ownerId)
+                            )
+                            null
+                        }
+                    fetchRecords(updatedAt = updatedAt,uuid =  uuid, filterId = filterId,  ownerId = ownerId)
                 }
-                fetchRecords(
-                    updatedAt = updatedAt,
-                    uuid = uuid,
-                    filterId = filterId,
-                    ownerId = ownerId
-                )
+            } else {
+                fetchRecords(offset = null, uuid = uuid, filterId =  null,  ownerId = ownerId)
             }
-            syncDocuments(filterIds = filterIds, uuid = uuid, ownerId = ownerId)
-            updateFilePath(filterIds = filterIds, ownerId = ownerId)
-            syncDeletedAndEditedDocuments(filterIds = filterIds, ownerId = ownerId)
+
+            syncDocuments(filterIds, uuid, ownerId)
+            updateFilePath(filterIds = filterIds, ownerId =  ownerId)
+            syncDeletedAndEditedDocuments(filterIds, ownerId)
 
             Result.success()
         } catch (e: Exception) {
@@ -240,7 +234,6 @@ class SyncFileWorker(
         ownerId: String
     ) {
         var currentOffset = offset
-
         do {
             try {
                 val response = recordsRepository.getRecords(
@@ -249,7 +242,6 @@ class SyncFileWorker(
                     oid = filterId
                 )
 
-                // Break the loop if no response
                 if (response == null) {
                     Log.w("SYNC_DOCUMENTS", "No response for filterId: $filterId")
                     break

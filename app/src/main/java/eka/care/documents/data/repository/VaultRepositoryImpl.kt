@@ -18,11 +18,11 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
     ): Flow<List<VaultEntity>> {
         val safeFilterIds = filterIds?.takeIf { it.isNotEmpty() }
         return if (docType == -1) {
-            database.vaultDao().fetchDocumentsByOwnerId(ownerId = ownerId, filterIds = filterIds)
+            database.vaultDao().fetchDocuments(ownerId = ownerId, filterIds = filterIds)
                 .flowOn(Dispatchers.IO)
         } else {
             database.vaultDao()
-                .fetchDocuments(ownerId = ownerId, filterIds = safeFilterIds, docType = docType)
+                .fetchDocumentsByDocType(ownerId = ownerId, filterIds = safeFilterIds, docType = docType)
                 .flowOn(Dispatchers.IO)
         }
     }
