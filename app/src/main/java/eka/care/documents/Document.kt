@@ -71,21 +71,23 @@ object Document {
         return appContext
     }
 
-    fun initSyncingData(context: Context, ownerId : String?, filterId: String?, patientUuid : String){
+    fun initSyncingData(context: Context, ownerId : String?, filterIds: List<String>, patientUuid : String){
         val inputData = Data.Builder()
             .putString("p_uuid", patientUuid)
-            .putString("oid", filterId)
-            .putString("doctorId", ownerId)
+            .putString("ownerId", ownerId)
+            .putString("filterIds", filterIds.joinToString(","))
             .build()
         val constraints = Constraints.Builder()
             .setRequiredNetworkType(NetworkType.CONNECTED)
             .build()
-        val uniqueWorkName = "syncFileWorker_${patientUuid}_${System.currentTimeMillis()}"
+
+        val uniqueWorkName = "syncFileWorker_${patientUuid}_$filterIds$ownerId"
         val uniqueSyncWorkRequest =
             OneTimeWorkRequestBuilder<SyncFileWorker>()
                 .setInputData(inputData)
                 .setConstraints(constraints)
                 .build()
+
         WorkManager.getInstance(context)
             .enqueueUniqueWork(
                 uniqueWorkName,
@@ -114,26 +116,26 @@ object Document {
         return thumbnail
     }
 
-//    fun getDocuments(
-//        ownerId: String?,
-//        filterIds: List<String>?,
-//        docType: Int = -1,
-//        sortBy : DocumentSortEnum
-//    ): Flow<List<VaultEntity>>? {
-//        return if (sortBy == DocumentSortEnum.UPLOAD_DATE) {
-//            documentRepository?.fetchDocuments(
-//                ownerId = ownerId,
-//                filterIds = filterIds,
-//                docType = docType
-//            )
-//        } else {
-//            documentRepository?.fetchDocumentsByDocDate(
-//                ownerId = ownerId,
-//                filterIds = filterIds,
-//                docType = docType
-//            )
-//        }
-//    }
+    fun getDocuments(
+        ownerId: String,
+        filterIds: List<String>?,
+        docType: Int = -1,
+        sortBy : DocumentSortEnum
+    ): Flow<List<VaultEntity>>? {
+        return if (sortBy == DocumentSortEnum.UPLOAD_DATE) {
+            documentRepository?.fetchDocuments(
+                ownerId = ownerId,
+                filterIds = filterIds,
+                docType = docType
+            )
+        } else {
+            documentRepository?.fetchDocumentsByDocDate(
+                ownerId = ownerId,
+                filterIds = filterIds,
+                docType = docType
+            )
+        }
+    }
 
     suspend fun storeDocuments(vaultEntityList: List<VaultEntity>) {
         documentRepository?.storeDocuments(vaultEntityList)

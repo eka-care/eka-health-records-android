@@ -7,6 +7,7 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.google.gson.Gson
 import eka.care.documents.data.db.database.DocumentDatabase
+import eka.care.documents.data.db.entity.UpdatedAtEntity
 import eka.care.documents.data.db.entity.VaultEntity
 import eka.care.documents.data.repository.UpdatedAtRepository
 import eka.care.documents.data.repository.UpdatedAtRepositoryImpl
@@ -48,21 +49,22 @@ class SyncFileWorker(
             val ownerId = inputData.getString("ownerId")
             val filterIdsString = inputData.getString("filterIds")
             val filterIds = filterIdsString?.split(",") ?: emptyList()
-//            val updatedAt = updatedAtRepository.getUpdatedAtByOid(
-//                filterId = filterIds[0],
-//                ownerId = ownerId
-//            ) ?: run {
-//                updatedAtRepository.insertUpdatedAtEntity(
-//                    UpdatedAtEntity(
-//                        filterId = currentFilterId,
-//                        updatedAt = null,
-//                        ownerId = ownerId ?: ""
-//                    )
-//                )
-//                "0"
-//            }
             filterIds.forEach { filterId ->
+                val updatedAt = updatedAtRepository.getUpdatedAtByOid(
+                    filterId = filterIds[0],
+                    ownerId = ownerId
+                ) ?: run {
+                    updatedAtRepository.insertUpdatedAtEntity(
+                        UpdatedAtEntity(
+                            filterId = filterId,
+                            updatedAt = null,
+                            ownerId = ownerId ?: ""
+                        )
+                    )
+                    "0"
+                }
                 fetchRecords(
+                    updatedAt = updatedAt,
                     uuid = uuid,
                     filterId = filterId,
                     ownerId = ownerId
@@ -255,7 +257,7 @@ class SyncFileWorker(
                 }
 
                 // Extract Eka-Uat header
-                val ekaUat = response.headers()?.get("Eka-Uat")
+                val ekaUat = response.headers().get("Eka-Uat")
                 if (ekaUat != null) {
                     updatedAtRepository.updateUpdatedAtByOid(
                         filterId = filterId,

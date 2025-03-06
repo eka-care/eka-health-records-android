@@ -287,14 +287,12 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
             viewModelScope.launch {
                 val vaultDocuments =
                     vaultRepository.getDeletedDocuments(ownerId = ownerId, filterIds = filterIds)
-                Log.d("AYUSHI-2", vaultDocuments.toString())
                 vaultDocuments.forEach { vaultEntity ->
                     vaultEntity.documentId?.let {
                         val resp = myFileRepository.deleteDocument(
                             documentId = it,
                             filterId = vaultEntity.filterId
                         )
-                        Log.d("AYUSHI-3", vaultDocuments.toString())
                         if (resp in 200..299) {
                             vaultRepository.removeDocument(
                                 localId = vaultEntity.localId,

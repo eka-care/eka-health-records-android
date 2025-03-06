@@ -21,4 +21,3 @@
 #-renamesourcefileattribute SourceFile
 -keep class vault.records.** { *; }
 -keep class * extends com.google.protobuf.GeneratedMessageLite { *; }
--keep class android.util.Log { *; }

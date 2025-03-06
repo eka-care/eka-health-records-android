@@ -72,7 +72,9 @@ class DocumentInstrumentedTest {
             tags = "tag1,tag2",
             cta = Gson().toJson(CTA(action = "view", title = "View Document")),
             hashId = "hash123",
-            isAnalyzing = false,
+            isABHALinked = false,
+            shareWithDoctor = false,
+            isAnalyzing = false
         )
         val repository = VaultRepositoryImpl(DocumentDatabase.getInstance(context))
         repository.storeDocuments(listOf( testRecord))

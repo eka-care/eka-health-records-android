@@ -183,7 +183,6 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
     }
 
     override suspend fun removeDocument(localId: String, filterId: String?) {
-        Log.d("AYUSHI-3", "$localId $filterId")
         database.vaultDao().removeDocument(localId = localId, filterId = filterId)
         return
     }
