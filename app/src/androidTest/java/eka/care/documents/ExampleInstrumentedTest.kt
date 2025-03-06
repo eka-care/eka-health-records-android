@@ -59,7 +59,9 @@ class DocumentInstrumentedTest {
         val testRecord = VaultEntity(
             localId = "123",
             documentId = "doc123",
+            doctorId = "doc456",
             uuid = "uuid123",
+            oid = "oid123",
             filePath = listOf("path1", "path2"),
             fileType = "pdf",
             thumbnail = "thumbnail_url",
