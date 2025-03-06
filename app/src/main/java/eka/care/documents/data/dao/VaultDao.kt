@@ -107,12 +107,12 @@ interface VaultDao {
     UPDATE vault_table 
     SET smart_report_field = :smartReport 
     WHERE doc_id = :documentId 
-    AND (filter_id IS :filterId OR filter_id IS NULL AND :filterId IS NULL) 
-    AND (owner_id IS :ownerId OR owner_id IS NULL AND :ownerId IS NULL)
+    AND (:filterId IS NULL OR filter_id = :filterId) 
+    AND owner_id = :ownerId 
 """)
     suspend fun updateSmartReport(
         filterId: String?,
-        ownerId: String?,
+        ownerId: String,
         documentId: String,
         smartReport: String
     )

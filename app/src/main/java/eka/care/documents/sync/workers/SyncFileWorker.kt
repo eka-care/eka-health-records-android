@@ -46,7 +46,7 @@ class SyncFileWorker(
     override suspend fun doWork(): Result = coroutineScope {
         try {
             val uuid = inputData.getString("p_uuid")
-            val ownerId = inputData.getString("ownerId")
+            val ownerId = inputData.getString("ownerId") ?: return@coroutineScope Result.failure()
             val filterIdsString = inputData.getString("filterIds")
             val filterIds = filterIdsString?.split(",") ?: emptyList()
             filterIds.forEach { filterId ->
@@ -70,11 +70,10 @@ class SyncFileWorker(
                     ownerId = ownerId
                 )
             }
-            if (ownerId != null) {
-                syncDocuments(filterIds = filterIds, uuid = uuid, ownerId = ownerId)
-                updateFilePath(filterIds = filterIds, ownerId = ownerId)
-                syncDeletedAndEditedDocuments(filterIds = filterIds, ownerId = ownerId)
-            }
+            syncDocuments(filterIds = filterIds, uuid = uuid, ownerId = ownerId)
+            updateFilePath(filterIds = filterIds, ownerId = ownerId)
+            syncDeletedAndEditedDocuments(filterIds = filterIds, ownerId = ownerId)
+
             Result.success()
         } catch (e: Exception) {
             Result.failure()
@@ -238,7 +237,7 @@ class SyncFileWorker(
         updatedAt: String? = null,
         uuid: String?,
         filterId: String?,
-        ownerId: String?
+        ownerId: String
     ) {
         var currentOffset = offset
 

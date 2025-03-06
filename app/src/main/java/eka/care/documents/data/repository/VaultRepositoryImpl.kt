@@ -59,7 +59,7 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
 
     override suspend fun updateSmartReport(
         filterId: String?,
-        ownerId: String?,
+        ownerId: String,
         documentId: String,
         smartReport: String
     ) {
