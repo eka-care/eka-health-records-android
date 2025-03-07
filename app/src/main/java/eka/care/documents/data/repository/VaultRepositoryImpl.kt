@@ -1,37 +1,82 @@
 package eka.care.documents.data.repository
 
+import android.util.Log
 import eka.care.documents.data.db.database.DocumentDatabase
 import eka.care.documents.data.db.entity.VaultEntity
 import eka.care.documents.data.db.model.AvailableDocTypes
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
 
 class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultRepository {
-    override fun fetchDocuments(ownerId: String?, filterId: String?, docType: Int): Flow<List<VaultEntity>> {
+    // flowOn is used to specify the dispatcher (thread) on which the upstream operations of a Flow should be executed
+    override fun fetchDocuments(
+        ownerId: String,
+        filterIds: List<String>?,
+        docType: Int
+    ): Flow<List<VaultEntity>> {
+        val safeFilterIds = filterIds?.takeIf { it.isNotEmpty() }
         return if (docType == -1) {
-            database.vaultDao().fetchDocumentsByOwnerId(ownerId = ownerId, filterId = filterId)
+            database.vaultDao().fetchDocuments(ownerId = ownerId, filterIds = filterIds)
+                .flowOn(Dispatchers.IO)
         } else {
-            database.vaultDao().fetchDocuments(ownerId = ownerId, filterId = filterId, docType = docType)
+            database.vaultDao()
+                .fetchDocumentsByDocType(ownerId = ownerId, filterIds = safeFilterIds, docType = docType)
+                .flowOn(Dispatchers.IO)
         }
     }
 
-    override suspend fun getSmartReport(filterId: String?, ownerId: String?, documentId: String) : String?{
+    override fun fetchDocumentsByDocDate(
+        filterIds: List<String>?,
+        docType: Int,
+        ownerId: String
+    ): Flow<List<VaultEntity>> {
+        return if (docType == -1) {
+            database.vaultDao().fetchDocumentsByDocDate(filterIds = filterIds, ownerId = ownerId)
+                .flowOn(Dispatchers.IO)
+        } else {
+            database.vaultDao()
+                .fetchDocumentsByDocDateAndDocType(
+                    filterIds = filterIds,
+                    docType = docType,
+                    ownerId = ownerId
+                )
+                .flowOn(Dispatchers.IO)
+        }
+    }
+
+    override suspend fun getSmartReport(
+        filterId: String?,
+        ownerId: String?,
+        documentId: String
+    ): String? {
         return withContext(Dispatchers.IO) {
             val result = database.vaultDao().getSmartReport(documentId = documentId)
             return@withContext result
         }
     }
 
-    override suspend fun updateSmartReport(filterId: String?, ownerId: String?, documentId: String, smartReport: String) {
+    override suspend fun updateSmartReport(
+        filterId: String?,
+        ownerId: String,
+        documentId: String,
+        smartReport: String
+    ) {
         withContext(Dispatchers.IO) {
-            database.vaultDao().updateSmartReport(filterId = filterId, ownerId = ownerId, documentId = documentId, smartReport = smartReport)
+            database.vaultDao().updateSmartReport(
+                filterId = filterId,
+                ownerId = ownerId,
+                documentId = documentId,
+                smartReport = smartReport
+            )
         }
     }
 
     override suspend fun alreadyExistDocument(documentId: String, ownerId: String?): Int? {
         return withContext(Dispatchers.IO) {
-            val isExist = database.vaultDao().alreadyExistDocument(documentId = documentId, ownerId = ownerId)
+            val isExist =
+                database.vaultDao().alreadyExistDocument(documentId = documentId, ownerId = ownerId)
             return@withContext isExist
         }
     }
@@ -46,8 +91,8 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
         database.vaultDao().storeDocuments(vaultEntityList)
     }
 
-    override suspend fun deleteDocument(filterId: String?, localId: String) {
-        database.vaultDao().deleteDocument(filterId = filterId, localId = localId)
+    override suspend fun deleteDocument(localId: String) {
+        database.vaultDao().deleteDocument(localId = localId)
         return
     }
 
@@ -65,8 +110,6 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
         )
     }
 
-    // OLD
-
     override suspend fun setThumbnail(thumbnail: String, documentId: String) {
         database.vaultDao().setThumbnail(thumbnail = thumbnail, docId = documentId)
     }
@@ -79,7 +122,7 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
         hasId: String,
         cta: String?,
         tags: String,
-        autoTags : String,
+        autoTags: String,
         documentDate: Long?
     ) {
         database.vaultDao().storeDocument(
@@ -95,67 +138,40 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
         )
     }
 
-    override suspend fun getUnSyncedDocuments(filterId: String?, ownerId: String?): List<VaultEntity> {
+    override suspend fun getUnSyncedDocuments(
+        filterIds: List<String>?,
+        ownerId: String
+    ): List<VaultEntity> {
         val resp = database.vaultDao().getUnSyncedDocuments(
-            filterId = filterId,
+            filterIds = filterIds,
             ownerId = ownerId
         )
         return resp
     }
 
-    override suspend fun getDeletedDocuments(filterId: String?, ownerId: String?): List<VaultEntity> {
-        return database.vaultDao().getDeletedDocuments(filterId = filterId, ownerId = ownerId)
+    override suspend fun getDeletedDocuments(
+        filterIds: List<String>?,
+        ownerId: String
+    ): List<VaultEntity> {
+        return database.vaultDao().getDeletedDocuments(filterIds = filterIds, ownerId = ownerId)
     }
 
-    override suspend fun getEditedDocuments(filterId: String?, ownerId: String?): List<VaultEntity> {
-        return database.vaultDao().getEditedDocuments(filterId = filterId, ownerId = ownerId)
-    }
-
-    override suspend fun fetchDocumentData(filterId: String, localId: String): VaultEntity {
-        return database.vaultDao().getDocumentData(filterId = filterId, localId = localId)
+    override suspend fun getEditedDocuments(
+        filterIds: List<String>?,
+        ownerId: String
+    ): List<VaultEntity> {
+        return database.vaultDao().getEditedDocuments(filterIds = filterIds, ownerId = ownerId)
     }
 
     override suspend fun getAvailableDocTypes(
-        filterId: String?,
+        filterIds: List<String>?,
         ownerId: String?
     ): List<AvailableDocTypes> {
-        return database.vaultDao().getAvailableDocTypes(filterId = filterId, ownerId = ownerId)
+        return database.vaultDao().getAvailableDocTypes(filterIds = filterIds, ownerId = ownerId)
     }
-
-    override fun fetchDocuments(
-        filterId: String,
-        docType: Int,
-        ownerId : String?
-    ): Flow<List<VaultEntity>> {
-        return if (docType == -1) {
-            database.vaultDao().fetchDocuments(filterId = filterId, ownerId = ownerId)
-        } else {
-            database.vaultDao()
-                .fetchDocumentsByDocType(filterId = filterId, docType = docType, ownerId = ownerId)
-        }
-    }
-
-    override fun fetchDocumentsByDocDate(
-        filterId: String?,
-        docType: Int,
-        ownerId: String?
-    ): Flow<List<VaultEntity>> {
-        return if (docType == -1) {
-            database.vaultDao().fetchDocumentsByDocDate(filterId = filterId, ownerId = ownerId)
-        } else {
-            database.vaultDao()
-                .fetchDocumentsByDocType(filterId = filterId, docType = docType, ownerId = ownerId)
-        }
-    }
-
 
     override suspend fun updateDocumentId(documentId: String, localId: String) {
         database.vaultDao().updateDocumentId(documentId, localId)
-    }
-
-    override suspend fun getLocalIdBySource(source: Int, filterId: String): List<String> {
-
-        return database.vaultDao().getLocalIdBySource(filterId = filterId, source)
     }
 
     override suspend fun getLocalId(docId: String): String? {
@@ -172,10 +188,10 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
     }
 
     override suspend fun getDocumentsWithoutFilePath(
-        ownerId: String?,
-        filterId: String?
+        ownerId: String,
+        filterIds: List<String>?
     ): List<VaultEntity> {
         return database.vaultDao()
-            .fetchDocumentsWithoutFilePath(ownerId = ownerId, filterId = filterId)
+            .fetchDocumentsWithoutFilePath(ownerId = ownerId, filterIds = filterIds)
     }
 }

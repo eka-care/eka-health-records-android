@@ -117,11 +117,11 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
         _isOnline.value = activeNetwork?.isConnected == true
     }
 
-    fun getTags(documentId: String, userId: String) {
+    fun getTags(documentId: String, filterId: String) {
         viewModelScope.launch {
             _selectedTags.value = emptyList()
             val response =
-                myFileRepository.getDocument(documentId = documentId, filterId = userId)?.tags
+                myFileRepository.getDocument(documentId = documentId, filterId = filterId)?.tags
             //   val apiTags = response?.let { Tags().getTagIdByNames(it) } ?: emptyList()
             val cardTags = cardClickData.value?.tags?.split(",")?.map { it.trim() } ?: emptyList()
             val allTags = (cardTags).distinct()
@@ -160,7 +160,9 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun getLocalRecords(oid: String, docType: Int = -1, doctorId: String?) {
+    fun getLocalRecords(filterIds: List<String>, docType: Int = -1, ownerId: String) {
+        _getRecordsState.value = GetRecordsState.Loading
+
         documentType.intValue = docType
         if (::launch.isInitialized) {
             launch.cancel()
@@ -169,15 +171,15 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
             try {
                 val documentsFlowResp = if (sortBy.value == DocumentSortEnum.UPLOAD_DATE) {
                     vaultRepository.fetchDocuments(
-                        filterId = oid,
+                        filterIds = filterIds,
                         docType = documentType.intValue,
-                        ownerId = doctorId
+                        ownerId = ownerId
                     )
                 } else {
                     vaultRepository.fetchDocumentsByDocDate(
-                        filterId = oid,
+                        filterIds = filterIds,
                         docType = documentType.intValue,
-                        ownerId = doctorId
+                        ownerId = ownerId
                     )
                 }
 
@@ -188,7 +190,7 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
                             RecordModel(
                                 localId = vaultEntity.localId,
                                 documentId = vaultEntity.documentId,
-                                ownerId = doctorId,
+                                ownerId = ownerId,
                                 documentType = vaultEntity.documentType,
                                 documentDate = vaultEntity.documentDate,
                                 createdAt = vaultEntity.createdAt,
@@ -202,7 +204,7 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
                                 isAnalyzing = vaultEntity.isAnalyzing
                             )
                         }
-                        getAvailableDocTypes(oid = oid, doctorId = doctorId)
+                        getAvailableDocTypes(filterIds = filterIds, ownerId = ownerId)
                         _getRecordsState.value = if (records.isEmpty()) {
                             GetRecordsState.EmptyState
                         } else {
@@ -226,68 +228,76 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
     fun editDocument(
         localId: String,
         docType: Int?,
-        oid: String,
+        filterId: String,
         docDate: Long?,
         tags: String,
-        doctorId: String
+        ownerId: String,
+        allFilterIds: List<String>
     ) {
         try {
             viewModelScope.launch {
-                vaultRepository.editDocument(localId, docType, docDate, filterId = oid)
+                vaultRepository.editDocument(localId, docType, docDate, filterId = filterId)
                 val tagList = tags.split(",")
                 //  val tagNames = Tags().getTagNamesByIds(tagList)
                 val updateFileDetailsRequest = UpdateFileDetailsRequest(
-                    oid = oid,
+                    filterId = filterId,
                     documentType = docTypes.find { it.idNew == docType }?.id,
                     documentDate = convertLongToFormattedDate(docDate),
                     userTags = emptyList(),
                     linkAbha = false
                 )
-
                 cardClickData.value?.documentId?.let {
                     myFileRepository.updateFileDetails(
                         documentId = it,
-                        oid = oid,
+                        oid = filterId,
                         updateFileDetailsRequest = updateFileDetailsRequest
                     )
                 }
-                getLocalRecords(oid, doctorId = doctorId)
+                getLocalRecords(filterIds = allFilterIds, ownerId = ownerId)
             }
         } catch (_: Exception) {
         }
     }
 
-    fun deleteDocument(localId: String, oid: String, doctorId: String) {
+    fun deleteDocument(
+        localId: String,
+        ownerId: String,
+        allFilterIds: List<String>
+    ) {
         try {
             viewModelScope.launch {
-                vaultRepository.deleteDocument(filterId = oid, localId = localId)
-                getLocalRecords(oid, doctorId = doctorId)
+                vaultRepository.deleteDocument(localId = localId)
+                getLocalRecords(filterIds = allFilterIds, ownerId = ownerId)
             }
         } catch (_: Exception) {
         }
     }
 
-    fun syncEditedDocuments(oid: String, doctorId: String?) {
+    fun syncEditedDocuments(filterIds: List<String>, ownerId: String) {
         try {
             viewModelScope.launch {
-                vaultRepository.getEditedDocuments(filterId = oid, ownerId = doctorId)
+                vaultRepository.getEditedDocuments(filterIds = filterIds, ownerId = ownerId)
             }
         } catch (_: Exception) {
         }
     }
 
-    fun syncDeletedDocuments(oid: String, doctorId: String?) {
+    fun syncDeletedDocuments(filterIds: List<String>, ownerId: String) {
         try {
             viewModelScope.launch {
                 val vaultDocuments =
-                    vaultRepository.getDeletedDocuments(ownerId = doctorId, filterId = oid)
-
+                    vaultRepository.getDeletedDocuments(ownerId = ownerId, filterIds = filterIds)
                 vaultDocuments.forEach { vaultEntity ->
                     vaultEntity.documentId?.let {
-                        val resp = myFileRepository.deleteDocument(documentId = it, filterId = oid)
-
+                        val resp = myFileRepository.deleteDocument(
+                            documentId = it,
+                            filterId = vaultEntity.filterId
+                        )
                         if (resp in 200..299) {
-                            vaultRepository.removeDocument(localId = vaultEntity.localId, filterId = oid)
+                            vaultRepository.removeDocument(
+                                localId = vaultEntity.localId,
+                                filterId = vaultEntity.filterId
+                            )
                         }
                     }
 
@@ -297,14 +307,14 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun getAvailableDocTypes(oid: String, doctorId: String?) {
+    fun getAvailableDocTypes(filterIds: List<String>, ownerId: String?) {
         try {
             viewModelScope.launch {
                 _getAvailableDocTypes.value =
                     GetAvailableDocTypesState(
                         resp = vaultRepository.getAvailableDocTypes(
-                            filterId = oid,
-                            ownerId = doctorId
+                            filterIds = filterIds,
+                            ownerId = ownerId
                         )
                     )
             }

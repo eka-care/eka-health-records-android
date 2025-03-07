@@ -41,7 +41,8 @@ fun DocumentBottomSheetContent(
     cameraLauncher: ManagedActivityResultLauncher<Intent, ActivityResult>,
     galleryLauncher: ManagedActivityResultLauncher<PickVisualMediaRequest, List<@JvmSuppressWildcards Uri>>,
     viewModel: RecordsViewModel,
-    params: RecordParamsModel
+    params: RecordParamsModel,
+    allFilterIds : List<String>
 ) {
     val cameraPermissionState = rememberPermissionState(permission = Manifest.permission.CAMERA)
     when (viewModel.documentBottomSheetType) {
@@ -135,9 +136,9 @@ fun DocumentBottomSheetContent(
                 onClick = {
                     viewModel.sortBy.value = it
                     viewModel.getLocalRecords(
-                        oid = params.patientId,
-                        viewModel.documentType.value,
-                        doctorId = params.doctorId
+                        filterIds = allFilterIds,
+                        docType = viewModel.documentType.value,
+                        ownerId = params.ownerId
                     )
                     onClick(CTA(action = RecordsAction.ACTION_CLOSE_SHEET))
                 },

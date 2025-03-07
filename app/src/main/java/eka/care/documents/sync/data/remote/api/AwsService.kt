@@ -10,13 +10,15 @@ import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.Part
 import retrofit2.http.PartMap
+import retrofit2.http.Query
 import retrofit2.http.Url
 
 interface AwsService {
 
     @POST("api/v1/docs")
     suspend fun filesUploadInit(
-        @Body request: FilesUploadInitRequest
+        @Body request: FilesUploadInitRequest,
+        @Query("p_oid") filterId: String?
     ): NetworkResponse<FilesUploadInitResponse, FilesUploadInitResponse>
 
     @POST

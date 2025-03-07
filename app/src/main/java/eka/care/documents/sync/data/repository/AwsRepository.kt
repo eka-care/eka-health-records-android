@@ -38,16 +38,16 @@ class AwsRepository {
         val batch = mutableListOf<Batch>()
 
         if (isMultiFile) {
-            batch.add(Batch(files = files, isEncrypted = isEncrypted, sharable = false, patientUuid = patientUuid, patientOid = patientOid, tags = tags, documentType = documentType))
+            batch.add(Batch(files = files, isEncrypted = isEncrypted, sharable = false, tags = tags, documentType = documentType))
         } else {
             files.forEach {
-                batch.add(Batch(files = listOf(it), isEncrypted = isEncrypted, sharable = false, patientUuid = patientUuid, patientOid = patientOid, tags = tags, documentType = documentType))
+                batch.add(Batch(files = listOf(it), isEncrypted = isEncrypted, sharable = false, tags = tags, documentType = documentType))
             }
         }
         val body = FilesUploadInitRequest(batchRequest = batch)
         return withContext(Dispatchers.IO) {
             val response =
-                when (val response = service.filesUploadInit(body)) {
+                when (val response = service.filesUploadInit(body, patientOid)) {
                     is NetworkResponse.Success -> response.body
                     is NetworkResponse.ServerError -> response.body
                     is NetworkResponse.NetworkError -> null

@@ -33,7 +33,7 @@ class DocumentActivity : AppCompatActivity() {
 
         params = Gson().fromJson(jsonString, JsonObject::class.java)
 
-        if (!params.has(MedicalRecordParams.PATIENT_ID.key)) {
+        if (!params.has(MedicalRecordParams.FILTER_ID.key)) {
             Log.e("DocumentActivity", "Patient ID is missing!")
             return
         }
@@ -47,11 +47,11 @@ class DocumentActivity : AppCompatActivity() {
         setContent {
             val context = this@DocumentActivity
             initData(
-                oid = params[MedicalRecordParams.PATIENT_ID.key]?.asString ?: "",
-                doctorId = params[MedicalRecordParams.DOCTOR_ID.key]?.asString ?: "",
+                ownerId = params[MedicalRecordParams.OWNER_ID.key]?.asString ?: "",
                 viewModel = viewModel,
                 context = context,
-                patientUuid = params[MedicalRecordParams.PATIENT_UUID.key]?.asString ?: ""
+                patientUuid = params[MedicalRecordParams.PATIENT_UUID.key]?.asString ?: "",
+                filterIds = listOf()
             )
             DocumentScreen(
                 param = params, onBackClick = {
@@ -76,10 +76,11 @@ class RecordsViewModelFactory(private val application: Application) : ViewModelP
 }
 
 enum class MedicalRecordParams(val key: String) {
-    PATIENT_ID("pid"),
-    DOCTOR_ID("doid"),
+    FILTER_ID("filter_id"),
+    OWNER_ID("owner_id"),
     PATIENT_UUID("p_uuid"),
     PATIENT_NAME("name"),
     PATIENT_GENDER("gen"),
-    PATIENT_AGE("age")
+    PATIENT_AGE("age"),
+    LINKS("links")
 }

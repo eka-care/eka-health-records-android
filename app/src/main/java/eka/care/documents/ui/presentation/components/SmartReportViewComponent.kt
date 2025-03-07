@@ -139,7 +139,7 @@ private fun initData(
     docId: String,
     userId: String?,
     localId: String,
-    doctorId: String?
+    doctorId: String
 ) {
     viewModel.getDocument(docId = docId, userId = userId, localId = localId)
     viewModel.getSmartReport(documentId = docId, ownerId = doctorId, filterId = userId)

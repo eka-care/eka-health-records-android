@@ -6,7 +6,7 @@ import com.google.gson.annotations.SerializedName
 @Keep
 data class UpdateFileDetailsRequest(
     @SerializedName("oid")
-    val oid: String? = null,
+    val filterId: String? = null,
 
     @SerializedName("dt")
     val documentType: String? = null,

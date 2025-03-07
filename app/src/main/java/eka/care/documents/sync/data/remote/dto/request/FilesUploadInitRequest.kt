@@ -23,10 +23,6 @@ data class Batch(
     val tags: List<String>? = null,
     @SerializedName("is_encrypted")
     val isEncrypted: Boolean = false,
-    @SerializedName("patient_oid")
-    val patientOid : String?,
-    @SerializedName("p_uuid")
-    val patientUuid : String?,
     @SerializedName("p_poid")
     val captainOid : String? = null
 )

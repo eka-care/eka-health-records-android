@@ -22,6 +22,7 @@ import eka.care.documents.sync.data.repository.SyncRecordsRepository
 import eka.care.documents.sync.workers.SyncFileWorker
 import eka.care.documents.ui.presentation.activity.DocumentViewActivity
 import eka.care.documents.ui.presentation.activity.SmartReportActivity
+import eka.care.documents.ui.presentation.components.FileSharing
 import eka.care.documents.ui.presentation.model.CTA
 import eka.care.documents.ui.presentation.model.RecordModel
 import eka.care.documents.ui.presentation.screens.DocumentSortEnum
@@ -70,21 +71,23 @@ object Document {
         return appContext
     }
 
-    fun initSyncingData(context: Context, doctorId : String?, oid: String?, patientUuid : String){
+    fun initSyncingData(context: Context, ownerId : String?, filterIds: List<String>?, patientUuid : String){
         val inputData = Data.Builder()
             .putString("p_uuid", patientUuid)
-            .putString("oid", oid)
-            .putString("doctorId", doctorId)
+            .putString("ownerId", ownerId)
+            .putString("filterIds", filterIds?.joinToString(","))
             .build()
         val constraints = Constraints.Builder()
             .setRequiredNetworkType(NetworkType.CONNECTED)
             .build()
-        val uniqueWorkName = "syncFileWorker_${patientUuid}_${System.currentTimeMillis()}"
+
+        val uniqueWorkName = "syncFileWorker_${patientUuid}_$filterIds$ownerId"
         val uniqueSyncWorkRequest =
             OneTimeWorkRequestBuilder<SyncFileWorker>()
                 .setInputData(inputData)
                 .setConstraints(constraints)
                 .build()
+
         WorkManager.getInstance(context)
             .enqueueUniqueWork(
                 uniqueWorkName,
@@ -114,21 +117,21 @@ object Document {
     }
 
     fun getDocuments(
-        ownerId: String?,
-        filterId: String?,
+        ownerId: String,
+        filterIds: List<String>?,
         docType: Int = -1,
         sortBy : DocumentSortEnum
     ): Flow<List<VaultEntity>>? {
         return if (sortBy == DocumentSortEnum.UPLOAD_DATE) {
             documentRepository?.fetchDocuments(
                 ownerId = ownerId,
-                filterId = filterId,
+                filterIds = filterIds,
                 docType = docType
             )
         } else {
             documentRepository?.fetchDocumentsByDocDate(
                 ownerId = ownerId,
-                filterId = filterId,
+                filterIds = filterIds,
                 docType = docType
             )
         }
@@ -138,8 +141,8 @@ object Document {
         documentRepository?.storeDocuments(vaultEntityList)
     }
 
-    suspend fun deleteDocument(filterId: String?, localId: String) {
-        documentRepository?.deleteDocument(filterId= filterId, localId = localId)
+    suspend fun deleteDocument(localId: String) {
+        documentRepository?.deleteDocument(localId = localId)
     }
 
     suspend fun editDocument(
@@ -156,11 +159,11 @@ object Document {
         )
     }
 
-    suspend fun getAvailableDocTypes(filterId: String?, ownerId: String?): List<AvailableDocTypes>?{
-       return documentRepository?.getAvailableDocTypes(filterId = filterId, ownerId = ownerId)
+    suspend fun getAvailableDocTypes(filterIds: List<String>?, ownerId: String?): List<AvailableDocTypes>?{
+       return documentRepository?.getAvailableDocTypes(filterIds = filterIds, ownerId = ownerId)
     }
 
-    fun view(context: Context, model: RecordModel, oid: String?){
+    fun view(context: Context, model: RecordModel, filterId: String?){
         if (model.autoTags?.split(",")?.contains("1") == true) {
             val date = RecordsUtility.convertLongToDateString(model.documentDate ?: model.createdAt)
             Intent(context, SmartReportActivity::class.java)
@@ -168,7 +171,7 @@ object Document {
                     it.putExtra("doc_id", model.documentId)
                     it.putExtra("local_id", model.localId)
                     it.putExtra("doctor_id", model.ownerId)
-                    it.putExtra("user_id", oid)
+                    it.putExtra("user_id", filterId)
                     it.putExtra("doc_date", date)
                     context.startActivity(it)
                 }
@@ -177,7 +180,7 @@ object Document {
             Intent(context, DocumentViewActivity::class.java).also {
                 it.putExtra("local_id", model.localId)
                 it.putExtra("doc_id", model.documentId)
-                it.putExtra("user_id", oid)
+                it.putExtra("user_id", filterId)
                 context.startActivity(it)
             }
             return
@@ -188,13 +191,17 @@ object Document {
     fun destroy() {
         db?.clearAllTables()
     }
-    suspend fun getRecordById(id: String?): RecordModel? {
+    suspend fun getDocumentById(id: String?): RecordModel? {
         if(id.isNullOrEmpty()) return null
         val vaultEntity = db?.vaultDao()?.getDocumentById(id)
         return vaultEntity?.toRecordModel()
     }
 
     fun getConfiguration() = configuration
+
+    fun shareFiles(context: Context, filePaths : List<String>){
+        FileSharing().shareFiles(context = context, filePaths = filePaths)
+    }
 }
 fun VaultEntity.toRecordModel(): RecordModel {
     return RecordModel(

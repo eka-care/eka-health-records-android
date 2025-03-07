@@ -120,7 +120,7 @@ class DocumentPreviewViewModel(val app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun getSmartReport(ownerId: String?, filterId: String?, documentId: String) {
+    fun getSmartReport(ownerId: String, filterId: String?, documentId: String) {
         viewModelScope.launch {
             _documentSmart.value = DocumentSmartReportState.Loading
             try {

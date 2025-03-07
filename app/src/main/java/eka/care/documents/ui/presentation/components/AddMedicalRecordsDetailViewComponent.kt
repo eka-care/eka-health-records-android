@@ -3,6 +3,7 @@ package eka.care.documents.ui.presentation.components
 import android.app.Activity
 import android.app.Application
 import android.content.Intent
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -90,7 +91,7 @@ fun AddMedicalRecordsDetailViewComponent(
     paramsModel: RecordParamsModel,
     editDocument: Boolean
 ) {
-    init(viewModel = viewModel, userId =  paramsModel.patientId, documentId = viewModel.cardClickData.value?.documentId)
+    init(viewModel = viewModel, filterId =  paramsModel.filterId, documentId = viewModel.cardClickData.value?.documentId)
     val context = LocalContext.current
     val compressedFiles by viewModel.compressedFiles.collectAsState(initial = emptyList())
     val initialSelectedDocType = viewModel.cardClickData.value?.documentType
@@ -116,17 +117,28 @@ fun AddMedicalRecordsDetailViewComponent(
     } else {
         if (selectedDate.value.length > 1) selectedDate.value else "Add Date"
     }
-
+    val filterIdsToProcess = mutableListOf<String>().apply {
+        if (paramsModel.filterId.isNotEmpty()) {
+            add(paramsModel.filterId)
+        }
+        if (!paramsModel.links.isNullOrBlank()) {
+            paramsModel.links.split(",")
+                .map { it.trim() }
+                .filter { it.isNotEmpty() && it != paramsModel.filterId }
+                .forEach { add(it) }
+        }
+    }
     val onAddMedicalRecord = {
 
         if (editDocument) {
             viewModel.editDocument(
                 localId = viewModel.cardClickData.value?.localId ?: "",
                 docType = selectedChipId,
-                oid = paramsModel.patientId,
+                filterId = paramsModel.filterId,
                 docDate = timestampToLong(date),
                 tags = selectedTags.joinToString(separator = ","),
-                doctorId = paramsModel.doctorId,
+                ownerId = paramsModel.ownerId,
+                allFilterIds = filterIdsToProcess
             )
             onClick(CTA(action = "onBackClick"))
         } else {
@@ -142,8 +154,8 @@ fun AddMedicalRecordsDetailViewComponent(
                     localId = UUID.randomUUID().toString(),
                     documentId = null,
                     uuid = paramsModel.uuid,
-                    ownerId = paramsModel.doctorId,
-                    filterId = paramsModel.patientId,
+                    ownerId = paramsModel.ownerId,
+                    filterId = paramsModel.filterId,
                     filePath = if (fileType == FileType.IMAGE.ordinal) compressedFiles.map { it.path } else fileList.map { it.path },
                     fileType = if (fileType == FileType.IMAGE.ordinal) "img" else "pdf",
                     thumbnail = if (fileType == FileType.IMAGE.ordinal) {
@@ -376,9 +388,9 @@ fun AddMedicalRecordsDetailViewComponent(
     )
 }
 
-private fun init(viewModel: RecordsViewModel, documentId : String?, userId : String){
+private fun init(viewModel: RecordsViewModel, documentId : String?, filterId : String){
     if (documentId != null) {
-        viewModel.getTags(documentId = documentId, userId = userId)
+        viewModel.getTags(documentId = documentId, filterId = filterId)
     }
 }
 
