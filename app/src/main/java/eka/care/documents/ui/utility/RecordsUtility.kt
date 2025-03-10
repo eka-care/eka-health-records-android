@@ -4,15 +4,12 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
-import android.net.ConnectivityManager
-import android.net.NetworkCapabilities
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import android.util.Log
 import android.webkit.MimeTypeMap
 import eka.care.documents.sync.data.repository.MyFileRepository
-import eka.care.documents.ui.utility.RecordsUtility.Companion.saveFile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.ResponseBody
