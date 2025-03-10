@@ -91,7 +91,11 @@ fun AddMedicalRecordsDetailViewComponent(
     paramsModel: RecordParamsModel,
     editDocument: Boolean
 ) {
-    init(viewModel = viewModel, filterId =  paramsModel.filterId, documentId = viewModel.cardClickData.value?.documentId)
+    init(
+        viewModel = viewModel,
+        filterId = paramsModel.filterId,
+        documentId = viewModel.cardClickData.value?.documentId
+    )
     val context = LocalContext.current
     val compressedFiles by viewModel.compressedFiles.collectAsState(initial = emptyList())
     val initialSelectedDocType = viewModel.cardClickData.value?.documentType
@@ -142,7 +146,7 @@ fun AddMedicalRecordsDetailViewComponent(
             )
             onClick(CTA(action = "onBackClick"))
         } else {
-            if (selectedChipId != null) {
+            if (selectedChipId != null && fileList.isNotEmpty()) {
                 val sdf = SimpleDateFormat("EEE, dd MMM, yyyy", Locale.getDefault())
                 val parsedDate = try {
                     sdf.parse(selectedDate.value)
@@ -159,12 +163,14 @@ fun AddMedicalRecordsDetailViewComponent(
                     filePath = if (fileType == FileType.IMAGE.ordinal) compressedFiles.map { it.path } else fileList.map { it.path },
                     fileType = if (fileType == FileType.IMAGE.ordinal) "img" else "pdf",
                     thumbnail = if (fileType == FileType.IMAGE.ordinal) {
-                        compressedFiles[0].path
+                        compressedFiles.firstOrNull()?.path ?: ""
                     } else {
-                        ThumbnailGenerator.getThumbnailFromPdf(
-                            app = context.applicationContext as Application,
-                            fileList[0]
-                        )
+                        if (fileList.isNotEmpty()) {
+                            ThumbnailGenerator.getThumbnailFromPdf(
+                                app = context.applicationContext as Application,
+                                fileList[0]
+                            )
+                        } else ""
                     },
                     createdAt = System.currentTimeMillis() / 1000,
                     source = null,
@@ -368,7 +374,9 @@ fun AddMedicalRecordsDetailViewComponent(
             Button(
                 colors = ButtonDefaults.buttonColors(
                     contentColor = DarwinTouchNeutral0,
-                    containerColor = if (selectedChipId != null) DarwinTouchPrimary else DarwinTouchNeutral600
+                    containerColor = if (selectedChipId != null &&
+                        (compressedFiles.isNotEmpty() || fileList.isNotEmpty())) DarwinTouchPrimary
+                    else DarwinTouchNeutral600
                 ),
                 onClick = {
                     if (selectedChipId != null) onAddMedicalRecord()
@@ -388,7 +396,7 @@ fun AddMedicalRecordsDetailViewComponent(
     )
 }
 
-private fun init(viewModel: RecordsViewModel, documentId : String?, filterId : String){
+private fun init(viewModel: RecordsViewModel, documentId: String?, filterId: String) {
     if (documentId != null) {
         viewModel.getTags(documentId = documentId, filterId = filterId)
     }
