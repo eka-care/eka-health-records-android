@@ -374,9 +374,7 @@ fun AddMedicalRecordsDetailViewComponent(
             Button(
                 colors = ButtonDefaults.buttonColors(
                     contentColor = DarwinTouchNeutral0,
-                    containerColor = if (selectedChipId != null &&
-                        (compressedFiles.isNotEmpty() || fileList.isNotEmpty())) DarwinTouchPrimary
-                    else DarwinTouchNeutral600
+                    containerColor =  if (selectedChipId != null) DarwinTouchPrimary else DarwinTouchNeutral600
                 ),
                 onClick = {
                     if (selectedChipId != null) onAddMedicalRecord()
