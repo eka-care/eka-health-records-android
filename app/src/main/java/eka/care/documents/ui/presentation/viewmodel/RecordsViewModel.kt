@@ -5,6 +5,7 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
+import android.net.NetworkRequest
 import android.net.Uri
 import android.util.Log
 import androidx.compose.runtime.getValue
@@ -52,6 +53,8 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
     private val _isOnline = MutableStateFlow(true)
     val isOnline = _isOnline.asStateFlow()
 
+    private var networkCallback: ConnectivityManager.NetworkCallback? = null
+
     val cardClickData = mutableStateOf<RecordModel?>(null)
 
     private val _getRecordsState = MutableStateFlow<GetRecordsState>(GetRecordsState.Loading)
@@ -86,10 +89,16 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun observeNetworkStatus(context: Context) {
+        unregisterNetworkCallback(context)
+
         val connectivityManager =
             context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
-        val callback = object : ConnectivityManager.NetworkCallback() {
+        val activeNetwork = connectivityManager.activeNetwork
+        val capabilities = connectivityManager.getNetworkCapabilities(activeNetwork)
+        _isOnline.value = capabilities?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) ?: false
+
+        networkCallback = object : ConnectivityManager.NetworkCallback() {
             override fun onAvailable(network: Network) {
                 _isOnline.value = true
             }
@@ -102,19 +111,37 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
                 network: Network,
                 capabilities: NetworkCapabilities
             ) {
-                _isOnline.value =
-                    capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                _isOnline.value = capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
             }
         }
 
-        val networkRequest = android.net.NetworkRequest.Builder()
-            .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-            .build()
+        try {
+            val request = NetworkRequest.Builder()
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                .build()
 
-        connectivityManager.registerNetworkCallback(networkRequest, callback)
+            connectivityManager.registerNetworkCallback(request, networkCallback!!)
+        } catch (e: Exception) {
+            Log.e("RecordsViewModel", "Failed to register network callback", e)
+        }
+    }
 
-        val activeNetwork = connectivityManager.activeNetworkInfo
-        _isOnline.value = activeNetwork?.isConnected == true
+    private fun unregisterNetworkCallback(context: Context) {
+        networkCallback?.let {
+            try {
+                val connectivityManager =
+                    context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+                connectivityManager.unregisterNetworkCallback(it)
+            } catch (e: Exception) {
+                Log.e("RecordsViewModel", "Failed to unregister network callback", e)
+            }
+        }
+        networkCallback = null
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        unregisterNetworkCallback(context = getApplication())
     }
 
     fun getTags(documentId: String, filterId: String) {
