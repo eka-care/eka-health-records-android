@@ -15,7 +15,6 @@ android {
 
     defaultConfig {
         minSdk = 23
-        targetSdk = 34
         multiDexEnabled = true
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -155,4 +154,5 @@ dependencies {
     implementation(libs.google.accompanist.pager.indicators)
     implementation(libs.accompanist.permissions)
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.1")
+    implementation(libs.play.services.time)
 }

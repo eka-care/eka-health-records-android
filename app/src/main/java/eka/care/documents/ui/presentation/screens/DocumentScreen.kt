@@ -3,7 +3,6 @@ package eka.care.documents.ui.presentation.screens
 import android.Manifest
 import android.app.Activity
 import android.app.Application
-import android.content.Context
 import android.content.Intent
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -42,16 +41,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.work.Constraints
-import androidx.work.Data
-import androidx.work.ExistingWorkPolicy
-import androidx.work.NetworkType
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkManager
 import com.example.reader.presentation.states.PdfSource
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionStatus
 import com.google.accompanist.permissions.rememberPermissionState
+import com.google.android.gms.time.TrustedTime
+import com.google.android.gms.time.TrustedTimeClient
 import com.google.gson.JsonObject
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.RESULT_FORMAT_JPEG
@@ -60,10 +55,8 @@ import com.google.mlkit.vision.documentscanner.GmsDocumentScanning
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
 import eka.care.documents.R
 import eka.care.documents.data.utility.DocumentUtility.Companion.PARAM_RECORD_PARAMS_MODEL
-import eka.care.documents.sync.workers.SyncFileWorker
 import eka.care.documents.ui.BgWhite
 import eka.care.documents.ui.presentation.activity.FileViewerActivity
-import eka.care.documents.ui.presentation.activity.MedicalRecordParams
 import eka.care.documents.ui.presentation.activity.RecordsViewModelFactory
 import eka.care.documents.ui.presentation.components.DocumentBottomSheetContent
 import eka.care.documents.ui.presentation.components.DocumentBottomSheetType
@@ -78,10 +71,6 @@ import eka.care.documents.ui.presentation.viewmodel.RecordsViewModel
 import eka.care.documents.ui.utility.RecordsAction
 import kotlinx.coroutines.launch
 
-enum class Mode {
-    VIEW, SELECTION
-}
-
 @OptIn(ExperimentalMaterialApi::class, ExperimentalPermissionsApi::class)
 @Composable
 fun DocumentScreen(
@@ -95,6 +84,7 @@ fun DocumentScreen(
     val viewModel: RecordsViewModel = viewModel(
         factory = RecordsViewModelFactory(context.applicationContext as Application)
     )
+    var trustedTimeClient by remember { mutableStateOf<TrustedTimeClient?>(null) }
     val cameraPermissionState = rememberPermissionState(permission = Manifest.permission.CAMERA)
     val isOnline by viewModel.isOnline.collectAsState()
     val photoUri by viewModel.photoUri.collectAsState()
@@ -109,6 +99,34 @@ fun DocumentScreen(
             links = param.get(MedicalRecordParams.LINKS.key)?.asString
         )
     }
+
+    LaunchedEffect(Unit) {
+        TrustedTime.createClient(context).addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                trustedTimeClient = task.result
+            } else {
+
+            }
+        }
+    }
+
+    fun getTrustedTime(): Long {
+        return try {
+            trustedTimeClient?.computeCurrentUnixEpochMillis() ?: (System.currentTimeMillis() / 1000)
+        } catch (e: Exception) {
+            System.currentTimeMillis() / 1000
+        }
+    }
+
+    fun updateTimestamp() {
+        val timestamp = getTrustedTime()
+        viewModel.updateUpdatedAtByOid(
+            filterId = params.filterId,
+            ownerId = params.ownerId,
+            updatedAt = timestamp
+        )
+    }
+
     val filterIdsToProcess = mutableListOf<String>().apply {
         if (params.filterId.isNotEmpty()) {
             add(params.filterId)
@@ -126,7 +144,6 @@ fun DocumentScreen(
         initData(
             filterIds = filterIdsToProcess,
             ownerId = params.ownerId,
-            viewModel = viewModel,
             context = context,
             patientUuid = params.uuid
         )
@@ -159,7 +176,6 @@ fun DocumentScreen(
                 initData(
                     filterIds = filterIdsToProcess,
                     ownerId = params.ownerId,
-                    viewModel = viewModel,
                     context = context,
                     patientUuid = params.uuid
                 )
@@ -272,10 +288,10 @@ fun DocumentScreen(
             initData(
                 filterIds = filterIdsToProcess,
                 ownerId = params.ownerId,
-                viewModel = viewModel,
                 context = context,
                 patientUuid = params.uuid
             )
+            updateTimestamp()
         }
     )
 
@@ -284,7 +300,6 @@ fun DocumentScreen(
             initData(
                 filterIds = filterIdsToProcess,
                 ownerId = params.ownerId,
-                viewModel = viewModel,
                 context = context,
                 patientUuid = params.uuid
             )
@@ -335,6 +350,7 @@ fun DocumentScreen(
                             ownerId = params.ownerId,
                             allFilterIds = filterIdsToProcess
                         )
+                        updateTimestamp()
                         showDeleteDialog = false
                     }) {
                     Text("Yes")
@@ -375,7 +391,8 @@ fun DocumentScreen(
                 viewModel = viewModel,
                 params = params,
                 galleryLauncher = pickMultipleMedia,
-                allFilterIds = filterIdsToProcess
+                allFilterIds = filterIdsToProcess,
+                trustedTimeClient = trustedTimeClient
             )
             Spacer(modifier = Modifier.height(16.dp))
         },
@@ -455,38 +472,4 @@ fun DocumentScreen(
             },
         )
     }
-}
-
-fun initData(
-    patientUuid: String,
-    filterIds: List<String>,
-    ownerId: String,
-    viewModel: RecordsViewModel,
-    context: Context,
-) {
-    val inputData = Data.Builder()
-        .putString("p_uuid", patientUuid)
-        .putString("ownerId", ownerId)
-        .putString("filterIds", filterIds.joinToString(","))
-        .build()
-
-    val constraints = Constraints.Builder()
-        .setRequiredNetworkType(NetworkType.CONNECTED)
-        .build()
-
-    val uniqueWorkName = "syncFileWorker_${patientUuid}_$filterIds$ownerId"
-    val uniqueSyncWorkRequest =
-        OneTimeWorkRequestBuilder<SyncFileWorker>()
-            .setInputData(inputData)
-            .setConstraints(constraints)
-            .build()
-
-    WorkManager.getInstance(context)
-        .enqueueUniqueWork(
-            uniqueWorkName,
-            ExistingWorkPolicy.KEEP,
-            uniqueSyncWorkRequest
-        )
-    viewModel.syncDeletedDocuments(filterIds = filterIds, ownerId = ownerId)
-    viewModel.syncEditedDocuments(filterIds = filterIds, ownerId = ownerId)
 }

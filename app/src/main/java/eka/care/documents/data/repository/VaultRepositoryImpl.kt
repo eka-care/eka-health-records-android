@@ -1,6 +1,5 @@
 package eka.care.documents.data.repository
 
-import android.util.Log
 import eka.care.documents.data.db.database.DocumentDatabase
 import eka.care.documents.data.db.entity.VaultEntity
 import eka.care.documents.data.db.model.AvailableDocTypes
@@ -193,5 +192,25 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
     ): List<VaultEntity> {
         return database.vaultDao()
             .fetchDocumentsWithoutFilePath(ownerId = ownerId, filterIds = filterIds)
+    }
+
+    override suspend fun getUpdatedAtByOid(filterId: String?, ownerId: String?): Long? {
+        return database.vaultDao().getUpdatedAtByOid(filterId = filterId, ownerId = ownerId)
+    }
+
+    override suspend fun updateUpdatedAtByOid(
+        filterId: String?,
+        updatedAt: Long,
+        ownerId: String?
+    ) {
+        database.vaultDao().updateUpdatedAtByOid(filterId = filterId, updatedAt = updatedAt.toString(), ownerId = ownerId)
+    }
+
+    override suspend fun getStatusByOid(filterId: String?, ownerId: String?): Int? {
+        return database.vaultDao().getStatusByOid(filterId = filterId, ownerId = ownerId)
+    }
+
+    override suspend fun updateStatusByOid(filterId: String?, status: Int, ownerId: String?) {
+        database.vaultDao().updateStatusByOid(filterId = filterId, status = status, ownerId = ownerId)
     }
 }

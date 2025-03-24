@@ -45,6 +45,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.reader.PdfReaderManager
 import com.example.reader.presentation.states.PdfSource
+import com.google.android.gms.time.TrustedTime
+import com.google.android.gms.time.TrustedTimeClient
 import eka.care.documents.R
 import eka.care.documents.data.utility.DocumentUtility.Companion.PARAM_RECORD_PARAMS_MODEL
 import eka.care.documents.ui.DarwinTouchNeutral0
@@ -64,11 +66,19 @@ class FileViewerActivity : AppCompatActivity() {
 
     private val pdfReaderManager: PdfReaderManager by lazy { PdfReaderManager(this) }
     private var fileToUpload: File? = null
+    lateinit var trustedTimeClient: TrustedTimeClient
 
     @OptIn(ExperimentalMaterialApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val recordsViewModel: RecordsViewModel by viewModels()
+        TrustedTime.createClient(this).addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                trustedTimeClient = task.result
+            } else {
+                // Handle the exception
+            }
+        }
 
         val paramsRecord = intent.getParcelableExtra<RecordParamsModel>(PARAM_RECORD_PARAMS_MODEL)
         if (paramsRecord == null) {
@@ -131,7 +141,8 @@ class FileViewerActivity : AppCompatActivity() {
                         fileList = if (pdfUriString != null) arrayListOf(pdfFile) else filesPreviewList,
                         paramsModel = paramsRecord,
                         editDocument = false,
-                        localId = recordsViewModel.cardClickData.value?.localId ?: ""
+                        localId = recordsViewModel.cardClickData.value?.localId ?: "",
+                        trustedTimeClient = trustedTimeClient
                     )
                 },
                 sheetShape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),

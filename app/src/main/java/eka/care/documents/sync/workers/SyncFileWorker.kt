@@ -3,14 +3,12 @@ package eka.care.documents.sync.workers
 import android.app.Application
 import android.content.Context
 import android.util.Log
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.google.gson.Gson
 import eka.care.documents.data.db.database.DocumentDatabase
-import eka.care.documents.data.db.entity.UpdatedAtEntity
 import eka.care.documents.data.db.entity.VaultEntity
-import eka.care.documents.data.repository.UpdatedAtRepository
-import eka.care.documents.data.repository.UpdatedAtRepositoryImpl
 import eka.care.documents.data.repository.VaultRepository
 import eka.care.documents.data.repository.VaultRepositoryImpl
 import eka.care.documents.data.utility.DocumentUtility.Companion.docTypes
@@ -38,7 +36,6 @@ class SyncFileWorker(
 
     private val db = DocumentDatabase.getInstance(applicationContext)
     private val vaultRepository: VaultRepository = VaultRepositoryImpl(db)
-    private val updatedAtRepository: UpdatedAtRepository = UpdatedAtRepositoryImpl(db)
     private val awsRepository = AwsRepository()
     private val myFileRepository = MyFileRepository()
     private val recordsRepository = SyncRecordsRepository(appContext as Application)
@@ -51,21 +48,20 @@ class SyncFileWorker(
 
             if (filterIds.isNotEmpty()) {
                 filterIds.forEach { filterId ->
-                    val updatedAt = updatedAtRepository.getUpdatedAtByOid(filterId, ownerId)
-                        ?: run {
-                            updatedAtRepository.insertUpdatedAtEntity(
-                                UpdatedAtEntity(filterId, ownerId = ownerId)
-                            )
-                            null
-                        }
-                    fetchRecords(updatedAt = updatedAt,uuid =  uuid, filterId = filterId,  ownerId = ownerId)
+                    val updatedAt = vaultRepository.getUpdatedAtByOid(filterId, ownerId) ?: 0L
+                    fetchRecords(
+                        updatedAt = updatedAt,
+                        uuid = uuid,
+                        filterId = filterId,
+                        ownerId = ownerId
+                    )
                 }
-            } else {
-                fetchRecords(offset = null, uuid = uuid, filterId =  null,  ownerId = ownerId)
+            }else{
+                  fetchRecords(offset = null, uuid = uuid, filterId =  null,  ownerId = ownerId)
             }
 
             syncDocuments(filterIds, uuid, ownerId)
-            updateFilePath(filterIds = filterIds, ownerId =  ownerId)
+            updateFilePath(filterIds = filterIds, ownerId = ownerId)
             syncDeletedAndEditedDocuments(filterIds, ownerId)
 
             Result.success()
@@ -75,6 +71,7 @@ class SyncFileWorker(
     }
 
     private suspend fun syncDocuments(filterIds: List<String>?, uuid: String?, ownerId: String) {
+        var currentFilterId: String? = null
         try {
             val vaultDocuments =
                 vaultRepository.getUnSyncedDocuments(filterIds = filterIds, ownerId = ownerId)
@@ -83,6 +80,7 @@ class SyncFileWorker(
             val tags = mutableListOf<String>()
 
             vaultDocuments.forEach { vaultEntity ->
+                currentFilterId = vaultEntity.filterId
                 val files = vaultEntity.filePath?.map { File(it) }
                 val fileContentList = files?.map { file ->
                     FileType(contentType = file.getMimeType() ?: "", fileSize = file.length())
@@ -110,6 +108,7 @@ class SyncFileWorker(
                         "SYNC_DOCUMENTS",
                         "Upload initialization error: ${uploadInitResponse.message}"
                     )
+                    vaultRepository.updateStatusByOid(filterId = vaultEntity.filterId, ownerId = ownerId, status = 1)
                     return
                 }
 
@@ -145,14 +144,19 @@ class SyncFileWorker(
                 }
             }
         } catch (e: Exception) {
+            currentFilterId?.let {
+                vaultRepository.updateStatusByOid(ownerId = ownerId, status = 1, filterId = it)
+            }
             Log.e("SYNC_DOCUMENTS", "Error syncing documents: ${e.message}", e)
         }
     }
 
     private suspend fun syncDeletedAndEditedDocuments(filterIds: List<String>?, ownerId: String) {
+        var currentFilterId: String? = null
         try {
             val resp = vaultRepository.getEditedDocuments(filterIds = filterIds, ownerId = ownerId)
             resp.forEach { vaultEntity ->
+                currentFilterId = vaultEntity.filterId
                 vaultEntity.documentId?.let {
                     val updateFileDetailsRequest = UpdateFileDetailsRequest(
                         filterId = vaultEntity.filterId,
@@ -168,6 +172,9 @@ class SyncFileWorker(
                 }
             }
         } catch (e: Exception) {
+            currentFilterId?.let {
+                vaultRepository.updateStatusByOid(ownerId = ownerId, status = 1, filterId = it)
+            }
             Log.e("SyncFileWorker", "Failed to sync edited documents", e)
         }
 
@@ -176,6 +183,7 @@ class SyncFileWorker(
                 vaultRepository.getDeletedDocuments(ownerId = ownerId, filterIds = filterIds)
 
             vaultDocuments.forEach { vaultEntity ->
+                currentFilterId = vaultEntity.filterId
                 vaultEntity.documentId?.let {
                     val resp = myFileRepository.deleteDocument(
                         documentId = it,
@@ -190,6 +198,9 @@ class SyncFileWorker(
                 }
             }
         } catch (e: Exception) {
+            currentFilterId?.let {
+                vaultRepository.updateStatusByOid(ownerId = ownerId, status = 1, filterId = it)
+            }
             Log.e("SyncFileWorker", "Failed to sync deleted documents", e)
         }
     }
@@ -228,7 +239,7 @@ class SyncFileWorker(
 
     private suspend fun fetchRecords(
         offset: String? = null,
-        updatedAt: String? = null,
+        updatedAt: Long? = 0L,
         uuid: String?,
         filterId: String?,
         ownerId: String
@@ -236,25 +247,15 @@ class SyncFileWorker(
         var currentOffset = offset
         do {
             try {
+                Log.d("AYUSHI", updatedAt.toString())
                 val response = recordsRepository.getRecords(
-                    updatedAt = updatedAt,
+                    updatedAt = updatedAt.toString(),
                     offset = currentOffset,
                     oid = filterId
                 )
 
                 if (response == null) {
-                    Log.w("SYNC_DOCUMENTS", "No response for filterId: $filterId")
                     break
-                }
-
-                // Extract Eka-Uat header
-                val ekaUat = response.headers().get("Eka-Uat")
-                if (ekaUat != null) {
-                    updatedAtRepository.updateUpdatedAtByOid(
-                        filterId = filterId,
-                        updatedAt = ekaUat,
-                        ownerId = ownerId
-                    )
                 }
 
                 val records = response.body()
@@ -338,12 +339,14 @@ class SyncFileWorker(
     }
 
     private suspend fun updateFilePath(ownerId: String, filterIds: List<String>?) {
+        var currentFilterId: String? = null
         try {
             val documentsWithoutPath = vaultRepository.getDocumentsWithoutFilePath(
                 ownerId = ownerId,
                 filterIds = filterIds
             )
             for (document in documentsWithoutPath) {
+                currentFilterId = document.filterId
                 val documentId = document.documentId ?: continue
                 val response = myFileRepository.getDocument(
                     filterId = document.filterId,
@@ -377,6 +380,9 @@ class SyncFileWorker(
                 }
             }
         } catch (e: Exception) {
+            currentFilterId?.let {
+                vaultRepository.updateStatusByOid(ownerId = ownerId, status = 1, filterId = it)
+            }
             Log.e("UpdateFilePath", "Error updating file paths", e)
         }
     }

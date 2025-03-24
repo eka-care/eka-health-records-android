@@ -9,9 +9,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import com.google.android.gms.time.TrustedTime
+import com.google.android.gms.time.TrustedTimeClient
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import eka.care.documents.ui.presentation.screens.DocumentScreen
+import eka.care.documents.ui.presentation.screens.MedicalRecordParams
 import eka.care.documents.ui.presentation.screens.Mode
 import eka.care.documents.ui.presentation.screens.initData
 import eka.care.documents.ui.presentation.viewmodel.RecordsViewModel
@@ -22,9 +25,7 @@ class DocumentActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         window.statusBarColor = Color.White.toArgb()
-
         val jsonString = intent.getStringExtra("params")
         if (jsonString.isNullOrEmpty()) {
             Log.e("DocumentActivity", "Params JSON is missing!")
@@ -54,11 +55,11 @@ class DocumentActivity : AppCompatActivity() {
                 filterIds = listOf()
             )
             DocumentScreen(
-                param = params, onBackClick = {
-
+                param = params,
+                onBackClick = {
                 },
                 mode = Mode.VIEW,
-                isUploadEnabled = false
+                isUploadEnabled = false,
             )
         }
     }
@@ -75,12 +76,3 @@ class RecordsViewModelFactory(private val application: Application) : ViewModelP
     }
 }
 
-enum class MedicalRecordParams(val key: String) {
-    FILTER_ID("filter_id"),
-    OWNER_ID("owner_id"),
-    PATIENT_UUID("p_uuid"),
-    PATIENT_NAME("name"),
-    PATIENT_GENDER("gen"),
-    PATIENT_AGE("age"),
-    LINKS("links")
-}

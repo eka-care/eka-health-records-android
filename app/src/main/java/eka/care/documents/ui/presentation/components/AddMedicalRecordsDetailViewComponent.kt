@@ -53,6 +53,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.google.android.gms.time.TrustedTimeClient
 import eka.care.documents.R
 import eka.care.documents.data.db.entity.VaultEntity
 import eka.care.documents.data.utility.DocumentUtility.Companion.docTypes
@@ -90,7 +91,8 @@ fun AddMedicalRecordsDetailViewComponent(
     fileList: ArrayList<File>,
     paramsModel: RecordParamsModel,
     editDocument: Boolean,
-    localId : String
+    localId : String,
+    trustedTimeClient: TrustedTimeClient? = null
 ) {
     val context = LocalContext.current
     val viewModel: RecordsViewModel = viewModel(
@@ -107,7 +109,6 @@ fun AddMedicalRecordsDetailViewComponent(
     val selectedDate = remember { mutableStateOf("") }
     val openDialogRecord = remember { mutableStateOf(false) }
     val selectedTags by viewModel.selectedTags.collectAsState()
-
     LaunchedEffect(Unit) {
         viewModel.compressFile(fileList, context)
     }
@@ -138,6 +139,23 @@ fun AddMedicalRecordsDetailViewComponent(
     }
     val onAddMedicalRecord = {
 
+        fun getTrustedTime(): Long {
+            return try {
+                trustedTimeClient?.computeCurrentUnixEpochMillis() ?: (System.currentTimeMillis() / 1000)
+            } catch (e: Exception) {
+                System.currentTimeMillis() / 1000
+            }
+        }
+
+        fun updateTimestamp() {
+            val timestamp = getTrustedTime()
+            viewModel.updateUpdatedAtByOid(
+                filterId = paramsModel.filterId,
+                ownerId = paramsModel.ownerId,
+                updatedAt = timestamp
+            )
+        }
+
         if (editDocument) {
             viewModel.editDocument(
                 localId = localId,
@@ -148,6 +166,7 @@ fun AddMedicalRecordsDetailViewComponent(
                 ownerId = paramsModel.ownerId,
                 allFilterIds = filterIdsToProcess
             )
+            updateTimestamp()
             onClick(CTA(action = "onBackClick"))
         } else {
             if (selectedChipId != null && fileList.isNotEmpty()) {
@@ -188,6 +207,7 @@ fun AddMedicalRecordsDetailViewComponent(
                 )
 
                 viewModel.createVaultRecord(vaultEntity)
+                updateTimestamp()
             }
             val intent = Intent(
                 context,

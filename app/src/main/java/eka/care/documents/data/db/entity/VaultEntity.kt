@@ -3,6 +3,7 @@ package eka.care.documents.data.db.entity
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import androidx.room.Update
 
 @Entity(tableName = "vault_table")
 data class VaultEntity(
@@ -25,5 +26,7 @@ data class VaultEntity(
     @ColumnInfo(name = "cta") var cta: String?,
     @ColumnInfo(name = "hash_id") var hashId: String?,
     @ColumnInfo(name = "is_analyzing") var isAnalyzing: Boolean,
-    @ColumnInfo(name = "smart_report_field") var smartReportField : String? = null
+    @ColumnInfo(name = "smart_report_field") var smartReportField : String? = null,
+    @ColumnInfo(name = "updated_at") var updatedAt : Long? = 0L,
+    @ColumnInfo(name = "status") var status : Int? = null
 )

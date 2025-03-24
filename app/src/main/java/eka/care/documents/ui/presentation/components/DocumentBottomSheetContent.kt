@@ -19,6 +19,7 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.permissions.shouldShowRationale
+import com.google.android.gms.time.TrustedTimeClient
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanner
 import eka.care.documents.ui.presentation.model.CTA
 import eka.care.documents.ui.presentation.model.RecordParamsModel
@@ -42,7 +43,8 @@ fun DocumentBottomSheetContent(
     galleryLauncher: ManagedActivityResultLauncher<PickVisualMediaRequest, List<@JvmSuppressWildcards Uri>>,
     viewModel: RecordsViewModel,
     params: RecordParamsModel,
-    allFilterIds : List<String>
+    allFilterIds : List<String>,
+    trustedTimeClient: TrustedTimeClient? = null
 ) {
     val cameraPermissionState = rememberPermissionState(permission = Manifest.permission.CAMERA)
     when (viewModel.documentBottomSheetType) {
@@ -154,7 +156,8 @@ fun DocumentBottomSheetContent(
                 paramsModel = params,
                 fileType = FileType.IMAGE.ordinal,
                 editDocument = true,
-                localId = viewModel.cardClickData.value?.localId ?: ""
+                localId = viewModel.cardClickData.value?.localId ?: "",
+                trustedTimeClient = trustedTimeClient
             )
         }
 

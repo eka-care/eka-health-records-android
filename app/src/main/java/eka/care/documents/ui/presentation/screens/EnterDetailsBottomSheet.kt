@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
+import com.google.android.gms.time.TrustedTimeClient
 import eka.care.documents.ui.DarwinTouchNeutral0
 import eka.care.documents.ui.DarwinTouchNeutral1000
 import eka.care.documents.ui.presentation.components.AddMedicalRecordsDetailViewComponent
@@ -31,7 +32,8 @@ fun EnterDetailsBottomSheet(
     fileList: ArrayList<File>,
     paramsModel: RecordParamsModel,
     editDocument: Boolean,
-    localId : String
+    localId : String,
+    trustedTimeClient: TrustedTimeClient? = null
 ) {
     val screenHeight = LocalConfiguration.current.screenHeightDp.dp
     Column(
@@ -71,7 +73,8 @@ fun EnterDetailsBottomSheet(
                 fileList = fileList,
                 paramsModel = paramsModel,
                 editDocument = editDocument,
-                localId  = localId
+                localId  = localId,
+                trustedTimeClient = trustedTimeClient
             )
         }
     }

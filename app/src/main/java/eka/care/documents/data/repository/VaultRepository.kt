@@ -31,4 +31,8 @@ interface VaultRepository: DocumentsRepository {
     suspend fun getDocumentById(id: String) : VaultEntity?
     suspend fun removeDocument(localId: String, filterId: String?)
     suspend fun getDocumentsWithoutFilePath(ownerId: String, filterIds: List<String>?) : List<VaultEntity>
+    suspend fun getUpdatedAtByOid(filterId: String?, ownerId :String?): Long?
+    suspend fun updateUpdatedAtByOid(filterId: String?, updatedAt: Long, ownerId :String?)
+    suspend fun getStatusByOid(filterId: String?, ownerId :String?): Int?
+    suspend fun updateStatusByOid(filterId: String?, status: Int, ownerId :String?)
 }

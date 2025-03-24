@@ -348,4 +348,15 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
         } catch (_: Exception) {
         }
     }
+
+    fun updateUpdatedAtByOid(filterId: String?, updatedAt: Long, ownerId :String?){
+        try {
+            viewModelScope.launch {
+                vaultRepository.updateUpdatedAtByOid(filterId = filterId, ownerId = ownerId, updatedAt = updatedAt)
+            }
+        }catch (e : Exception){
+
+        }
+    }
+
 }
