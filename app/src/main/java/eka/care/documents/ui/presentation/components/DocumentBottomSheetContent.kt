@@ -153,8 +153,8 @@ fun DocumentBottomSheetContent(
                 fileList = ArrayList(),
                 paramsModel = params,
                 fileType = FileType.IMAGE.ordinal,
-                viewModel = viewModel,
-                editDocument = true
+                editDocument = true,
+                localId = viewModel.cardClickData.value?.localId ?: ""
             )
         }
 

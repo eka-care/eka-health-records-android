@@ -27,11 +27,11 @@ import java.io.File
 @Composable
 fun EnterDetailsBottomSheet(
     onCLick: () -> Unit,
-    viewModel: RecordsViewModel,
     fileType: Int,
     fileList: ArrayList<File>,
     paramsModel: RecordParamsModel,
-    editDocument: Boolean
+    editDocument: Boolean,
+    localId : String
 ) {
     val screenHeight = LocalConfiguration.current.screenHeightDp.dp
     Column(
@@ -67,11 +67,11 @@ fun EnterDetailsBottomSheet(
                         }
                     }
                 },
-                viewModel = viewModel,
                 fileType = fileType,
                 fileList = fileList,
                 paramsModel = paramsModel,
-                editDocument = editDocument
+                editDocument = editDocument,
+                localId  = localId
             )
         }
     }

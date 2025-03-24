@@ -55,7 +55,10 @@ object Document {
         if (appContext is Application) {
             recordsRepository = SyncRecordsRepository(appContext as Application)
         } else {
-            Log.e("Document", "Context is not an Application, cannot initialize SyncRecordsRepository")
+            Log.e(
+                "Document",
+                "Context is not an Application, cannot initialize SyncRecordsRepository"
+            )
         }
     }
 
@@ -71,7 +74,12 @@ object Document {
         return appContext
     }
 
-    fun initSyncingData(context: Context, ownerId : String?, filterIds: List<String>?, patientUuid : String){
+    fun initSyncingData(
+        context: Context,
+        ownerId: String?,
+        filterIds: List<String>?,
+        patientUuid: String
+    ) {
         val inputData = Data.Builder()
             .putString("p_uuid", patientUuid)
             .putString("ownerId", ownerId)
@@ -96,11 +104,11 @@ object Document {
             )
     }
 
-    suspend fun alreadyExistDocument(documentId : String, ownerId : String?) : Int?{
-       return documentRepository?.alreadyExistDocument(documentId = documentId, ownerId = ownerId)
+    suspend fun alreadyExistDocument(documentId: String, ownerId: String?): Int? {
+        return documentRepository?.alreadyExistDocument(documentId = documentId, ownerId = ownerId)
     }
 
-    fun downloadFileFromTheAssetUrl(url : String?, context: Context, type: String?) : String{
+    fun downloadFileFromTheAssetUrl(url: String?, context: Context, type: String?): String {
         var filePath = ""
         runBlocking {
             filePath = RecordsUtility.downloadFile(url, context, type ?: "")
@@ -108,7 +116,7 @@ object Document {
         return filePath
     }
 
-    fun downloadThumbNailFromAssetUrl(url : String?, context: Context) : String{
+    fun downloadThumbNailFromAssetUrl(url: String?, context: Context): String {
         var thumbnail = ""
         runBlocking {
             thumbnail = RecordsUtility.downloadThumbnail(url, context)
@@ -120,7 +128,7 @@ object Document {
         ownerId: String,
         filterIds: List<String>?,
         docType: Int = -1,
-        sortBy : DocumentSortEnum
+        sortBy: DocumentSortEnum
     ): Flow<List<VaultEntity>>? {
         return if (sortBy == DocumentSortEnum.UPLOAD_DATE) {
             documentRepository?.fetchDocuments(
@@ -155,15 +163,18 @@ object Document {
             localId = localId,
             docType = docType,
             docDate = docDate,
-            filterId= filterId
+            filterId = filterId
         )
     }
 
-    suspend fun getAvailableDocTypes(filterIds: List<String>?, ownerId: String?): List<AvailableDocTypes>?{
-       return documentRepository?.getAvailableDocTypes(filterIds = filterIds, ownerId = ownerId)
+    suspend fun getAvailableDocTypes(
+        filterIds: List<String>?,
+        ownerId: String?
+    ): List<AvailableDocTypes>? {
+        return documentRepository?.getAvailableDocTypes(filterIds = filterIds, ownerId = ownerId)
     }
 
-    fun view(context: Context, model: RecordModel, filterId: String?){
+    fun view(context: Context, model: RecordModel, filterId: String?) {
         if (model.autoTags?.split(",")?.contains("1") == true) {
             val date = RecordsUtility.convertLongToDateString(model.documentDate ?: model.createdAt)
             Intent(context, SmartReportActivity::class.java)
@@ -191,18 +202,20 @@ object Document {
     fun destroy() {
         db?.clearAllTables()
     }
+
     suspend fun getDocumentById(id: String?): RecordModel? {
-        if(id.isNullOrEmpty()) return null
+        if (id.isNullOrEmpty()) return null
         val vaultEntity = db?.vaultDao()?.getDocumentById(id)
         return vaultEntity?.toRecordModel()
     }
 
     fun getConfiguration() = configuration
 
-    fun shareFiles(context: Context, filePaths : List<String>){
+    fun shareFiles(context: Context, filePaths: List<String>) {
         FileSharing().shareFiles(context = context, filePaths = filePaths)
     }
 }
+
 fun VaultEntity.toRecordModel(): RecordModel {
     return RecordModel(
         localId = this.localId,

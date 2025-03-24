@@ -41,6 +41,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.reader.PdfReaderManager
 import com.example.reader.presentation.states.PdfSource
@@ -126,11 +127,11 @@ class FileViewerActivity : AppCompatActivity() {
                             (context as Activity).setResult(RESULT_OK, intent)
                             closeSheet()
                         },
-                        viewModel = recordsViewModel,
                         fileType = if (pdfUriString != null) FileType.PDF.ordinal else FileType.IMAGE.ordinal,
                         fileList = if (pdfUriString != null) arrayListOf(pdfFile) else filesPreviewList,
                         paramsModel = paramsRecord,
-                        editDocument = false
+                        editDocument = false,
+                        localId = recordsViewModel.cardClickData.value?.localId ?: ""
                     )
                 },
                 sheetShape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),

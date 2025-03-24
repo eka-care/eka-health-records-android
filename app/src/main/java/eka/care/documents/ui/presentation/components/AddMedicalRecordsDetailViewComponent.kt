@@ -3,7 +3,6 @@ package eka.care.documents.ui.presentation.components
 import android.app.Activity
 import android.app.Application
 import android.content.Intent
-import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -53,6 +52,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import eka.care.documents.R
 import eka.care.documents.data.db.entity.VaultEntity
 import eka.care.documents.data.utility.DocumentUtility.Companion.docTypes
@@ -67,6 +67,7 @@ import eka.care.documents.ui.DarwinTouchPrimaryBgDark
 import eka.care.documents.ui.DarwinTouchPrimaryDark
 import eka.care.documents.ui.DarwinTouchRed
 import eka.care.documents.ui.presentation.activity.DocumentActivity
+import eka.care.documents.ui.presentation.activity.RecordsViewModelFactory
 import eka.care.documents.ui.presentation.model.CTA
 import eka.care.documents.ui.presentation.model.RecordParamsModel
 import eka.care.documents.ui.presentation.viewmodel.RecordsViewModel
@@ -85,18 +86,21 @@ import java.util.UUID
 @Composable
 fun AddMedicalRecordsDetailViewComponent(
     onClick: (CTA) -> Unit,
-    viewModel: RecordsViewModel,
     fileType: Int,
     fileList: ArrayList<File>,
     paramsModel: RecordParamsModel,
-    editDocument: Boolean
+    editDocument: Boolean,
+    localId : String
 ) {
+    val context = LocalContext.current
+    val viewModel: RecordsViewModel = viewModel(
+        factory = RecordsViewModelFactory(context.applicationContext as Application)
+    )
     init(
         viewModel = viewModel,
         filterId = paramsModel.filterId,
         documentId = viewModel.cardClickData.value?.documentId
     )
-    val context = LocalContext.current
     val compressedFiles by viewModel.compressedFiles.collectAsState(initial = emptyList())
     val initialSelectedDocType = viewModel.cardClickData.value?.documentType
     var selectedChipId by remember { mutableStateOf(initialSelectedDocType) }
@@ -136,7 +140,7 @@ fun AddMedicalRecordsDetailViewComponent(
 
         if (editDocument) {
             viewModel.editDocument(
-                localId = viewModel.cardClickData.value?.localId ?: "",
+                localId = localId,
                 docType = selectedChipId,
                 filterId = paramsModel.filterId,
                 docDate = timestampToLong(date),

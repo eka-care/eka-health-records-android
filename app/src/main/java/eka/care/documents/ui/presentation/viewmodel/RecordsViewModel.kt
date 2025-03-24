@@ -255,7 +255,7 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
     fun editDocument(
         localId: String,
         docType: Int?,
-        filterId: String,
+        filterId: String?,
         docDate: Long?,
         tags: String,
         ownerId: String,
