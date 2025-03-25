@@ -26,13 +26,13 @@ data class ItemData(
     @SerializedName("patient_id")
     val patientId: String? = null,
     @SerializedName("upload_date")
-    val uploadDate: Long
+    val uploadDate: Long? = null
 )
 @Keep
 data class Metadata(
     val abha: Abha? = null,
     @SerializedName("document_date")
-    val documentDate: Int? = null,
+    val documentDate: Long? = null,
     @SerializedName("auto_tags")
     val autoTags: List<String>? = null,
     val tags: List<String>? = null,
