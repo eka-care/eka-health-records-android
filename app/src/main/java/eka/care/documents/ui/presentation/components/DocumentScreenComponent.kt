@@ -1,5 +1,6 @@
 package eka.care.documents.ui.presentation.components
 
+import android.content.Context
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
@@ -24,7 +25,14 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.work.Constraints
+import androidx.work.Data
+import androidx.work.ExistingWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import eka.care.documents.R
+import eka.care.documents.sync.workers.SyncFileWorker
 import eka.care.documents.ui.presentation.screens.DocumentSortEnum
 import eka.care.documents.ui.presentation.viewmodel.RecordsViewModel
 import eka.care.documents.ui.touchLabelBold
@@ -43,6 +51,37 @@ fun DocumentsHeader(
             onClickFilter = onClickFilter
         )
     }
+}
+
+fun initData(
+    patientUuid: String,
+    filterIds: List<String>,
+    ownerId: String,
+    context: Context,
+) {
+    val inputData = Data.Builder()
+        .putString("p_uuid", patientUuid)
+        .putString("ownerId", ownerId)
+        .putString("filterIds", filterIds.joinToString(","))
+        .build()
+
+    val constraints = Constraints.Builder()
+        .setRequiredNetworkType(NetworkType.CONNECTED)
+        .build()
+
+    val uniqueWorkName = "syncFileWorker_${patientUuid}_$filterIds$ownerId"
+    val uniqueSyncWorkRequest =
+        OneTimeWorkRequestBuilder<SyncFileWorker>()
+            .setInputData(inputData)
+            .setConstraints(constraints)
+            .build()
+
+    WorkManager.getInstance(context)
+        .enqueueUniqueWork(
+            uniqueWorkName,
+            ExistingWorkPolicy.KEEP,
+            uniqueSyncWorkRequest
+        )
 }
 
 @Composable

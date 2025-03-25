@@ -71,6 +71,7 @@ import eka.care.documents.ui.presentation.components.DocumentFilter
 import eka.care.documents.ui.presentation.components.DocumentScreenContent
 import eka.care.documents.ui.presentation.components.DocumentsSort
 import eka.care.documents.ui.presentation.components.TopAppBarSmall
+import eka.care.documents.ui.presentation.components.initData
 import eka.care.documents.ui.presentation.model.RecordModel
 import eka.care.documents.ui.presentation.model.RecordParamsModel
 import eka.care.documents.ui.presentation.state.GetRecordsState
@@ -96,7 +97,6 @@ fun DocumentScreen(
         factory = RecordsViewModelFactory(context.applicationContext as Application)
     )
     val cameraPermissionState = rememberPermissionState(permission = Manifest.permission.CAMERA)
-    val isOnline by viewModel.isOnline.collectAsState()
     val photoUri by viewModel.photoUri.collectAsState()
     val params = remember(param) {
         RecordParamsModel(
@@ -126,7 +126,6 @@ fun DocumentScreen(
         initData(
             filterIds = filterIdsToProcess,
             ownerId = params.ownerId,
-            viewModel = viewModel,
             context = context,
             patientUuid = params.uuid
         )
@@ -135,7 +134,7 @@ fun DocumentScreen(
             ownerId = params.ownerId,
             docType = viewModel.documentType.intValue,
         )
-        viewModel.observeNetworkStatus(context)
+//        viewModel.observeNetworkStatus(context)
     }
 
     LaunchedEffect(cameraPermissionState.status) {
@@ -159,7 +158,6 @@ fun DocumentScreen(
                 initData(
                     filterIds = filterIdsToProcess,
                     ownerId = params.ownerId,
-                    viewModel = viewModel,
                     context = context,
                     patientUuid = params.uuid
                 )
@@ -272,24 +270,11 @@ fun DocumentScreen(
             initData(
                 filterIds = filterIdsToProcess,
                 ownerId = params.ownerId,
-                viewModel = viewModel,
                 context = context,
                 patientUuid = params.uuid
             )
         }
     )
-
-    LaunchedEffect(isOnline) {
-        if (isOnline) {
-            initData(
-                filterIds = filterIdsToProcess,
-                ownerId = params.ownerId,
-                viewModel = viewModel,
-                context = context,
-                patientUuid = params.uuid
-            )
-        }
-    }
 
     LaunchedEffect(key1 = viewModel.documentType.intValue) {
         viewModel.getAvailableDocTypes(
@@ -455,38 +440,4 @@ fun DocumentScreen(
             },
         )
     }
-}
-
-fun initData(
-    patientUuid: String,
-    filterIds: List<String>,
-    ownerId: String,
-    viewModel: RecordsViewModel,
-    context: Context,
-) {
-    val inputData = Data.Builder()
-        .putString("p_uuid", patientUuid)
-        .putString("ownerId", ownerId)
-        .putString("filterIds", filterIds.joinToString(","))
-        .build()
-
-    val constraints = Constraints.Builder()
-        .setRequiredNetworkType(NetworkType.CONNECTED)
-        .build()
-
-    val uniqueWorkName = "syncFileWorker_${patientUuid}_$filterIds$ownerId"
-    val uniqueSyncWorkRequest =
-        OneTimeWorkRequestBuilder<SyncFileWorker>()
-            .setInputData(inputData)
-            .setConstraints(constraints)
-            .build()
-
-    WorkManager.getInstance(context)
-        .enqueueUniqueWork(
-            uniqueWorkName,
-            ExistingWorkPolicy.KEEP,
-            uniqueSyncWorkRequest
-        )
-    viewModel.syncDeletedDocuments(filterIds = filterIds, ownerId = ownerId)
-    viewModel.syncEditedDocuments(filterIds = filterIds, ownerId = ownerId)
 }

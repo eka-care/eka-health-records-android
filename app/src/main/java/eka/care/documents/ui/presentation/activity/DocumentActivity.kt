@@ -11,9 +11,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.google.gson.Gson
 import com.google.gson.JsonObject
+import eka.care.documents.ui.presentation.components.initData
 import eka.care.documents.ui.presentation.screens.DocumentScreen
 import eka.care.documents.ui.presentation.screens.Mode
-import eka.care.documents.ui.presentation.screens.initData
 import eka.care.documents.ui.presentation.viewmodel.RecordsViewModel
 
 class DocumentActivity : AppCompatActivity() {
@@ -48,7 +48,6 @@ class DocumentActivity : AppCompatActivity() {
             val context = this@DocumentActivity
             initData(
                 ownerId = params[MedicalRecordParams.OWNER_ID.key]?.asString ?: "",
-                viewModel = viewModel,
                 context = context,
                 patientUuid = params[MedicalRecordParams.PATIENT_UUID.key]?.asString ?: "",
                 filterIds = listOf()

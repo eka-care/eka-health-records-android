@@ -80,7 +80,7 @@ afterEvaluate {
 
                 groupId = "com.eka.records"
                 artifactId = "eka-records"
-                version = "3.1.6"
+                version = "3.2.1"
             }
         }
     }
@@ -129,7 +129,7 @@ dependencies {
     api(libs.play.services.mlkit.document.scanner)
     implementation(libs.zelory.compressor)
     implementation(libs.google.gson)
-    implementation("com.github.Saroj-EkaCare:Jet-Pdf-Reader:1.1.4")
+    implementation(libs.eka.android.pdf)
     implementation("com.github.eka-care:eka-network-android:1.0.3") {
         exclude(group = "com.google.protobuf", module = "protobuf-java")
     }

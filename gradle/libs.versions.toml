@@ -1,6 +1,7 @@
 [versions]
 accompanistPermissions = "0.25.1"
 agp = "8.4.0"
+ekaAndroidPdf = "0.0.1"
 kotlin = "1.8.10"
 coreKtx = "1.13.1"
 junit = "4.13.2"
@@ -32,6 +33,7 @@ ok2curl = "0.8.0"
 [libraries]
 accompanist-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanistPermissions" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+eka-android-pdf = { module = "com.github.eka-care:eka-android-pdf", version.ref = "ekaAndroidPdf" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
