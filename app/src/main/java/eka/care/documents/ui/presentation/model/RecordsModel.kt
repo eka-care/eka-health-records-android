@@ -21,5 +21,5 @@ data class RecordModel(
     val autoTags : String?,
     val source: Int?,
     val isAnalyzing: Boolean? = false,
-    val status : Boolean? = null
+    val status : String? = null
 ): Parcelable

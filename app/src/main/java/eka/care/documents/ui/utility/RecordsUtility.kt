@@ -113,5 +113,13 @@ class RecordsUtility {
         }
         fun File.getMimeType(): String? =
             MimeTypeMap.getSingleton().getMimeTypeFromExtension(this.extension)
+
+        enum class Status(val value: String) {
+            WAITING_TO_UPLOAD("WTU"), // when worker start
+            WAITING_FOR_NETWORK("WFN"), // offline
+            UPLOADING_DOCUMENT("UPD"), // ui state
+            UNSYNCED_DOCUMENT("UND"), // unsynced document
+            SYNCED_DOCUMENT("SD")
+        }
     }
 }

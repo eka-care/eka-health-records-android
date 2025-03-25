@@ -194,4 +194,8 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
         return database.vaultDao()
             .fetchDocumentsWithoutFilePath(ownerId = ownerId, filterIds = filterIds)
     }
+    override suspend fun updateDocumentStatus(localId: String, status: String) {
+        database.vaultDao().updateDocumentStatus(localId, status)
+        return
+    }
 }

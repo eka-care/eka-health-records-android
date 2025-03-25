@@ -53,6 +53,8 @@ import eka.care.documents.ui.presentation.screens.Mode
 import eka.care.documents.ui.presentation.viewmodel.RecordsViewModel
 import eka.care.documents.ui.touchLabelBold
 import eka.care.documents.ui.touchLabelRegular
+import eka.care.documents.ui.utility.RecordsUtility
+import vault.added_records_summary.status
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -117,7 +119,6 @@ fun DocumentGridItem(
     val uploadDate = uploadTimestamp?.times(1000)?.let { Date(it) }
     val sdf = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
     val formattedDate = uploadDate?.let { sdf.format(it) }
-    val isOnline = viewModel.isOnline.collectAsState().value
 
     Box(
         modifier = Modifier
@@ -187,13 +188,15 @@ fun DocumentGridItem(
                 }
             }
             Spacer(modifier = Modifier.height(8.dp))
-            Box(modifier = Modifier
-                .clip(RoundedCornerShape(12.dp))
-                .height(60.dp)
-                .fillMaxWidth(),
-                contentAlignment = Alignment.BottomEnd) {
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(12.dp))
+                    .height(60.dp)
+                    .fillMaxWidth(),
+                contentAlignment = Alignment.BottomEnd
+            ) {
                 when {
-                    recordModel.status == true -> {
+                    recordModel.status?.equals(RecordsUtility.Companion.Status.SYNCED_DOCUMENT.value) == true -> {
                         AsyncImage(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -210,25 +213,35 @@ fun DocumentGridItem(
                         }
                     }
 
-                    !isOnline && recordModel.status == false  -> {
+                    recordModel.status?.equals(RecordsUtility.Companion.Status.WAITING_FOR_NETWORK.value) == true -> {
                         DocumentStateIndicator(
                             icon = R.drawable.no_cloud,
-                            text = "Waiting for network"
+                            text = "Waiting for network",
+                            onClick = { onClick(CTA(action = "open_deepThought"), recordModel) }
                         )
                     }
 
-                    isOnline && recordModel.status == false -> {
+                    recordModel.status?.equals(RecordsUtility.Companion.Status.WAITING_TO_UPLOAD.value) == true -> {
                         DocumentStateIndicator(
                             isLoading = true,
-                            text = "Uploading..."
+                            text = "Waiting to upload..",
+                            onClick = { onClick(CTA(action = "open_deepThought"), recordModel) }
                         )
                     }
 
-                    else -> {
+                     recordModel.status?.equals(RecordsUtility.Companion.Status.UPLOADING_DOCUMENT.value) == true -> {
                         DocumentStateIndicator(
-                            icon = R.drawable.ic_solid_rotate_left_solid,
+                            isLoading = true,
+                            text = "Uploading..",
+                            onClick = { onClick(CTA(action = "open_deepThought"), recordModel) }
+                        )
+                    }
+
+                    recordModel.status?.equals(RecordsUtility.Companion.Status.UNSYNCED_DOCUMENT.value) == true -> {
+                        DocumentStateIndicator(
+                            icon = R.drawable.ic_rotate_right_solid,
                             text = "Try again",
-                            onClick = { onClick(CTA(action = "retry"), recordModel) }
+                            onClick = { onClick(CTA(action = "open_deepThought"), recordModel) }
                         )
                     }
                 }
@@ -282,7 +295,8 @@ fun DocumentStateIndicator(
                     painter = painterResource(id = icon),
                     contentDescription = null,
                     modifier = Modifier
-                        .size(18.dp))
+                        .size(18.dp)
+                )
             }
         }
         Spacer(modifier = Modifier.width(8.dp))

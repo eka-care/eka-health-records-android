@@ -33,6 +33,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import eka.care.documents.R
 import eka.care.documents.sync.workers.SyncFileWorker
+import eka.care.documents.ui.DarwinTouchNeutral1000
 import eka.care.documents.ui.presentation.screens.DocumentSortEnum
 import eka.care.documents.ui.presentation.viewmodel.RecordsViewModel
 import eka.care.documents.ui.touchLabelBold
@@ -50,6 +51,21 @@ fun DocumentsHeader(
             modifier = Modifier.padding(top = 8.dp, start = 16.dp, end = 16.dp),
             onClickFilter = onClickFilter
         )
+    }
+}
+
+@Composable
+fun DocumentStatus() {
+    Row(
+        modifier = Modifier
+            .padding(horizontal = 16.dp)
+            .fillMaxWidth()
+            .background(
+                DarwinTouchNeutral1000
+            )
+            .padding(horizontal = 16.dp)
+    ) {
+
     }
 }
 

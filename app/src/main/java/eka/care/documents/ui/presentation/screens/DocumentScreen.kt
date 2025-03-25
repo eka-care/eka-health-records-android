@@ -69,6 +69,7 @@ import eka.care.documents.ui.presentation.components.DocumentBottomSheetContent
 import eka.care.documents.ui.presentation.components.DocumentBottomSheetType
 import eka.care.documents.ui.presentation.components.DocumentFilter
 import eka.care.documents.ui.presentation.components.DocumentScreenContent
+import eka.care.documents.ui.presentation.components.DocumentStatus
 import eka.care.documents.ui.presentation.components.DocumentsSort
 import eka.care.documents.ui.presentation.components.TopAppBarSmall
 import eka.care.documents.ui.presentation.components.initData
@@ -77,6 +78,7 @@ import eka.care.documents.ui.presentation.model.RecordParamsModel
 import eka.care.documents.ui.presentation.state.GetRecordsState
 import eka.care.documents.ui.presentation.viewmodel.RecordsViewModel
 import eka.care.documents.ui.utility.RecordsAction
+import eka.care.documents.ui.utility.RecordsUtility
 import kotlinx.coroutines.launch
 
 enum class Mode {
@@ -398,6 +400,7 @@ fun DocumentScreen(
                             }
                         }
                     )
+                //    DocumentStatus()
                     if (resp.isNotEmpty()) {
                         DocumentFilter(
                             viewModel = viewModel,
