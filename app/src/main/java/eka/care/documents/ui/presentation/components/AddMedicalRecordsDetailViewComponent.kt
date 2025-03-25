@@ -180,7 +180,8 @@ fun AddMedicalRecordsDetailViewComponent(
                     autoTags = selectedTags.joinToString(",").trimStart(','),
                     hashId = null,
                     cta = null,
-                    isAnalyzing = false
+                    isAnalyzing = false,
+                    status = false
                 )
 
                 viewModel.createVaultRecord(vaultEntity)

@@ -181,13 +181,16 @@ interface VaultDao {
 """)
     suspend fun alreadyExistDocument(documentId: String, ownerId: String?): Int?
 
-    @Query("""
+    @Query(
+        """
     SELECT * FROM vault_table 
     WHERE doc_id IS NULL 
     AND is_deleted = 0 
-    AND owner_id = :ownerId 
+    AND owner_id = :ownerId
+    AND status = 0
     AND (filter_id IN (:filterIds) OR filter_id IS NULL)
-""")
+"""
+    )
     suspend fun getUnSyncedDocuments(filterIds: List<String>?, ownerId: String): List<VaultEntity>
 
     @Query("""
@@ -207,6 +210,6 @@ interface VaultDao {
 """)
     suspend fun getAvailableDocTypes(filterIds: List<String>?, ownerId: String?): List<AvailableDocTypes>
 
-    @Query("UPDATE vault_table SET doc_id = :docId WHERE local_id = :localId")
+    @Query("UPDATE vault_table SET doc_id = :docId, status = 1 WHERE local_id = :localId")
     suspend fun updateDocumentId(docId: String, localId: String)
 }

@@ -228,7 +228,8 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
                                 tags = vaultEntity.tags,
                                 autoTags = vaultEntity.autoTags,
                                 source = vaultEntity.source,
-                                isAnalyzing = vaultEntity.isAnalyzing
+                                isAnalyzing = vaultEntity.isAnalyzing,
+                                status = vaultEntity.status
                             )
                         }
                         getAvailableDocTypes(filterIds = filterIds, ownerId = ownerId)

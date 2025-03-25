@@ -294,7 +294,7 @@ class SyncFileWorker(
             val recordItem = it.record.item
             val localId = vaultRepository.getLocalId(recordItem.documentId)
             val documentDate =
-                if (recordItem.metadata?.documentDate?.toLong() == 0L) null else recordItem.metadata?.documentDate?.toLong()
+                if (recordItem.metadata?.documentDate == 0L) null else recordItem.metadata?.documentDate
             if (!localId.isNullOrEmpty()) {
                 vaultRepository.storeDocument(
                     localId = localId,
@@ -327,7 +327,8 @@ class SyncFileWorker(
                         hashId = null,
                         isAnalyzing = false,
                         cta = null,
-                        autoTags = recordItem.metadata?.autoTags?.joinToString(",") ?: ""
+                        autoTags = recordItem.metadata?.autoTags?.joinToString(",") ?: "",
+                        status = true
                     )
                 )
             }

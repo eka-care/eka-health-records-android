@@ -1,8 +1,6 @@
 package eka.care.documents.data.repository
 
 import eka.care.documents.data.db.entity.VaultEntity
-import eka.care.documents.data.db.model.AvailableDocTypes
-import kotlinx.coroutines.flow.Flow
 
 interface VaultRepository: DocumentsRepository {
     // NEW
