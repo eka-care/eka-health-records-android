@@ -319,7 +319,7 @@ class SyncFileWorker(
                         filePath = null,
                         fileType = "",
                         thumbnail = null,
-                        createdAt = recordItem.uploadDate.toLong(),
+                        createdAt = recordItem.uploadDate ?: 0L,
                         source = null,
                         documentType = docTypes.find { it.id == recordItem.documentType }?.idNew
                             ?: -1,

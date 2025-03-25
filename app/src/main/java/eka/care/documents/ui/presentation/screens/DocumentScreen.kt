@@ -145,7 +145,8 @@ fun DocumentScreen(
             filterIds = filterIdsToProcess,
             ownerId = params.ownerId,
             context = context,
-            patientUuid = params.uuid
+            patientUuid = params.uuid,
+            onSuccess = {}
         )
         viewModel.getLocalRecords(
             filterIds = filterIdsToProcess,
@@ -177,7 +178,10 @@ fun DocumentScreen(
                     filterIds = filterIdsToProcess,
                     ownerId = params.ownerId,
                     context = context,
-                    patientUuid = params.uuid
+                    patientUuid = params.uuid,
+                    onSuccess = {
+
+                    }
                 )
             }
         }
@@ -289,7 +293,8 @@ fun DocumentScreen(
                 filterIds = filterIdsToProcess,
                 ownerId = params.ownerId,
                 context = context,
-                patientUuid = params.uuid
+                patientUuid = params.uuid,
+                onSuccess = {}
             )
             updateTimestamp()
         }
@@ -301,7 +306,8 @@ fun DocumentScreen(
                 filterIds = filterIdsToProcess,
                 ownerId = params.ownerId,
                 context = context,
-                patientUuid = params.uuid
+                patientUuid = params.uuid,
+                onSuccess = {}
             )
         }
     }

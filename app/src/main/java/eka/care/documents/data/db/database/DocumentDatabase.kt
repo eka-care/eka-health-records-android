@@ -11,7 +11,7 @@ import eka.care.documents.data.db.entity.VaultEntity
 
 @Database(
     entities = [VaultEntity::class],
-    version = 13,
+    version = 16,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
