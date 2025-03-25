@@ -26,7 +26,7 @@ data class ItemData(
     @SerializedName("patient_id")
     val patientId: String? = null,
     @SerializedName("upload_date")
-    val uploadDate: Int
+    val uploadDate: Long
 )
 @Keep
 data class Metadata(
