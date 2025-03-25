@@ -134,7 +134,7 @@ fun DocumentScreen(
             ownerId = params.ownerId,
             docType = viewModel.documentType.intValue,
         )
-//        viewModel.observeNetworkStatus(context)
+        viewModel.observeNetworkStatus(context)
     }
 
     LaunchedEffect(cameraPermissionState.status) {

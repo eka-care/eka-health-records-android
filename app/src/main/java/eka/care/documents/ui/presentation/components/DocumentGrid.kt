@@ -187,8 +187,6 @@ fun DocumentGridItem(
                 }
             }
             Spacer(modifier = Modifier.height(8.dp))
-
-            // Simplified document state UI
             Box(modifier = Modifier
                 .clip(RoundedCornerShape(12.dp))
                 .height(60.dp)
@@ -219,7 +217,7 @@ fun DocumentGridItem(
                         )
                     }
 
-                    recordModel.status == false -> {
+                    isOnline && recordModel.status == false -> {
                         DocumentStateIndicator(
                             isLoading = true,
                             text = "Uploading..."
@@ -284,13 +282,10 @@ fun DocumentStateIndicator(
                     painter = painterResource(id = icon),
                     contentDescription = null,
                     modifier = Modifier
-                        .size(18.dp)
-                        .graphicsLayer {
-                            rotationZ = 180f
-                        })
+                        .size(18.dp))
             }
         }
-        Spacer(modifier = Modifier.width(4.dp))
+        Spacer(modifier = Modifier.width(8.dp))
         Text(
             text = text,
             style = touchLabelRegular,
