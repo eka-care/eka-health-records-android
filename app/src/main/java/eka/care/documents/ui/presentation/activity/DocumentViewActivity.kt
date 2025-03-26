@@ -3,6 +3,7 @@ package eka.care.documents.ui.presentation.activity
 import android.app.Activity
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -40,6 +41,7 @@ class DocumentViewActivity : ComponentActivity() {
             val localId = intent.getStringExtra("local_id")
             val docId = intent.getStringExtra("doc_id")
             val userId = intent.getStringExtra("user_id")
+            Log.d("AYUSHI-5", "${userId.toString()}, $docId")
             viewModel.getDocument(
                 userId = userId ?: "",
                 docId = docId ?: "",

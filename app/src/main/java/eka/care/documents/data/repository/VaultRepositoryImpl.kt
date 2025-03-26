@@ -1,6 +1,5 @@
 package eka.care.documents.data.repository
 
-import android.util.Log
 import eka.care.documents.data.db.database.DocumentDatabase
 import eka.care.documents.data.db.entity.VaultEntity
 import eka.care.documents.data.db.model.AvailableDocTypes
@@ -188,10 +187,9 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
     }
 
     override suspend fun getDocumentsWithoutFilePath(
-        ownerId: String,
-        filterIds: List<String>?
+        ownerId: String
     ): List<VaultEntity> {
         return database.vaultDao()
-            .fetchDocumentsWithoutFilePath(ownerId = ownerId, filterIds = filterIds)
+            .fetchDocumentsWithoutFilePath(ownerId = ownerId)
     }
 }

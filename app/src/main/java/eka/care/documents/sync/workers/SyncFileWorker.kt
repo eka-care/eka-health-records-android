@@ -65,7 +65,7 @@ class SyncFileWorker(
             }
 
             syncDocuments(filterIds, uuid, ownerId)
-            updateFilePath(filterIds = filterIds, ownerId =  ownerId)
+            updateFilePath(ownerId =  ownerId)
             syncDeletedAndEditedDocuments(filterIds, ownerId)
 
             Result.success()
@@ -293,7 +293,6 @@ class SyncFileWorker(
             val localId = vaultRepository.getLocalId(recordItem.documentId)
             val documentDate =
                 if (recordItem.metadata?.documentDate == 0L) null else recordItem.metadata?.documentDate
-            Log.d("AYUSHI", recordItem.patientId.toString())
             if (!localId.isNullOrEmpty()) {
                 vaultRepository.storeDocument(
                     localId = localId,
@@ -336,16 +335,16 @@ class SyncFileWorker(
         storeThumbnails(vaultList = vaultList, recordsResponse = recordsResponse, context = context)
     }
 
-    private suspend fun updateFilePath(ownerId: String, filterIds: List<String>?) {
+    private suspend fun updateFilePath(ownerId: String) {
         try {
             val documentsWithoutPath = vaultRepository.getDocumentsWithoutFilePath(
-                ownerId = ownerId,
-                filterIds = filterIds
+                ownerId = ownerId
             )
             for (document in documentsWithoutPath) {
                 val documentId = document.documentId ?: continue
+                val vaultEntity = vaultRepository.getDocumentById(id = documentId)
                 val response = myFileRepository.getDocument(
-                    filterId = document.filterId,
+                    filterId = vaultEntity?.filterId,
                     documentId = documentId
                 )
 

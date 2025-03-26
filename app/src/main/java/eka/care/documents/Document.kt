@@ -71,17 +71,16 @@ object Document {
         return appContext
     }
 
-    fun initSyncingData(context: Context, ownerId : String?, filterIds: List<String>?, patientUuid : String){
+    fun initSyncingData(context: Context, ownerId : String?, patientUuid : String){
         val inputData = Data.Builder()
             .putString("p_uuid", patientUuid)
             .putString("ownerId", ownerId)
-            .putString("filterIds", filterIds?.joinToString(","))
             .build()
         val constraints = Constraints.Builder()
             .setRequiredNetworkType(NetworkType.CONNECTED)
             .build()
 
-        val uniqueWorkName = "syncFileWorker_${patientUuid}_$filterIds$ownerId"
+        val uniqueWorkName = "syncFileWorker_${patientUuid}"
         val uniqueSyncWorkRequest =
             OneTimeWorkRequestBuilder<SyncFileWorker>()
                 .setInputData(inputData)
