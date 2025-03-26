@@ -58,14 +58,14 @@ class SyncFileWorker(
                             )
                             null
                         }
-                    fetchRecords(updatedAt = updatedAt,uuid =  uuid, filterId = filterId,  ownerId = ownerId)
+                    fetchRecords(updatedAt = updatedAt,uuid =uuid, filterId = filterId,ownerId = ownerId)
                 }
             } else {
-                fetchRecords(offset = null, uuid = uuid, filterId =  null,  ownerId = ownerId)
+                fetchRecords(offset = null, uuid = uuid, filterId =null,ownerId = ownerId)
             }
 
             syncDocuments(filterIds, uuid, ownerId)
-            updateFilePath(filterIds = filterIds, ownerId =  ownerId)
+            updateFilePath(filterIds = filterIds, ownerId = ownerId)
             syncDeletedAndEditedDocuments(filterIds, ownerId)
 
             Result.success()
@@ -106,6 +106,10 @@ class SyncFileWorker(
                     )
                 }
                 if (uploadInitResponse?.error == true) {
+                    vaultRepository.updateDocumentStatus(
+                        localId = vaultEntity.localId,
+                        status = RecordsUtility.Companion.Status.UNSYNCED_DOCUMENT.value
+                    )
                     Log.d(
                         "SYNC_DOCUMENTS",
                         "Upload initialization error: ${uploadInitResponse.message}"
@@ -119,12 +123,25 @@ class SyncFileWorker(
                     // Handle multi-file upload for the current document
                     val batchResponse = batchResponses.firstOrNull()
                     if (batchResponse != null) {
+                        vaultRepository.updateDocumentStatus(
+                            localId = vaultEntity.localId,
+                            status = RecordsUtility.Companion.Status.UPLOADING_DOCUMENT.value
+                        )
                         val response =
                             awsRepository.uploadFile(batch = batchResponse, fileList = files)
                         if (response?.error == false) {
                             response.documentId?.let { docId ->
                                 updateDocumentDetails(docId, vaultEntity.filterId, vaultEntity)
+                                vaultRepository.updateDocumentStatus(
+                                    localId = vaultEntity.localId,
+                                    status = RecordsUtility.Companion.Status.SYNCED_DOCUMENT.value
+                                )
                             }
+                        } else {
+                            vaultRepository.updateDocumentStatus(
+                                localId = vaultEntity.localId,
+                                status = RecordsUtility.Companion.Status.UNSYNCED_DOCUMENT.value
+                            )
                         }
                     }
                 } else {
@@ -135,10 +152,23 @@ class SyncFileWorker(
                         if (batchResponse != null) {
                             val response =
                                 awsRepository.uploadFile(file = file, batch = batchResponse)
+                            vaultRepository.updateDocumentStatus(
+                                localId = vaultEntity.localId,
+                                status = RecordsUtility.Companion.Status.UPLOADING_DOCUMENT.value
+                            )
                             if (response?.error == false) {
                                 response.documentId?.let { docId ->
                                     updateDocumentDetails(docId, vaultEntity.filterId, vaultEntity)
+                                    vaultRepository.updateDocumentStatus(
+                                        localId = vaultEntity.localId,
+                                        status = RecordsUtility.Companion.Status.SYNCED_DOCUMENT.value
+                                    )
                                 }
+                            } else {
+                                vaultRepository.updateDocumentStatus(
+                                    localId = vaultEntity.localId,
+                                    status = RecordsUtility.Companion.Status.UNSYNCED_DOCUMENT.value
+                                )
                             }
                         }
                     }
@@ -294,7 +324,7 @@ class SyncFileWorker(
             val recordItem = it.record.item
             val localId = vaultRepository.getLocalId(recordItem.documentId)
             val documentDate =
-                if (recordItem.metadata?.documentDate?.toLong() == 0L) null else recordItem.metadata?.documentDate?.toLong()
+                if (recordItem.metadata?.documentDate == 0L) null else recordItem.metadata?.documentDate
             if (!localId.isNullOrEmpty()) {
                 vaultRepository.storeDocument(
                     localId = localId,
@@ -327,7 +357,8 @@ class SyncFileWorker(
                         hashId = null,
                         isAnalyzing = false,
                         cta = null,
-                        autoTags = recordItem.metadata?.autoTags?.joinToString(",") ?: ""
+                        autoTags = recordItem.metadata?.autoTags?.joinToString(",") ?: "",
+                        status = RecordsUtility.Companion.Status.SYNCED_DOCUMENT.value
                     )
                 )
             }

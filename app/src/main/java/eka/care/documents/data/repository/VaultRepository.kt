@@ -1,7 +1,6 @@
 package eka.care.documents.data.repository
 
 import eka.care.documents.data.db.entity.VaultEntity
-import eka.care.documents.data.db.model.AvailableDocTypes
 import kotlinx.coroutines.flow.Flow
 
 interface VaultRepository: DocumentsRepository {
@@ -31,4 +30,10 @@ interface VaultRepository: DocumentsRepository {
     suspend fun getDocumentById(id: String) : VaultEntity?
     suspend fun removeDocument(localId: String, filterId: String?)
     suspend fun getDocumentsWithoutFilePath(ownerId: String, filterIds: List<String>?) : List<VaultEntity>
+    suspend fun updateDocumentStatus(localId: String, status: Int)
+    fun getStatusCount(
+        ownerId: String?,
+        filterId: String?,
+        status: Int?
+    ): Flow<Int>
 }

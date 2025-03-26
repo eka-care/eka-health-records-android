@@ -194,4 +194,16 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
         return database.vaultDao()
             .fetchDocumentsWithoutFilePath(ownerId = ownerId, filterIds = filterIds)
     }
+    override suspend fun updateDocumentStatus(localId: String, status: Int) {
+        database.vaultDao().updateDocumentStatus(localId, status)
+        return
+    }
+
+    override fun getStatusCount(
+        ownerId: String?,
+        filterId: String?,
+        status: Int?
+    ): Flow<Int> {
+        return database.vaultDao().getVaultEntityCount(ownerId = ownerId, filterId = filterId, status = status).flowOn(Dispatchers.IO)
+    }
 }

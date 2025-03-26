@@ -34,6 +34,7 @@ import eka.care.documents.ui.utility.RecordsUtility.Companion.convertLongToForma
 import id.zelory.compressor.Compressor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -96,7 +97,8 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
 
         val activeNetwork = connectivityManager.activeNetwork
         val capabilities = connectivityManager.getNetworkCapabilities(activeNetwork)
-        _isOnline.value = capabilities?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) ?: false
+        _isOnline.value =
+            capabilities?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) ?: false
 
         networkCallback = object : ConnectivityManager.NetworkCallback() {
             override fun onAvailable(network: Network) {
@@ -111,7 +113,8 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
                 network: Network,
                 capabilities: NetworkCapabilities
             ) {
-                _isOnline.value = capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                _isOnline.value =
+                    capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
             }
         }
 
@@ -228,7 +231,8 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
                                 tags = vaultEntity.tags,
                                 autoTags = vaultEntity.autoTags,
                                 source = vaultEntity.source,
-                                isAnalyzing = vaultEntity.isAnalyzing
+                                isAnalyzing = vaultEntity.isAnalyzing,
+                                status = vaultEntity.status
                             )
                         }
                         getAvailableDocTypes(filterIds = filterIds, ownerId = ownerId)
@@ -300,40 +304,6 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun syncEditedDocuments(filterIds: List<String>, ownerId: String) {
-        try {
-            viewModelScope.launch {
-                vaultRepository.getEditedDocuments(filterIds = filterIds, ownerId = ownerId)
-            }
-        } catch (_: Exception) {
-        }
-    }
-
-    fun syncDeletedDocuments(filterIds: List<String>, ownerId: String) {
-        try {
-            viewModelScope.launch {
-                val vaultDocuments =
-                    vaultRepository.getDeletedDocuments(ownerId = ownerId, filterIds = filterIds)
-                vaultDocuments.forEach { vaultEntity ->
-                    vaultEntity.documentId?.let {
-                        val resp = myFileRepository.deleteDocument(
-                            documentId = it,
-                            filterId = vaultEntity.filterId
-                        )
-                        if (resp in 200..299) {
-                            vaultRepository.removeDocument(
-                                localId = vaultEntity.localId,
-                                filterId = vaultEntity.filterId
-                            )
-                        }
-                    }
-
-                }
-            }
-        } catch (_: Exception) {
-        }
-    }
-
     fun getAvailableDocTypes(filterIds: List<String>, ownerId: String?) {
         try {
             viewModelScope.launch {
@@ -347,5 +317,17 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
             }
         } catch (_: Exception) {
         }
+    }
+
+    fun getVaultEntityCount(
+        ownerId: String,
+        filterId: String?,
+        status: Int
+    ): Flow<Int> {
+        return vaultRepository.getStatusCount(
+            ownerId = ownerId,
+            filterId = filterId,
+            status = status
+        )
     }
 }

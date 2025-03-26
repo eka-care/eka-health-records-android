@@ -32,8 +32,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
@@ -44,12 +46,13 @@ import coil.compose.AsyncImage
 import eka.care.documents.R
 import eka.care.documents.data.utility.DocumentUtility.Companion.docTypes
 import eka.care.documents.ui.DarwinTouchNeutral1000
+import eka.care.documents.ui.DarwinTouchNeutral800
 import eka.care.documents.ui.presentation.model.CTA
 import eka.care.documents.ui.presentation.model.RecordModel
-import eka.care.documents.ui.presentation.screens.Mode
 import eka.care.documents.ui.presentation.viewmodel.RecordsViewModel
 import eka.care.documents.ui.touchLabelBold
 import eka.care.documents.ui.touchLabelRegular
+import eka.care.documents.ui.utility.RecordsUtility
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -183,22 +186,38 @@ fun DocumentGridItem(
                 }
             }
             Spacer(modifier = Modifier.height(8.dp))
-            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.BottomEnd) {
-                AsyncImage(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(60.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(color = DarwinTouchNeutral1000)
-                        .graphicsLayer(alpha = 0.4f),
-                    model = recordModel.thumbnail,
-                    contentDescription = "",
-                    contentScale = ContentScale.FillWidth,
-                )
-                if (recordModel.fileType.equals("pdf", ignoreCase = true)) {
-                    if (recordModel.autoTags?.split(",")?.contains("1") == true) {
-                        SmartChip()
-                    }
+
+            when {
+                recordModel.status?.equals(RecordsUtility.Companion.Status.SYNCED_DOCUMENT.value) == true -> {
+                    SyncedDocumentComponent(recordModel)
+                }
+
+                recordModel.status?.equals(RecordsUtility.Companion.Status.WAITING_FOR_NETWORK.value) == true -> {
+                    WaitForNetworkComponent(onClick, recordModel)
+                }
+
+                recordModel.status?.equals(RecordsUtility.Companion.Status.WAITING_TO_UPLOAD.value) == true -> {
+                    DocumentStateIndicator(
+                        isLoading = true,
+                        text = "Waiting to upload..",
+                        onClick = { onClick(CTA(action = "open_deepThought"), recordModel) }
+                    )
+                }
+
+                recordModel.status?.equals(RecordsUtility.Companion.Status.UPLOADING_DOCUMENT.value) == true -> {
+                    DocumentStateIndicator(
+                        isLoading = true,
+                        text = "Uploading..",
+                        onClick = { onClick(CTA(action = "open_deepThought"), recordModel) }
+                    )
+                }
+
+                recordModel.status?.equals(RecordsUtility.Companion.Status.UNSYNCED_DOCUMENT.value) == true -> {
+                    DocumentStateIndicator(
+                        icon = R.drawable.ic_rotate_right_solid,
+                        text = "Try again",
+                        onClick = { onClick(CTA(action = "open_deepThought"), recordModel) }
+                    )
                 }
             }
         }
@@ -221,6 +240,132 @@ fun DocumentGridItem(
     }
 }
 
+@Composable
+private fun WaitForNetworkComponent(
+    onClick: (CTA?, RecordModel) -> Unit,
+    recordModel: RecordModel
+) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(12.dp))
+            .height(60.dp)
+            .fillMaxWidth()
+            .clickable {
+                onClick(CTA(action = "open_deepThought"), recordModel)
+            }, contentAlignment = Alignment.Center
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+        ) {
+            AsyncImage(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                model = recordModel.thumbnail,
+                contentDescription = "",
+                contentScale = ContentScale.FillWidth,
+            )
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(Color.White.copy(alpha = 0.4f))
+                    .blur(100.dp)
+            )
+        }
+        Column(
+            modifier = Modifier,
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.ic_cloud_slash),
+                contentDescription = null,
+                modifier = Modifier
+                    .size(18.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "Waiting for network",
+                style = touchLabelBold,
+                color = DarwinTouchNeutral1000
+            )
+        }
+    }
+}
+
+@Composable
+private fun SyncedDocumentComponent(recordModel: RecordModel) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(12.dp))
+            .height(60.dp)
+            .fillMaxWidth(),
+        contentAlignment = Alignment.BottomEnd
+    ) {
+        AsyncImage(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(color = DarwinTouchNeutral1000)
+                .graphicsLayer(alpha = 0.4f),
+            model = recordModel.thumbnail,
+            contentDescription = "",
+            contentScale = ContentScale.FillWidth,
+        )
+        if (recordModel.fileType.equals("pdf", ignoreCase = true)) {
+            if (recordModel.autoTags?.split(",")?.contains("1") == true) {
+                SmartChip()
+            }
+        }
+    }
+}
+
+@Composable
+fun DocumentStateIndicator(
+    icon: Int? = null,
+    text: String,
+    isLoading: Boolean = false,
+    onClick: (() -> Unit)? = null
+) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(12.dp))
+            .height(60.dp)
+            .fillMaxWidth()
+            .background(color = Color.LightGray.copy(alpha = 0.2f))
+            .clickable(enabled = onClick != null) { onClick?.invoke() },
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(18.dp),
+                    strokeWidth = 2.dp,
+                    color = DarwinTouchNeutral1000,
+                    strokeCap = StrokeCap.Round
+                )
+            } else {
+                icon?.let {
+                    Image(
+                        painter = painterResource(id = icon),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(18.dp)
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = text,
+                style = touchLabelBold,
+                color = DarwinTouchNeutral800
+            )
+        }
+    }
+}
 
 @Composable
 fun SmartChip() {
@@ -244,36 +389,6 @@ fun SmartChip() {
         Spacer(modifier = Modifier.width(2.dp))
         Text(
             text = "Smart", style = touchLabelBold, color = MaterialTheme.colorScheme.onSurface
-        )
-    }
-}
-
-@Composable
-fun AnalysingChip() {
-    val strokeWidth = 2.dp
-    Row(
-        modifier = Modifier
-            .width(100.dp)
-            .height(30.dp)
-            .padding(end = 4.dp, bottom = 4.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .border(
-                width = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant,
-                shape = RoundedCornerShape(8.dp)
-            )
-            .background(color = MaterialTheme.colorScheme.surfaceVariant)
-            .padding(start = 4.dp, end = 6.dp, top = 2.dp, bottom = 2.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        CircularProgressIndicator(
-            modifier = Modifier.size(12.dp), color = Color.DarkGray, strokeWidth = strokeWidth
-        )
-        Text(
-            text = "Generating...",
-            style = touchLabelBold,
-            color = MaterialTheme.colorScheme.onSurface
         )
     }
 }

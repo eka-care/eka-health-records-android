@@ -181,14 +181,20 @@ interface VaultDao {
 """)
     suspend fun alreadyExistDocument(documentId: String, ownerId: String?): Int?
 
-    @Query("""
+    @Query(
+        """
     SELECT * FROM vault_table 
     WHERE doc_id IS NULL 
     AND is_deleted = 0 
-    AND owner_id = :ownerId 
+    AND owner_id = :ownerId
+    AND status IN (2, 4)
     AND (filter_id IN (:filterIds) OR filter_id IS NULL)
-""")
-    suspend fun getUnSyncedDocuments(filterIds: List<String>?, ownerId: String): List<VaultEntity>
+    """
+    )
+    suspend fun getUnSyncedDocuments(
+        filterIds: List<String>?,
+        ownerId: String
+    ): List<VaultEntity>
 
     @Query("""
     SELECT * FROM vault_table 
@@ -209,4 +215,14 @@ interface VaultDao {
 
     @Query("UPDATE vault_table SET doc_id = :docId WHERE local_id = :localId")
     suspend fun updateDocumentId(docId: String, localId: String)
+
+    @Query("UPDATE vault_table SET status = :newStatus WHERE local_id = :localId")
+    suspend fun updateDocumentStatus(localId: String, newStatus: Int)
+
+    @Query("SELECT COUNT(*) FROM vault_table WHERE owner_id = :ownerId AND filter_id = :filterId AND status = :status")
+    fun getVaultEntityCount(
+        ownerId: String?,
+        filterId: String?,
+        status: Int?
+    ): Flow<Int>
 }

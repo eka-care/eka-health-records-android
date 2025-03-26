@@ -1,5 +1,6 @@
 package eka.care.documents.ui.presentation.components
 
+import android.content.Context
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
@@ -13,20 +14,34 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.work.Constraints
+import androidx.work.Data
+import androidx.work.ExistingWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import eka.care.documents.R
+import eka.care.documents.sync.workers.SyncFileWorker
+import eka.care.documents.ui.DarwinTouchNeutral0
+import eka.care.documents.ui.DarwinTouchNeutral1000
 import eka.care.documents.ui.presentation.screens.DocumentSortEnum
 import eka.care.documents.ui.presentation.viewmodel.RecordsViewModel
+import eka.care.documents.ui.touchCalloutBold
+import eka.care.documents.ui.touchCalloutRegular
 import eka.care.documents.ui.touchLabelBold
 
 @Composable
@@ -43,6 +58,70 @@ fun DocumentsHeader(
             onClickFilter = onClickFilter
         )
     }
+}
+
+@Composable
+fun DocumentStatus(icon: Int, text: String, buttonText: String?, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .padding(horizontal = 16.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .fillMaxWidth()
+            .background(
+                DarwinTouchNeutral1000
+            )
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Start
+    ) {
+        Image(
+            painter = painterResource(id = icon),
+            contentDescription = null,
+            modifier = Modifier.size(20.dp)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(text = text, style = touchCalloutRegular, color = DarwinTouchNeutral0)
+        if (buttonText != null) {
+            Spacer(modifier = Modifier.weight(1f))
+            Text(text = buttonText,
+                style = touchCalloutBold,
+                color = MaterialTheme.colorScheme.inversePrimary,
+                modifier = Modifier.clickable {
+                    onClick()
+                })
+        }
+    }
+}
+
+fun initData(
+    patientUuid: String,
+    filterIds: List<String>,
+    ownerId: String,
+    context: Context,
+) {
+    val inputData = Data.Builder()
+        .putString("p_uuid", patientUuid)
+        .putString("ownerId", ownerId)
+        .putString("filterIds", filterIds.joinToString(","))
+        .build()
+
+    val constraints = Constraints.Builder()
+        .setRequiredNetworkType(NetworkType.CONNECTED)
+        .build()
+
+    val uniqueWorkName = "syncFileWorker_${patientUuid}_$filterIds$ownerId"
+    val uniqueSyncWorkRequest =
+        OneTimeWorkRequestBuilder<SyncFileWorker>()
+            .setInputData(inputData)
+            .setConstraints(constraints)
+            .build()
+
+    WorkManager.getInstance(context)
+        .enqueueUniqueWork(
+            uniqueWorkName,
+            ExistingWorkPolicy.KEEP,
+            uniqueSyncWorkRequest
+        )
 }
 
 @Composable
@@ -111,4 +190,8 @@ enum class DocumentBottomSheetType {
 
 enum class DocumentViewType {
     ListView, GridView
+}
+
+enum class Mode {
+    VIEW, SELECTION
 }
