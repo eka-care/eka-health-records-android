@@ -190,68 +190,11 @@ fun DocumentGridItem(
 
             when {
                 recordModel.status?.equals(RecordsUtility.Companion.Status.SYNCED_DOCUMENT.value) == true -> {
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
-                            .height(60.dp)
-                            .fillMaxWidth(),
-                        contentAlignment = Alignment.BottomEnd
-                    ) {
-                        AsyncImage(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(color = DarwinTouchNeutral1000)
-                                .graphicsLayer(alpha = 0.4f),
-                            model = recordModel.thumbnail,
-                            contentDescription = "",
-                            contentScale = ContentScale.FillWidth,
-                        )
-                        if (recordModel.fileType.equals("pdf", ignoreCase = true)) {
-                            if (recordModel.autoTags?.split(",")?.contains("1") == true) {
-                                SmartChip()
-                            }
-                        }
-                    }
+                    SyncedDocumentComponent(recordModel)
                 }
 
                 recordModel.status?.equals(RecordsUtility.Companion.Status.WAITING_FOR_NETWORK.value) == true -> {
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
-                            .height(60.dp)
-                            .fillMaxWidth()
-                            .clickable {
-                                onClick(CTA(action = "open_deepThought"), recordModel)
-                            }, contentAlignment = Alignment.Center
-                    ) {
-                        AsyncImage(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(color = DarwinTouchNeutral1000)
-                                .blur(radius = 100.dp),
-                            model = recordModel.thumbnail,
-                            contentDescription = "",
-                            contentScale = ContentScale.FillWidth,
-                        )
-                        Column(
-                            modifier = Modifier,
-                            verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Image(
-                                painter = painterResource(id = R.drawable.no_cloud),
-                                contentDescription = null,
-                                modifier = Modifier
-                                    .size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Waiting for network",
-                                style = touchLabelBold,
-                                color = DarwinTouchNeutral1000
-                            )
-                        }
-                    }
+                    WaitForNetworkComponent(onClick, recordModel)
                 }
 
                 recordModel.status?.equals(RecordsUtility.Companion.Status.WAITING_TO_UPLOAD.value) == true -> {
@@ -299,6 +242,76 @@ fun DocumentGridItem(
 }
 
 @Composable
+private fun WaitForNetworkComponent(
+    onClick: (CTA?, RecordModel) -> Unit,
+    recordModel: RecordModel
+) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(12.dp))
+            .height(60.dp)
+            .fillMaxWidth()
+            .clickable {
+                onClick(CTA(action = "open_deepThought"), recordModel)
+            }, contentAlignment = Alignment.Center
+    ) {
+        AsyncImage(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(color = DarwinTouchNeutral1000)
+                .blur(radius = 100.dp),
+            model = recordModel.thumbnail,
+            contentDescription = "",
+            contentScale = ContentScale.FillWidth,
+        )
+        Column(
+            modifier = Modifier,
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.no_cloud),
+                contentDescription = null,
+                modifier = Modifier
+                    .size(18.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "Waiting for network",
+                style = touchLabelBold,
+                color = DarwinTouchNeutral1000
+            )
+        }
+    }
+}
+
+@Composable
+private fun SyncedDocumentComponent(recordModel: RecordModel) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(12.dp))
+            .height(60.dp)
+            .fillMaxWidth(),
+        contentAlignment = Alignment.BottomEnd
+    ) {
+        AsyncImage(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(color = DarwinTouchNeutral1000)
+                .graphicsLayer(alpha = 0.4f),
+            model = recordModel.thumbnail,
+            contentDescription = "",
+            contentScale = ContentScale.FillWidth,
+        )
+        if (recordModel.fileType.equals("pdf", ignoreCase = true)) {
+            if (recordModel.autoTags?.split(",")?.contains("1") == true) {
+                SmartChip()
+            }
+        }
+    }
+}
+
+@Composable
 fun DocumentStateIndicator(
     icon: Int? = null,
     text: String,
@@ -309,42 +322,34 @@ fun DocumentStateIndicator(
         modifier = Modifier
             .clip(RoundedCornerShape(12.dp))
             .height(60.dp)
-            .fillMaxWidth(),
-        contentAlignment = Alignment.BottomEnd
+            .fillMaxWidth()
+            .background(color = Color.LightGray.copy(alpha = 0.2f))
+            .clickable(enabled = onClick != null) { onClick?.invoke() },
+        contentAlignment = Alignment.Center
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(60.dp)
-                .background(color = Color.LightGray.copy(alpha = 0.2f))
-                .clickable(enabled = onClick != null) { onClick?.invoke() },
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            if (isLoading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(18.dp),
-                    strokeWidth = 2.dp,
-                    color = DarwinTouchNeutral1000,
-                    strokeCap = StrokeCap.Round
-                )
-            } else {
-                icon?.let {
-                    Image(
-                        painter = painterResource(id = icon),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(18.dp)
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = text,
-                style = touchLabelBold,
-                color = DarwinTouchNeutral800
+        if (isLoading) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(18.dp),
+                strokeWidth = 2.dp,
+                color = DarwinTouchNeutral1000,
+                strokeCap = StrokeCap.Round
             )
+        } else {
+            icon?.let {
+                Image(
+                    painter = painterResource(id = icon),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(18.dp)
+                )
+            }
         }
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = text,
+            style = touchLabelBold,
+            color = DarwinTouchNeutral800
+        )
     }
 }
 

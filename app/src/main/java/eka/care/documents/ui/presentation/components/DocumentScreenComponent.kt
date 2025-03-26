@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Button
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -33,9 +34,12 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import eka.care.documents.R
 import eka.care.documents.sync.workers.SyncFileWorker
+import eka.care.documents.ui.DarwinTouchNeutral0
 import eka.care.documents.ui.DarwinTouchNeutral1000
 import eka.care.documents.ui.presentation.screens.DocumentSortEnum
 import eka.care.documents.ui.presentation.viewmodel.RecordsViewModel
+import eka.care.documents.ui.touchCalloutBold
+import eka.care.documents.ui.touchCalloutRegular
 import eka.care.documents.ui.touchLabelBold
 
 @Composable
@@ -55,7 +59,7 @@ fun DocumentsHeader(
 }
 
 @Composable
-fun DocumentStatus() {
+fun DocumentStatus(icon: Int, text : String, buttonText :String) {
     Row(
         modifier = Modifier
             .padding(horizontal = 16.dp)
@@ -63,9 +67,21 @@ fun DocumentStatus() {
             .background(
                 DarwinTouchNeutral1000
             )
-            .padding(horizontal = 16.dp)
+            .padding(horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Start
     ) {
-
+        Image(
+            painter = painterResource(id = icon),
+            contentDescription = null,
+            modifier = Modifier.size(16.dp)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(text = text, style = touchCalloutRegular, color = DarwinTouchNeutral0)
+        Spacer(modifier = Modifier.weight(1f))
+        Button(onClick = { /*TODO*/ }) {
+            Text(text = buttonText)
+        }
     }
 }
 

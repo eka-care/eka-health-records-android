@@ -99,3 +99,11 @@ val touchCalloutBold = DefaultTextStyle.copy(
     fontSize = 14.sp,
     lineHeight = 20.sp,
 )
+
+val touchCalloutRegular = TextStyle.Default.copy(
+    fontFamily = ekaFontFamily,
+    fontWeight = FontWeight.Normal,
+    fontStyle = FontStyle.Normal,
+    fontSize = 14.sp,
+    lineHeight = 20.sp,
+)

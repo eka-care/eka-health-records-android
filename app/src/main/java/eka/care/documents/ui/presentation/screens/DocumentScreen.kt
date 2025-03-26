@@ -401,7 +401,9 @@ fun DocumentScreen(
                             }
                         }
                     )
-                    DocumentStatus()
+//                    AnimatedVisibility(visible = ) {
+//                      //  DocumentStatus()
+//                    }
                     if (resp.isNotEmpty()) {
                         DocumentFilter(
                             viewModel = viewModel,
