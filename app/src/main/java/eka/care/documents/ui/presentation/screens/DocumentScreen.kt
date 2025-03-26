@@ -8,6 +8,7 @@ import android.content.Intent
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -400,7 +401,7 @@ fun DocumentScreen(
                             }
                         }
                     )
-                //    DocumentStatus()
+                    DocumentStatus()
                     if (resp.isNotEmpty()) {
                         DocumentFilter(
                             viewModel = viewModel,

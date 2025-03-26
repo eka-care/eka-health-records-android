@@ -28,11 +28,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
@@ -54,7 +54,6 @@ import eka.care.documents.ui.presentation.viewmodel.RecordsViewModel
 import eka.care.documents.ui.touchLabelBold
 import eka.care.documents.ui.touchLabelRegular
 import eka.care.documents.ui.utility.RecordsUtility
-import vault.added_records_summary.status
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -188,15 +187,16 @@ fun DocumentGridItem(
                 }
             }
             Spacer(modifier = Modifier.height(8.dp))
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(12.dp))
-                    .height(60.dp)
-                    .fillMaxWidth(),
-                contentAlignment = Alignment.BottomEnd
-            ) {
-                when {
-                    recordModel.status?.equals(RecordsUtility.Companion.Status.SYNCED_DOCUMENT.value) == true -> {
+
+            when {
+                recordModel.status?.equals(RecordsUtility.Companion.Status.SYNCED_DOCUMENT.value) == true -> {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(12.dp))
+                            .height(60.dp)
+                            .fillMaxWidth(),
+                        contentAlignment = Alignment.BottomEnd
+                    ) {
                         AsyncImage(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -212,38 +212,70 @@ fun DocumentGridItem(
                             }
                         }
                     }
+                }
 
-                    recordModel.status?.equals(RecordsUtility.Companion.Status.WAITING_FOR_NETWORK.value) == true -> {
-                        DocumentStateIndicator(
-                            icon = R.drawable.no_cloud,
-                            text = "Waiting for network",
-                            onClick = { onClick(CTA(action = "open_deepThought"), recordModel) }
+                recordModel.status?.equals(RecordsUtility.Companion.Status.WAITING_FOR_NETWORK.value) == true -> {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(12.dp))
+                            .height(60.dp)
+                            .fillMaxWidth()
+                            .clickable {
+                                onClick(CTA(action = "open_deepThought"), recordModel)
+                            }, contentAlignment = Alignment.Center
+                    ) {
+                        AsyncImage(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(color = DarwinTouchNeutral1000)
+                                .blur(radius = 100.dp),
+                            model = recordModel.thumbnail,
+                            contentDescription = "",
+                            contentScale = ContentScale.FillWidth,
                         )
+                        Column(
+                            modifier = Modifier,
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Image(
+                                painter = painterResource(id = R.drawable.no_cloud),
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Waiting for network",
+                                style = touchLabelBold,
+                                color = DarwinTouchNeutral1000
+                            )
+                        }
                     }
+                }
 
-                    recordModel.status?.equals(RecordsUtility.Companion.Status.WAITING_TO_UPLOAD.value) == true -> {
-                        DocumentStateIndicator(
-                            isLoading = true,
-                            text = "Waiting to upload..",
-                            onClick = { onClick(CTA(action = "open_deepThought"), recordModel) }
-                        )
-                    }
+                recordModel.status?.equals(RecordsUtility.Companion.Status.WAITING_TO_UPLOAD.value) == true -> {
+                    DocumentStateIndicator(
+                        isLoading = true,
+                        text = "Waiting to upload..",
+                        onClick = { onClick(CTA(action = "open_deepThought"), recordModel) }
+                    )
+                }
 
-                     recordModel.status?.equals(RecordsUtility.Companion.Status.UPLOADING_DOCUMENT.value) == true -> {
-                        DocumentStateIndicator(
-                            isLoading = true,
-                            text = "Uploading..",
-                            onClick = { onClick(CTA(action = "open_deepThought"), recordModel) }
-                        )
-                    }
+                recordModel.status?.equals(RecordsUtility.Companion.Status.UPLOADING_DOCUMENT.value) == true -> {
+                    DocumentStateIndicator(
+                        isLoading = true,
+                        text = "Uploading..",
+                        onClick = { onClick(CTA(action = "open_deepThought"), recordModel) }
+                    )
+                }
 
-                    recordModel.status?.equals(RecordsUtility.Companion.Status.UNSYNCED_DOCUMENT.value) == true -> {
-                        DocumentStateIndicator(
-                            icon = R.drawable.ic_rotate_right_solid,
-                            text = "Try again",
-                            onClick = { onClick(CTA(action = "open_deepThought"), recordModel) }
-                        )
-                    }
+                recordModel.status?.equals(RecordsUtility.Companion.Status.UNSYNCED_DOCUMENT.value) == true -> {
+                    DocumentStateIndicator(
+                        icon = R.drawable.ic_rotate_right_solid,
+                        text = "Try again",
+                        onClick = { onClick(CTA(action = "open_deepThought"), recordModel) }
+                    )
                 }
             }
         }
@@ -273,38 +305,46 @@ fun DocumentStateIndicator(
     isLoading: Boolean = false,
     onClick: (() -> Unit)? = null
 ) {
-    Column(
+    Box(
         modifier = Modifier
-            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
             .height(60.dp)
-            .background(color = Color.LightGray.copy(alpha = 0.2f))
-            .clickable(enabled = onClick != null) { onClick?.invoke() },
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+            .fillMaxWidth(),
+        contentAlignment = Alignment.BottomEnd
     ) {
-        if (isLoading) {
-            CircularProgressIndicator(
-                modifier = Modifier.size(18.dp),
-                strokeWidth = 2.dp,
-                color = DarwinTouchNeutral1000,
-                strokeCap = StrokeCap.Round
-            )
-        } else {
-            icon?.let {
-                Image(
-                    painter = painterResource(id = icon),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .size(18.dp)
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(60.dp)
+                .background(color = Color.LightGray.copy(alpha = 0.2f))
+                .clickable(enabled = onClick != null) { onClick?.invoke() },
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(18.dp),
+                    strokeWidth = 2.dp,
+                    color = DarwinTouchNeutral1000,
+                    strokeCap = StrokeCap.Round
                 )
+            } else {
+                icon?.let {
+                    Image(
+                        painter = painterResource(id = icon),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(18.dp)
+                    )
+                }
             }
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = text,
+                style = touchLabelBold,
+                color = DarwinTouchNeutral800
+            )
         }
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(
-            text = text,
-            style = touchLabelRegular,
-            color = DarwinTouchNeutral800
-        )
     }
 }
 
