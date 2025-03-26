@@ -85,7 +85,6 @@ class DocumentPreviewViewModel(val app: Application) : AndroidViewModel(app) {
                     )
                     return@launch
                 }
-                Log.d("AYUSHI-3", "${userId.toString()}, $docId")
                 val response = myFileRepository.getDocument(documentId = docId, filterId = userId)
                 if (response == null) {
                     _document.value = DocumentPreviewState.Error("Something went wrong!")

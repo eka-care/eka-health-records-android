@@ -41,7 +41,6 @@ class DocumentViewActivity : ComponentActivity() {
             val localId = intent.getStringExtra("local_id")
             val docId = intent.getStringExtra("doc_id")
             val userId = intent.getStringExtra("user_id")
-            Log.d("AYUSHI-5", "${userId.toString()}, $docId")
             viewModel.getDocument(
                 userId = userId ?: "",
                 docId = docId ?: "",
