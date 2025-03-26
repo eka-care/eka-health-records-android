@@ -218,4 +218,11 @@ interface VaultDao {
 
     @Query("UPDATE vault_table SET status = :newStatus WHERE local_id = :localId")
     suspend fun updateDocumentStatus(localId: String, newStatus: String)
+
+    @Query("SELECT COUNT(*) FROM vault_table WHERE owner_id = :ownerId AND filter_id = :filterId AND status = :status")
+    suspend fun getVaultEntityCount(
+        ownerId: String?,
+        filterId: String?,
+        status: String?
+    ): Int
 }

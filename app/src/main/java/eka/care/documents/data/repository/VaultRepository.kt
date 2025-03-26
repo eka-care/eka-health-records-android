@@ -30,4 +30,9 @@ interface VaultRepository: DocumentsRepository {
     suspend fun removeDocument(localId: String, filterId: String?)
     suspend fun getDocumentsWithoutFilePath(ownerId: String, filterIds: List<String>?) : List<VaultEntity>
     suspend fun updateDocumentStatus(localId: String, status: String)
+    suspend fun getVaultEntityCount(
+        ownerId: String?,
+        filterId: String?,
+        status: String?
+    ): Int
 }

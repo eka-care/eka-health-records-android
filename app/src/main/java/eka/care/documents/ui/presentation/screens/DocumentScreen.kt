@@ -3,7 +3,6 @@ package eka.care.documents.ui.presentation.screens
 import android.Manifest
 import android.app.Activity
 import android.app.Application
-import android.content.Context
 import android.content.Intent
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -43,12 +42,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.work.Constraints
-import androidx.work.Data
-import androidx.work.ExistingWorkPolicy
-import androidx.work.NetworkType
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkManager
 import com.example.reader.presentation.states.PdfSource
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionStatus
@@ -61,7 +54,6 @@ import com.google.mlkit.vision.documentscanner.GmsDocumentScanning
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
 import eka.care.documents.R
 import eka.care.documents.data.utility.DocumentUtility.Companion.PARAM_RECORD_PARAMS_MODEL
-import eka.care.documents.sync.workers.SyncFileWorker
 import eka.care.documents.ui.BgWhite
 import eka.care.documents.ui.presentation.activity.FileViewerActivity
 import eka.care.documents.ui.presentation.activity.MedicalRecordParams
@@ -79,7 +71,6 @@ import eka.care.documents.ui.presentation.model.RecordParamsModel
 import eka.care.documents.ui.presentation.state.GetRecordsState
 import eka.care.documents.ui.presentation.viewmodel.RecordsViewModel
 import eka.care.documents.ui.utility.RecordsAction
-import eka.care.documents.ui.utility.RecordsUtility
 import kotlinx.coroutines.launch
 
 enum class Mode {
@@ -401,9 +392,21 @@ fun DocumentScreen(
                             }
                         }
                     )
-//                    AnimatedVisibility(visible = ) {
-//                      //  DocumentStatus()
-//                    }
+                    val count = viewModel.getVaultEntityCount(
+                        ownerId = params.ownerId,
+                        filterId = params.filterId,
+                        status = "WFN"
+                    )
+                    AnimatedVisibility(visible =) {
+                        DocumentStatus(
+                            icon = R.drawable.ic_cloud_slash,
+                            buttonText = "Try Again",
+                            text = "2 documents pending upload",
+                            onClick = {
+
+                            }
+                        )
+                    }
                     if (resp.isNotEmpty()) {
                         DocumentFilter(
                             viewModel = viewModel,

@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.material.primarySurface
 import androidx.compose.material3.Button
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -59,7 +60,7 @@ fun DocumentsHeader(
 }
 
 @Composable
-fun DocumentStatus(icon: Int, text : String, buttonText :String) {
+fun DocumentStatus(icon: Int, text : String, buttonText :String, onClick:()->Unit) {
     Row(
         modifier = Modifier
             .padding(horizontal = 16.dp)
@@ -74,13 +75,14 @@ fun DocumentStatus(icon: Int, text : String, buttonText :String) {
         Image(
             painter = painterResource(id = icon),
             contentDescription = null,
+            colorFilter = ColorFilter.tint(DarwinTouchNeutral1000),
             modifier = Modifier.size(16.dp)
         )
         Spacer(modifier = Modifier.width(8.dp))
         Text(text = text, style = touchCalloutRegular, color = DarwinTouchNeutral0)
         Spacer(modifier = Modifier.weight(1f))
-        Button(onClick = { /*TODO*/ }) {
-            Text(text = buttonText)
+        Button(onClick = { onClick() }) {
+            Text(text = buttonText, style = touchCalloutBold, color = MaterialTheme.colorScheme.inversePrimary)
         }
     }
 }

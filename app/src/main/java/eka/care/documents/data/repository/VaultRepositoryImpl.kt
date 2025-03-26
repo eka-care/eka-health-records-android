@@ -198,4 +198,12 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
         database.vaultDao().updateDocumentStatus(localId, status)
         return
     }
+
+    override suspend fun getVaultEntityCount(
+        ownerId: String?,
+        filterId: String?,
+        status: String?
+    ): Int {
+        return database.vaultDao().getVaultEntityCount(ownerId = ownerId, filterId = filterId, status = status)
+    }
 }

@@ -96,7 +96,8 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
 
         val activeNetwork = connectivityManager.activeNetwork
         val capabilities = connectivityManager.getNetworkCapabilities(activeNetwork)
-        _isOnline.value = capabilities?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) ?: false
+        _isOnline.value =
+            capabilities?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) ?: false
 
         networkCallback = object : ConnectivityManager.NetworkCallback() {
             override fun onAvailable(network: Network) {
@@ -111,7 +112,8 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
                 network: Network,
                 capabilities: NetworkCapabilities
             ) {
-                _isOnline.value = capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                _isOnline.value =
+                    capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
             }
         }
 
@@ -301,40 +303,6 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun syncEditedDocuments(filterIds: List<String>, ownerId: String) {
-        try {
-            viewModelScope.launch {
-                vaultRepository.getEditedDocuments(filterIds = filterIds, ownerId = ownerId)
-            }
-        } catch (_: Exception) {
-        }
-    }
-
-    fun syncDeletedDocuments(filterIds: List<String>, ownerId: String) {
-        try {
-            viewModelScope.launch {
-                val vaultDocuments =
-                    vaultRepository.getDeletedDocuments(ownerId = ownerId, filterIds = filterIds)
-                vaultDocuments.forEach { vaultEntity ->
-                    vaultEntity.documentId?.let {
-                        val resp = myFileRepository.deleteDocument(
-                            documentId = it,
-                            filterId = vaultEntity.filterId
-                        )
-                        if (resp in 200..299) {
-                            vaultRepository.removeDocument(
-                                localId = vaultEntity.localId,
-                                filterId = vaultEntity.filterId
-                            )
-                        }
-                    }
-
-                }
-            }
-        } catch (_: Exception) {
-        }
-    }
-
     fun getAvailableDocTypes(filterIds: List<String>, ownerId: String?) {
         try {
             viewModelScope.launch {
@@ -347,6 +315,23 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
                     )
             }
         } catch (_: Exception) {
+        }
+    }
+
+    suspend fun getVaultEntityCount(
+        ownerId: String,
+        filterId: String?,
+        status: String
+    ): Int {
+        return vaultRepository.getVaultEntityCount(
+            ownerId = ownerId,
+            filterId = filterId,
+            status = status
+        ).runCatching {
+            this
+        }.getOrElse { exception ->
+            Log.e("VaultRepository", "Error getting vault count", exception)
+            0
         }
     }
 }
