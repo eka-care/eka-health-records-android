@@ -384,8 +384,8 @@ fun DocumentScreen(
                         exit = fadeOut()
                     ) {
                         DocumentStatus(icon = R.drawable.ic_cloud_slash_solid,
-                            buttonText = "Try Again",
-                            text = if (!isOnline) "$count document${if (count > 1) "s" else ""} pending upload"
+                            buttonText =if(isOnline) "Try Again" else null,
+                            text = if (!isOnline) "$count file${if (count > 1) "s" else ""} pending upload. Connect to the internet."
                             else "$count document${if (count > 1) "s" else ""} failed to upload",
                             onClick = {
                                 initData(

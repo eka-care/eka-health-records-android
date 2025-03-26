@@ -61,7 +61,7 @@ fun DocumentsHeader(
 }
 
 @Composable
-fun DocumentStatus(icon: Int, text: String, buttonText: String, onClick: () -> Unit) {
+fun DocumentStatus(icon: Int, text: String, buttonText: String?, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .padding(horizontal = 16.dp)
@@ -81,13 +81,15 @@ fun DocumentStatus(icon: Int, text: String, buttonText: String, onClick: () -> U
         )
         Spacer(modifier = Modifier.width(8.dp))
         Text(text = text, style = touchCalloutRegular, color = DarwinTouchNeutral0)
-        Spacer(modifier = Modifier.weight(1f))
-        Text(text = buttonText,
-            style = touchCalloutBold,
-            color = MaterialTheme.colorScheme.inversePrimary,
-            modifier = Modifier.clickable {
-                onClick()
-            })
+        if (buttonText != null) {
+            Spacer(modifier = Modifier.weight(1f))
+            Text(text = buttonText,
+                style = touchCalloutBold,
+                color = MaterialTheme.colorScheme.inversePrimary,
+                modifier = Modifier.clickable {
+                    onClick()
+                })
+        }
     }
 }
 

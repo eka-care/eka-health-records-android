@@ -32,7 +32,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
@@ -254,15 +253,23 @@ private fun WaitForNetworkComponent(
                 onClick(CTA(action = "open_deepThought"), recordModel)
             }, contentAlignment = Alignment.Center
     ) {
-        AsyncImage(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(color = DarwinTouchNeutral1000)
-                .blur(radius = 100.dp),
-            model = recordModel.thumbnail,
-            contentDescription = "",
-            contentScale = ContentScale.FillWidth,
-        )
+        ) {
+            AsyncImage(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                model = recordModel.thumbnail,
+                contentDescription = "",
+                contentScale = ContentScale.FillWidth,
+            )
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(Color.White.copy(alpha = 0.4f))
+            )
+        }
         Column(
             modifier = Modifier,
             verticalArrangement = Arrangement.Center,
@@ -326,29 +333,35 @@ fun DocumentStateIndicator(
             .clickable(enabled = onClick != null) { onClick?.invoke() },
         contentAlignment = Alignment.Center
     ) {
-        if (isLoading) {
-            CircularProgressIndicator(
-                modifier = Modifier.size(18.dp),
-                strokeWidth = 2.dp,
-                color = DarwinTouchNeutral1000,
-                strokeCap = StrokeCap.Round
-            )
-        } else {
-            icon?.let {
-                Image(
-                    painter = painterResource(id = icon),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .size(18.dp)
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(18.dp),
+                    strokeWidth = 2.dp,
+                    color = DarwinTouchNeutral1000,
+                    strokeCap = StrokeCap.Round
                 )
+            } else {
+                icon?.let {
+                    Image(
+                        painter = painterResource(id = icon),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(18.dp)
+                    )
+                }
             }
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = text,
+                style = touchLabelBold,
+                color = DarwinTouchNeutral800
+            )
         }
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(
-            text = text,
-            style = touchLabelBold,
-            color = DarwinTouchNeutral800
-        )
     }
 }
 
