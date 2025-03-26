@@ -30,10 +30,10 @@ interface VaultRepository: DocumentsRepository {
     suspend fun getDocumentById(id: String) : VaultEntity?
     suspend fun removeDocument(localId: String, filterId: String?)
     suspend fun getDocumentsWithoutFilePath(ownerId: String, filterIds: List<String>?) : List<VaultEntity>
-    suspend fun updateDocumentStatus(localId: String, status: String)
-    fun getVaultEntityCount(
+    suspend fun updateDocumentStatus(localId: String, status: Int)
+    fun getStatusCount(
         ownerId: String?,
         filterId: String?,
-        status: String?
+        status: Int?
     ): Flow<Int>
 }

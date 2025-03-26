@@ -322,9 +322,9 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
     fun getVaultEntityCount(
         ownerId: String,
         filterId: String?,
-        status: String
+        status: Int
     ): Flow<Int> {
-        return vaultRepository.getVaultEntityCount(
+        return vaultRepository.getStatusCount(
             ownerId = ownerId,
             filterId = filterId,
             status = status
