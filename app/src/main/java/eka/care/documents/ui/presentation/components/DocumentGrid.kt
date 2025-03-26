@@ -32,6 +32,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
@@ -268,6 +269,7 @@ private fun WaitForNetworkComponent(
                 modifier = Modifier
                     .matchParentSize()
                     .background(Color.White.copy(alpha = 0.4f))
+                    .blur(100.dp)
             )
         }
         Column(

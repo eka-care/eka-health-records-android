@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -24,13 +25,17 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import eka.care.documents.R
 import eka.care.documents.data.utility.DocumentUtility.Companion.docTypes
+import eka.care.documents.ui.DarwinTouchNeutral1000
 import eka.care.documents.ui.presentation.model.CTA
 import eka.care.documents.ui.presentation.model.RecordModel
+import eka.care.documents.ui.touchCalloutRegular
 import eka.care.documents.ui.touchLabelRegular
+import eka.care.documents.ui.utility.RecordsUtility
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -95,13 +100,34 @@ fun DocumentList(
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface
                 )
-                formattedDate?.let {
-                    Text(
-                        text = it,
-                        style = touchLabelRegular,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                when {
+                    recordModel.status?.equals(RecordsUtility.Companion.Status.SYNCED_DOCUMENT.value) == true -> {
+                        formattedDate?.let {
+                            Text(
+                                text = it,
+                                style = touchLabelRegular,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    recordModel.status?.equals(RecordsUtility.Companion.Status.WAITING_FOR_NETWORK.value) == true -> {
+                        RowStatusComponent(icon = R.drawable.ic_cloud_slash,  text = "Waiting for network")
+                    }
+
+                    recordModel.status?.equals(RecordsUtility.Companion.Status.WAITING_TO_UPLOAD.value) == true -> {
+                        RowStatusComponent(isLoading = true, icon = null, text = "Waiting to upload..")
+                    }
+
+                    recordModel.status?.equals(RecordsUtility.Companion.Status.UPLOADING_DOCUMENT.value) == true -> {
+                        RowStatusComponent(isLoading = true, icon = null, text = "Uploading..")
+                    }
+
+                    recordModel.status?.equals(RecordsUtility.Companion.Status.UNSYNCED_DOCUMENT.value) == true -> {
+                        RowStatusComponent(isLoading = true, icon = R.drawable.ic_rotate_right_solid, text = "Try again")
+                    }
                 }
+
             }
         }
         Row {
@@ -136,5 +162,37 @@ fun DocumentList(
                     .padding(2.dp)
             )
         }
+    }
+}
+
+@Composable
+private fun RowStatusComponent(isLoading : Boolean = false, icon : Int?, text:String) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Start
+    ) {
+        if (isLoading) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(18.dp),
+                strokeWidth = 2.dp,
+                color = DarwinTouchNeutral1000,
+                strokeCap = StrokeCap.Round
+            )
+        } else {
+            icon?.let {
+                Image(
+                    painter = painterResource(id = icon),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(16.dp)
+                )
+            }
+        }
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = text,
+            style = touchCalloutRegular,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
