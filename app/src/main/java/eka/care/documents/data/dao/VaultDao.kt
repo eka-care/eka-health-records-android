@@ -164,10 +164,9 @@ interface VaultDao {
     @Query("""
     SELECT * FROM vault_table 
     WHERE file_path IS NULL 
-    AND owner_id = :ownerId 
-    AND (filter_id IN (:filterIds) OR filter_id IS NULL)
+    AND owner_id = :ownerId
 """)
-    fun fetchDocumentsWithoutFilePath(ownerId: String, filterIds: List<String>?): List<VaultEntity>
+    fun fetchDocumentsWithoutFilePath(ownerId: String): List<VaultEntity>
 
     @Query("UPDATE vault_table SET file_path=:filePath WHERE doc_id=:docId")
     suspend fun updateFilePath(docId: String?, filePath: String)
