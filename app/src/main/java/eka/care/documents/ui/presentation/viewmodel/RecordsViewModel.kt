@@ -34,6 +34,7 @@ import eka.care.documents.ui.utility.RecordsUtility.Companion.convertLongToForma
 import id.zelory.compressor.Compressor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -318,20 +319,15 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    suspend fun getVaultEntityCount(
+    fun getVaultEntityCount(
         ownerId: String,
         filterId: String?,
         status: String
-    ): Int {
+    ): Flow<Int> {
         return vaultRepository.getVaultEntityCount(
             ownerId = ownerId,
             filterId = filterId,
             status = status
-        ).runCatching {
-            this
-        }.getOrElse { exception ->
-            Log.e("VaultRepository", "Error getting vault count", exception)
-            0
-        }
+        )
     }
 }

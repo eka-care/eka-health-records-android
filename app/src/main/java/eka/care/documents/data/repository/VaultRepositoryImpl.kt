@@ -199,11 +199,11 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
         return
     }
 
-    override suspend fun getVaultEntityCount(
+    override fun getVaultEntityCount(
         ownerId: String?,
         filterId: String?,
         status: String?
-    ): Int {
-        return database.vaultDao().getVaultEntityCount(ownerId = ownerId, filterId = filterId, status = status)
+    ): Flow<Int> {
+        return database.vaultDao().getVaultEntityCount(ownerId = ownerId, filterId = filterId, status = status).flowOn(Dispatchers.IO)
     }
 }

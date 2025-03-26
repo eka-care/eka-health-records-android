@@ -8,6 +8,8 @@ import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -64,6 +66,7 @@ import eka.care.documents.ui.presentation.components.DocumentFilter
 import eka.care.documents.ui.presentation.components.DocumentScreenContent
 import eka.care.documents.ui.presentation.components.DocumentStatus
 import eka.care.documents.ui.presentation.components.DocumentsSort
+import eka.care.documents.ui.presentation.components.Mode
 import eka.care.documents.ui.presentation.components.TopAppBarSmall
 import eka.care.documents.ui.presentation.components.initData
 import eka.care.documents.ui.presentation.model.RecordModel
@@ -71,11 +74,8 @@ import eka.care.documents.ui.presentation.model.RecordParamsModel
 import eka.care.documents.ui.presentation.state.GetRecordsState
 import eka.care.documents.ui.presentation.viewmodel.RecordsViewModel
 import eka.care.documents.ui.utility.RecordsAction
+import eka.care.documents.ui.utility.RecordsUtility
 import kotlinx.coroutines.launch
-
-enum class Mode {
-    VIEW, SELECTION
-}
 
 @OptIn(ExperimentalMaterialApi::class, ExperimentalPermissionsApi::class)
 @Composable
@@ -108,10 +108,8 @@ fun DocumentScreen(
             add(params.filterId)
         }
         if (!params.links.isNullOrBlank()) {
-            params.links.split(",")
-                .map { it.trim() }
-                .filter { it.isNotEmpty() && it != params.filterId }
-                .forEach { add(it) }
+            params.links.split(",").map { it.trim() }
+                .filter { it.isNotEmpty() && it != params.filterId }.forEach { add(it) }
         }
     }
     val selectedItems = remember { mutableStateListOf<RecordModel>() }
@@ -137,12 +135,8 @@ fun DocumentScreen(
         }
     }
 
-    val options = GmsDocumentScannerOptions.Builder()
-        .setGalleryImportAllowed(true)
-        .setPageLimit(4)
-        .setResultFormats(RESULT_FORMAT_JPEG)
-        .setScannerMode(SCANNER_MODE_FULL)
-        .build()
+    val options = GmsDocumentScannerOptions.Builder().setGalleryImportAllowed(true).setPageLimit(4)
+        .setResultFormats(RESULT_FORMAT_JPEG).setScannerMode(SCANNER_MODE_FULL).build()
 
     val scanner = GmsDocumentScanning.getClient(options)
 
@@ -178,34 +172,31 @@ fun DocumentScreen(
         }
     }
 
-    val pdfPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocument(),
-        onResult = { uri ->
-            uri?.let {
-                viewModel.pdfSource = PdfSource.Uri(it)
-                Intent(context, FileViewerActivity::class.java).apply {
-                    putExtra("PDF_URI", it.toString())
-                    putExtra(PARAM_RECORD_PARAMS_MODEL, params)
-                }.also { intent ->
-                    documentViewerLauncher.launch(intent)
+    val pdfPickerLauncher =
+        rememberLauncherForActivityResult(contract = ActivityResultContracts.OpenDocument(),
+            onResult = { uri ->
+                uri?.let {
+                    viewModel.pdfSource = PdfSource.Uri(it)
+                    Intent(context, FileViewerActivity::class.java).apply {
+                        putExtra("PDF_URI", it.toString())
+                        putExtra(PARAM_RECORD_PARAMS_MODEL, params)
+                    }.also { intent ->
+                        documentViewerLauncher.launch(intent)
+                    }
                 }
-            }
-        }
-    )
+            })
 
     val scannerLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
-                val data =
-                    GmsDocumentScanningResult.fromActivityResultIntent(result.data)
+                val data = GmsDocumentScanningResult.fromActivityResultIntent(result.data)
                 data?.pages?.let { pages ->
                     val imageUris = ArrayList<String>()
                     for (page in pages) {
                         imageUris.add(page.imageUri.toString())
                     }
                     Intent(
-                        context,
-                        FileViewerActivity::class.java
+                        context, FileViewerActivity::class.java
                     ).apply {
                         putStringArrayListExtra("IMAGE_URIS", imageUris)
                         putExtra(PARAM_RECORD_PARAMS_MODEL, params)
@@ -234,11 +225,10 @@ fun DocumentScreen(
             }
         }
 
-    val modalBottomSheetState = rememberModalBottomSheetState(
-        initialValue = ModalBottomSheetValue.Hidden,
-        skipHalfExpanded = true,
-        confirmValueChange = { true }
-    )
+    val modalBottomSheetState =
+        rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden,
+            skipHalfExpanded = true,
+            confirmValueChange = { true })
 
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
@@ -258,22 +248,18 @@ fun DocumentScreen(
     val recordsState by viewModel.getRecordsState.collectAsState()
     var firstVisibleItemIndex by remember { mutableIntStateOf(0) }
 
-    val pullRefreshState = rememberPullRefreshState(
-        refreshing = isRefreshing,
-        onRefresh = {
-            initData(
-                filterIds = filterIdsToProcess,
-                ownerId = params.ownerId,
-                context = context,
-                patientUuid = params.uuid
-            )
-        }
-    )
+    val pullRefreshState = rememberPullRefreshState(refreshing = isRefreshing, onRefresh = {
+        initData(
+            filterIds = filterIdsToProcess,
+            ownerId = params.ownerId,
+            context = context,
+            patientUuid = params.uuid
+        )
+    })
 
     LaunchedEffect(key1 = viewModel.documentType.intValue) {
         viewModel.getAvailableDocTypes(
-            filterIds = filterIdsToProcess,
-            ownerId = params.ownerId
+            filterIds = filterIdsToProcess, ownerId = params.ownerId
         )
         viewModel.getLocalRecords(
             filterIds = filterIdsToProcess,
@@ -301,21 +287,19 @@ fun DocumentScreen(
 
     var showDeleteDialog by remember { mutableStateOf(false) }
     if (showDeleteDialog) {
-        AlertDialog(
-            containerColor = Color.White,
+        AlertDialog(containerColor = Color.White,
             onDismissRequest = { showDeleteDialog = false },
             title = { Text(text = "Confirm Delete") },
             text = { Text(text = stringResource(id = R.string.are_you_sure_you_want_to_delete_this_record)) },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        viewModel.deleteDocument(
-                            localId = viewModel.cardClickData.value?.localId ?: "",
-                            ownerId = params.ownerId,
-                            allFilterIds = filterIdsToProcess
-                        )
-                        showDeleteDialog = false
-                    }) {
+                TextButton(onClick = {
+                    viewModel.deleteDocument(
+                        localId = viewModel.cardClickData.value?.localId ?: "",
+                        ownerId = params.ownerId,
+                        allFilterIds = filterIdsToProcess
+                    )
+                    showDeleteDialog = false
+                }) {
                     Text("Yes")
                 }
             },
@@ -323,13 +307,19 @@ fun DocumentScreen(
                 TextButton(onClick = { showDeleteDialog = false }) {
                     Text("No")
                 }
-            }
-        )
+            })
     }
+    val isOnline = viewModel.isOnline.collectAsState().value
+    val count by viewModel.getVaultEntityCount(
+        ownerId = params.ownerId,
+        filterId = params.filterId,
+        status = if (!isOnline) RecordsUtility.Companion.Status.WAITING_FOR_NETWORK.value
+        else RecordsUtility.Companion.Status.UNSYNCED_DOCUMENT.value
+    ).collectAsState(initial = 0)
+    Log.d("AYUSHI", count.toString())
     val resp = (recordsState as? GetRecordsState.Success)?.resp ?: emptyList()
     ModalBottomSheetLayout(
-        sheetState = modalBottomSheetState,
-        sheetContent = {
+        sheetState = modalBottomSheetState, sheetContent = {
             DocumentBottomSheetContent(
                 onClick = {
                     when (it.action) {
@@ -357,9 +347,7 @@ fun DocumentScreen(
                 allFilterIds = filterIdsToProcess
             )
             Spacer(modifier = Modifier.height(16.dp))
-        },
-        sheetShape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
-        sheetElevation = 0.dp
+        }, sheetShape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp), sheetElevation = 0.dp
     ) {
         Scaffold(
             topBar = {
@@ -368,10 +356,9 @@ fun DocumentScreen(
                         .fillMaxWidth()
                         .background(BgWhite)
                 ) {
-                    TopAppBarSmall(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(BgWhite),
+                    TopAppBarSmall(modifier = Modifier
+                        .fillMaxWidth()
+                        .background(BgWhite),
                         title = params.name,
                         subTitle = if (params.age != null && params.age > 1) {
                             "${params.gender}, ${params.age}y"
@@ -390,47 +377,42 @@ fun DocumentScreen(
                                 viewModel.documentBottomSheetType = null
                                 selectedRecords?.invoke(selectedItems.toList())
                             }
-                        }
-                    )
-                    val count = viewModel.getVaultEntityCount(
-                        ownerId = params.ownerId,
-                        filterId = params.filterId,
-                        status = "WFN"
-                    )
-                    AnimatedVisibility(visible =) {
-                        DocumentStatus(
-                            icon = R.drawable.ic_cloud_slash,
+                        })
+                    AnimatedVisibility(
+                        visible = count >= 1,
+                        enter = fadeIn(),
+                        exit = fadeOut()
+                    ) {
+                        DocumentStatus(icon = R.drawable.ic_cloud_slash_solid,
                             buttonText = "Try Again",
-                            text = "2 documents pending upload",
+                            text = if (!isOnline) "$count document${if (count > 1) "s" else ""} pending upload"
+                            else "$count document${if (count > 1) "s" else ""} failed to upload",
                             onClick = {
-
-                            }
-                        )
-                    }
-                    if (resp.isNotEmpty()) {
-                        DocumentFilter(
-                            viewModel = viewModel,
-                            onClick = {
-                                viewModel.getLocalRecords(
+                                initData(
                                     filterIds = filterIdsToProcess,
                                     ownerId = params.ownerId,
-                                    docType = it
+                                    context = context,
+                                    patientUuid = params.uuid
                                 )
-                            }
-                        )
-                        DocumentsSort(
-                            viewModel = viewModel,
-                            onClickSort = {
-                                openSheet()
-                                viewModel.documentBottomSheetType =
-                                    DocumentBottomSheetType.DocumentSort
                             })
+                    }
+                    if (resp.isNotEmpty()) {
+                        DocumentFilter(viewModel = viewModel, onClick = {
+                            viewModel.getLocalRecords(
+                                filterIds = filterIdsToProcess,
+                                ownerId = params.ownerId,
+                                docType = it
+                            )
+                        })
+                        DocumentsSort(viewModel = viewModel, onClickSort = {
+                            openSheet()
+                            viewModel.documentBottomSheetType = DocumentBottomSheetType.DocumentSort
+                        })
                     }
                 }
             },
             content = {
-                DocumentScreenContent(
-                    paddingValues = it,
+                DocumentScreenContent(paddingValues = it,
                     pullRefreshState = pullRefreshState,
                     recordsState = recordsState,
                     openSheet = openSheet,
@@ -444,8 +426,7 @@ fun DocumentScreen(
                     onSelectedItemsChange = { items ->
                         selectedItems.clear()
                         selectedItems.addAll(items)
-                    }
-                )
+                    })
             },
         )
     }

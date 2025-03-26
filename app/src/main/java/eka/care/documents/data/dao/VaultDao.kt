@@ -220,9 +220,9 @@ interface VaultDao {
     suspend fun updateDocumentStatus(localId: String, newStatus: String)
 
     @Query("SELECT COUNT(*) FROM vault_table WHERE owner_id = :ownerId AND filter_id = :filterId AND status = :status")
-    suspend fun getVaultEntityCount(
+    fun getVaultEntityCount(
         ownerId: String?,
         filterId: String?,
         status: String?
-    ): Int
+    ): Flow<Int>
 }

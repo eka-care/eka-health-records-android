@@ -30,7 +30,6 @@ import eka.care.documents.R
 import eka.care.documents.data.utility.DocumentUtility.Companion.docTypes
 import eka.care.documents.ui.presentation.model.CTA
 import eka.care.documents.ui.presentation.model.RecordModel
-import eka.care.documents.ui.presentation.screens.Mode
 import eka.care.documents.ui.touchLabelRegular
 import java.text.SimpleDateFormat
 import java.util.Date

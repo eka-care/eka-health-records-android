@@ -49,7 +49,6 @@ import eka.care.documents.ui.DarwinTouchNeutral1000
 import eka.care.documents.ui.DarwinTouchNeutral800
 import eka.care.documents.ui.presentation.model.CTA
 import eka.care.documents.ui.presentation.model.RecordModel
-import eka.care.documents.ui.presentation.screens.Mode
 import eka.care.documents.ui.presentation.viewmodel.RecordsViewModel
 import eka.care.documents.ui.touchLabelBold
 import eka.care.documents.ui.touchLabelRegular
@@ -270,7 +269,7 @@ private fun WaitForNetworkComponent(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Image(
-                painter = painterResource(id = R.drawable.no_cloud),
+                painter = painterResource(id = R.drawable.ic_cloud_slash),
                 contentDescription = null,
                 modifier = Modifier
                     .size(18.dp)

@@ -362,7 +362,7 @@ fun AddMedicalRecordsDetailViewComponent(
                     )
                     Spacer(modifier = Modifier.width(16.dp))
                     Text(
-                        text = date ?: "",
+                        text = date,
                         color = MaterialTheme.colorScheme.onSurface,
                         style = touchBodyBold
                     )

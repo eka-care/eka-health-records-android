@@ -40,7 +40,6 @@ import eka.care.documents.ui.DarwinTouchNeutral1000
 import eka.care.documents.ui.presentation.model.RecordModel
 import eka.care.documents.ui.presentation.model.RecordParamsModel
 import eka.care.documents.ui.presentation.screens.DocumentEmptyStateScreen
-import eka.care.documents.ui.presentation.screens.Mode
 import eka.care.documents.ui.presentation.state.GetRecordsState
 import eka.care.documents.ui.presentation.viewmodel.RecordsViewModel
 import kotlinx.coroutines.Job
