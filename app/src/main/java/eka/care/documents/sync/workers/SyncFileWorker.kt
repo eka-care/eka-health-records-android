@@ -58,12 +58,7 @@ class SyncFileWorker(
                             )
                             null
                         }
-                    fetchRecords(
-                        updatedAt = updatedAt,
-                        uuid = uuid,
-                        filterId = filterId,
-                        ownerId = ownerId
-                    )
+                    fetchRecords(updatedAt = updatedAt,uuid = uuid, filterId = filterId, ownerId = ownerId)
                 }
             } else {
                 fetchRecords(offset = null, uuid = uuid, filterId = null, ownerId = ownerId)
