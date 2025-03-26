@@ -264,7 +264,6 @@ class SyncFileWorker(
                         recordsResponse = records,
                         ownerId = ownerId,
                         uuid = uuid,
-                        app_oid = filterId,
                         context = applicationContext
                     )
                 }
@@ -286,7 +285,6 @@ class SyncFileWorker(
         recordsResponse: GetFilesResponse,
         ownerId: String?,
         uuid: String?,
-        app_oid: String?,
         context: Context
     ) {
         val vaultList = mutableListOf<VaultEntity>()
@@ -294,7 +292,8 @@ class SyncFileWorker(
             val recordItem = it.record.item
             val localId = vaultRepository.getLocalId(recordItem.documentId)
             val documentDate =
-                if (recordItem.metadata?.documentDate?.toLong() == 0L) null else recordItem.metadata?.documentDate?.toLong()
+                if (recordItem.metadata?.documentDate == 0L) null else recordItem.metadata?.documentDate
+            Log.d("AYUSHI", recordItem.patientId.toString())
             if (!localId.isNullOrEmpty()) {
                 vaultRepository.storeDocument(
                     localId = localId,
@@ -302,7 +301,7 @@ class SyncFileWorker(
                     isAnalysing = false,
                     docId = recordItem.documentId,
                     hasId = "",
-                    filterId = app_oid,
+                    filterId = recordItem.patientId,
                     tags = recordItem.metadata?.tags?.joinToString(",") ?: "",
                     autoTags = recordItem.metadata?.autoTags?.joinToString(",") ?: "",
                     documentDate = documentDate,
@@ -313,7 +312,7 @@ class SyncFileWorker(
                         localId = localId ?: UUID.randomUUID().toString(),
                         documentId = recordItem.documentId,
                         ownerId = ownerId,
-                        filterId = app_oid,
+                        filterId = recordItem.patientId,
                         uuid = uuid,
                         filePath = null,
                         fileType = "",
