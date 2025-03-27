@@ -149,15 +149,17 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
     }
 
     override suspend fun getDeletedDocuments(
+        filterIds: List<String>?,
         ownerId: String
     ): List<VaultEntity> {
-        return database.vaultDao().getDeletedDocuments(ownerId = ownerId)
+        return database.vaultDao().getDeletedDocuments(filterIds = filterIds, ownerId = ownerId)
     }
 
     override suspend fun getEditedDocuments(
+        filterIds: List<String>?,
         ownerId: String
     ): List<VaultEntity> {
-        return database.vaultDao().getEditedDocuments(ownerId = ownerId)
+        return database.vaultDao().getEditedDocuments(filterIds = filterIds, ownerId = ownerId)
     }
 
     override suspend fun getAvailableDocTypes(

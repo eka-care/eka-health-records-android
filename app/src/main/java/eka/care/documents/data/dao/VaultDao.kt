@@ -134,9 +134,10 @@ interface VaultDao {
     @Query("""
     SELECT * FROM vault_table 
     WHERE is_edited = 1 
-    AND owner_id = :ownerId
+    AND owner_id = :ownerId 
+    AND (filter_id IN (:filterIds) OR filter_id IS NULL)
 """)
-    suspend fun getEditedDocuments(ownerId: String): List<VaultEntity>
+    suspend fun getEditedDocuments(filterIds: List<String>?, ownerId: String): List<VaultEntity>
 
     // delete
     @Query("""
@@ -148,9 +149,10 @@ interface VaultDao {
     @Query("""
     SELECT * FROM vault_table 
     WHERE is_deleted = 1 
-    AND owner_id = :ownerId
+    AND owner_id = :ownerId 
+    AND (filter_id IN (:filterIds) OR filter_id IS NULL)
 """)
-    suspend fun getDeletedDocuments(ownerId: String): List<VaultEntity>
+    suspend fun getDeletedDocuments(filterIds: List<String>?, ownerId: String): List<VaultEntity>
     @Query("""
     DELETE FROM vault_table 
     WHERE local_id = :localId 

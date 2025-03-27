@@ -49,24 +49,20 @@ class SyncFileWorker(
             val ownerId = inputData.getString("ownerId") ?: return@coroutineScope Result.failure()
             val filterIds = inputData.getString("filterIds")?.split(",") ?: emptyList()
 
-            if (filterIds.isNotEmpty()) {
-                filterIds.forEach { filterId ->
-                    val updatedAt = updatedAtRepository.getUpdatedAtByOid(filterId, ownerId)
-                        ?: run {
-                            updatedAtRepository.insertUpdatedAtEntity(
-                                UpdatedAtEntity(filterId, ownerId = ownerId)
-                            )
-                            null
-                        }
-                    fetchRecords(updatedAt = updatedAt,uuid =  uuid, filterId = filterId,  ownerId = ownerId)
-                }
-            } else {
-                fetchRecords(offset = null, uuid = uuid, filterId =  null,  ownerId = ownerId)
+            filterIds.forEach { filterId ->
+                val updatedAt = updatedAtRepository.getUpdatedAtByOid(filterId, ownerId)
+                    ?: run {
+                        updatedAtRepository.insertUpdatedAtEntity(
+                            UpdatedAtEntity(filterId, ownerId = ownerId)
+                        )
+                        null
+                    }
+                fetchRecords(uuid = uuid, filterId = filterId, ownerId = ownerId)
             }
 
             syncDocuments(filterIds, uuid, ownerId)
-            updateFilePath(ownerId =  ownerId)
-            syncDeletedAndEditedDocuments(ownerId = ownerId)
+            updateFilePath(ownerId = ownerId)
+            syncDeletedAndEditedDocuments(filterIds, ownerId)
 
             Result.success()
         } catch (e: Exception) {
@@ -149,9 +145,9 @@ class SyncFileWorker(
         }
     }
 
-    private suspend fun syncDeletedAndEditedDocuments(ownerId: String) {
+    private suspend fun syncDeletedAndEditedDocuments(filterIds: List<String>?, ownerId: String) {
         try {
-            val resp = vaultRepository.getEditedDocuments(ownerId = ownerId)
+            val resp = vaultRepository.getEditedDocuments(filterIds = filterIds, ownerId = ownerId)
             resp.forEach { vaultEntity ->
                 vaultEntity.documentId?.let {
                     val updateFileDetailsRequest = UpdateFileDetailsRequest(
@@ -173,7 +169,7 @@ class SyncFileWorker(
 
         try {
             val vaultDocuments =
-                vaultRepository.getDeletedDocuments(ownerId = ownerId)
+                vaultRepository.getDeletedDocuments(ownerId = ownerId, filterIds = filterIds)
             vaultDocuments.forEach { vaultEntity ->
                 vaultEntity.documentId?.let {
                     val resp = myFileRepository.deleteDocument(
