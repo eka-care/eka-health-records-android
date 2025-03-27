@@ -74,6 +74,7 @@ class SyncFileWorker(
         try {
             val vaultDocuments =
                 vaultRepository.getUnSyncedDocuments(filterIds = filterIds, ownerId = ownerId)
+            Log.d("AYUSHI", vaultDocuments.toString())
             if (vaultDocuments.isEmpty()) return
 
             val tags = mutableListOf<String>()

@@ -21,7 +21,7 @@ interface MyFileService {
     suspend fun getFiles(
         @Query("u_at__gt") updatedAt: String?,
         @Query("offset") offset: String?,
-        @Query("patient_oid") filterId : String?
+        @Query("p_oid") filterId : String?
     ): Response<GetFilesResponse>
 
     @PATCH("api/v1/docs/{document_id}")
