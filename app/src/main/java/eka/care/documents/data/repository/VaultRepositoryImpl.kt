@@ -1,6 +1,5 @@
 package eka.care.documents.data.repository
 
-import android.util.Log
 import eka.care.documents.data.db.database.DocumentDatabase
 import eka.care.documents.data.db.entity.VaultEntity
 import eka.care.documents.data.db.model.AvailableDocTypes
