@@ -303,7 +303,7 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
     fun syncEditedDocuments(filterIds: List<String>, ownerId: String) {
         try {
             viewModelScope.launch {
-                vaultRepository.getEditedDocuments(filterIds = filterIds, ownerId = ownerId)
+                vaultRepository.getEditedDocuments(ownerId = ownerId)
             }
         } catch (_: Exception) {
         }
@@ -313,7 +313,7 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
         try {
             viewModelScope.launch {
                 val vaultDocuments =
-                    vaultRepository.getDeletedDocuments(ownerId = ownerId, filterIds = filterIds)
+                    vaultRepository.getDeletedDocuments(ownerId = ownerId)
                 vaultDocuments.forEach { vaultEntity ->
                     vaultEntity.documentId?.let {
                         val resp = myFileRepository.deleteDocument(

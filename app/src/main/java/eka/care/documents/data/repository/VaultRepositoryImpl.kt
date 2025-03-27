@@ -1,5 +1,6 @@
 package eka.care.documents.data.repository
 
+import android.util.Log
 import eka.care.documents.data.db.database.DocumentDatabase
 import eka.care.documents.data.db.entity.VaultEntity
 import eka.care.documents.data.db.model.AvailableDocTypes
@@ -149,17 +150,15 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
     }
 
     override suspend fun getDeletedDocuments(
-        filterIds: List<String>?,
         ownerId: String
     ): List<VaultEntity> {
-        return database.vaultDao().getDeletedDocuments(filterIds = filterIds, ownerId = ownerId)
+        return database.vaultDao().getDeletedDocuments(ownerId = ownerId)
     }
 
     override suspend fun getEditedDocuments(
-        filterIds: List<String>?,
         ownerId: String
     ): List<VaultEntity> {
-        return database.vaultDao().getEditedDocuments(filterIds = filterIds, ownerId = ownerId)
+        return database.vaultDao().getEditedDocuments(ownerId = ownerId)
     }
 
     override suspend fun getAvailableDocTypes(

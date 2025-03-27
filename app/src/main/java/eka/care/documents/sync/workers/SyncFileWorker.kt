@@ -66,7 +66,7 @@ class SyncFileWorker(
 
             syncDocuments(filterIds, uuid, ownerId)
             updateFilePath(ownerId =  ownerId)
-            syncDeletedAndEditedDocuments(filterIds, ownerId)
+            syncDeletedAndEditedDocuments(ownerId = ownerId)
 
             Result.success()
         } catch (e: Exception) {
@@ -149,9 +149,9 @@ class SyncFileWorker(
         }
     }
 
-    private suspend fun syncDeletedAndEditedDocuments(filterIds: List<String>?, ownerId: String) {
+    private suspend fun syncDeletedAndEditedDocuments(ownerId: String) {
         try {
-            val resp = vaultRepository.getEditedDocuments(filterIds = filterIds, ownerId = ownerId)
+            val resp = vaultRepository.getEditedDocuments(ownerId = ownerId)
             resp.forEach { vaultEntity ->
                 vaultEntity.documentId?.let {
                     val updateFileDetailsRequest = UpdateFileDetailsRequest(
@@ -173,8 +173,7 @@ class SyncFileWorker(
 
         try {
             val vaultDocuments =
-                vaultRepository.getDeletedDocuments(ownerId = ownerId, filterIds = filterIds)
-
+                vaultRepository.getDeletedDocuments(ownerId = ownerId)
             vaultDocuments.forEach { vaultEntity ->
                 vaultEntity.documentId?.let {
                     val resp = myFileRepository.deleteDocument(

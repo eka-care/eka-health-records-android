@@ -137,6 +137,7 @@ object Document {
     }
 
     suspend fun storeDocuments(vaultEntityList: List<VaultEntity>) {
+        Log.d("AYSHI-2", vaultEntityList.toString())
         documentRepository?.storeDocuments(vaultEntityList)
     }
 
