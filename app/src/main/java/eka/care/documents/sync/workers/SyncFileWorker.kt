@@ -47,7 +47,7 @@ class SyncFileWorker(
 
             filterIds.forEach { filterId ->
                 val updatedAt = vaultRepository.getUpdatedAtByOid(filterId = filterId,ownerId = ownerId)
-                fetchRecords(uuid = uuid, filterId = filterId, ownerId = ownerId)
+                fetchRecords(updatedAt = updatedAt, uuid = uuid, filterId = filterId, ownerId = ownerId)
                 vaultRepository.updateUpdatedAtByOid(filterId = filterId, ownerId = ownerId, updatedAt = System.currentTimeMillis())
             }
 
@@ -214,7 +214,7 @@ class SyncFileWorker(
 
     private suspend fun fetchRecords(
         offset: String? = null,
-        updatedAt: String? = null,
+        updatedAt: Long? = null,
         uuid: String?,
         filterId: String?,
         ownerId: String

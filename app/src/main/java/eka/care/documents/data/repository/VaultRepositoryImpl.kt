@@ -191,7 +191,7 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
             .fetchDocumentsWithoutFilePath(ownerId = ownerId)
     }
 
-    override suspend fun getUpdatedAtByOid(filterId: String?, ownerId: String?): String? {
+    override suspend fun getUpdatedAtByOid(filterId: String?, ownerId: String?): Long? {
         return database.vaultDao().getUpdatedAtByOid(filterId = filterId, ownerId = ownerId)
     }
 
