@@ -92,7 +92,6 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
 
     override suspend fun deleteDocument(localId: String) {
         database.vaultDao().deleteDocument(localId = localId)
-        return
     }
 
     override suspend fun editDocument(
@@ -183,7 +182,6 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
 
     override suspend fun removeDocument(localId: String, filterId: String?) {
         database.vaultDao().removeDocument(localId = localId, filterId = filterId)
-        return
     }
 
     override suspend fun getDocumentsWithoutFilePath(
@@ -191,5 +189,17 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
     ): List<VaultEntity> {
         return database.vaultDao()
             .fetchDocumentsWithoutFilePath(ownerId = ownerId)
+    }
+
+    override suspend fun getUpdatedAtByOid(filterId: String?, ownerId: String?): String? {
+        return database.vaultDao().getUpdatedAtByOid(filterId = filterId, ownerId = ownerId)
+    }
+
+    override suspend fun updateUpdatedAtByOid(
+        filterId: String?,
+        updatedAt: Long,
+        ownerId: String?
+    ) {
+        database.vaultDao().updateUpdatedAtByOid(filterId = filterId, updatedAt = updatedAt, ownerId = ownerId)
     }
 }

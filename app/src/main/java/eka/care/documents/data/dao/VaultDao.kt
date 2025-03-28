@@ -208,4 +208,10 @@ interface VaultDao {
 
     @Query("UPDATE vault_table SET doc_id = :docId WHERE local_id = :localId")
     suspend fun updateDocumentId(docId: String, localId: String)
+
+    @Query("SELECT updated_at FROM vault_table WHERE filter_id = :filterId AND owner_id = :ownerId")
+    suspend fun getUpdatedAtByOid(filterId: String?, ownerId :String?): String?
+
+    @Query("UPDATE vault_table SET updated_at = :updatedAt WHERE filter_id = :filterId AND owner_id = :ownerId")
+    suspend fun updateUpdatedAtByOid(filterId: String?, updatedAt: Long, ownerId :String?)
 }
