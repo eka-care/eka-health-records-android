@@ -19,7 +19,6 @@ interface MyFileService {
 
     @GET("api/v1/docs")
     suspend fun getFiles(
-        @Query("u_at__gt") updatedAt: String?,
         @Query("offset") offset: String?,
         @Query("p_oid") filterId : String?
     ): Response<GetFilesResponse>

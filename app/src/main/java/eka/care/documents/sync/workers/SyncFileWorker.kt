@@ -46,9 +46,9 @@ class SyncFileWorker(
             val filterIds = inputData.getString("filterIds")?.split(",") ?: emptyList()
 
             filterIds.forEach { filterId ->
-                val updatedAt = vaultRepository.getUpdatedAtByOid(filterId = filterId,ownerId = ownerId)
-                fetchRecords(updatedAt = updatedAt, uuid = uuid, filterId = filterId, ownerId = ownerId)
-                vaultRepository.updateUpdatedAtByOid(filterId = filterId, ownerId = ownerId, updatedAt = System.currentTimeMillis())
+            //    val updatedAt = vaultRepository.getUpdatedAtByOid(filterId = filterId,ownerId = ownerId)
+                fetchRecords(uuid = uuid, filterId = filterId, ownerId = ownerId)
+       //         vaultRepository.updateUpdatedAtByOid(filterId = filterId, ownerId = ownerId, updatedAt = System.currentTimeMillis())
             }
 
             syncDocuments(filterIds, uuid, ownerId)

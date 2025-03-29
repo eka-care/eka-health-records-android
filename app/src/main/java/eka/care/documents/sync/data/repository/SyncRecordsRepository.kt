@@ -26,7 +26,6 @@ class SyncRecordsRepository(val app: Application) {
         return withContext(Dispatchers.IO) {
             try {
                 val response = recordsProtoService.getFiles(
-                    updatedAt = updatedAt.toString(),
                     offset = offset,
                     filterId = oid
                 )
