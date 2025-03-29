@@ -303,7 +303,7 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
     fun syncEditedDocuments(filterIds: List<String>, ownerId: String) {
         try {
             viewModelScope.launch {
-                vaultRepository.getEditedDocuments(filterIds = filterIds, ownerId = ownerId)
+                vaultRepository.getEditedDocuments(ownerId = ownerId, filterIds = filterIds)
             }
         } catch (_: Exception) {
         }

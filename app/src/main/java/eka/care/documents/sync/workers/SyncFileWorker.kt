@@ -7,10 +7,7 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.google.gson.Gson
 import eka.care.documents.data.db.database.DocumentDatabase
-import eka.care.documents.data.db.entity.UpdatedAtEntity
 import eka.care.documents.data.db.entity.VaultEntity
-import eka.care.documents.data.repository.UpdatedAtRepository
-import eka.care.documents.data.repository.UpdatedAtRepositoryImpl
 import eka.care.documents.data.repository.VaultRepository
 import eka.care.documents.data.repository.VaultRepositoryImpl
 import eka.care.documents.data.utility.DocumentUtility.Companion.docTypes
@@ -38,7 +35,6 @@ class SyncFileWorker(
 
     private val db = DocumentDatabase.getInstance(applicationContext)
     private val vaultRepository: VaultRepository = VaultRepositoryImpl(db)
-    private val updatedAtRepository: UpdatedAtRepository = UpdatedAtRepositoryImpl(db)
     private val awsRepository = AwsRepository()
     private val myFileRepository = MyFileRepository()
     private val recordsRepository = SyncRecordsRepository(appContext as Application)
@@ -49,23 +45,14 @@ class SyncFileWorker(
             val ownerId = inputData.getString("ownerId") ?: return@coroutineScope Result.failure()
             val filterIds = inputData.getString("filterIds")?.split(",") ?: emptyList()
 
-            if (filterIds.isNotEmpty()) {
-                filterIds.forEach { filterId ->
-                    val updatedAt = updatedAtRepository.getUpdatedAtByOid(filterId, ownerId)
-                        ?: run {
-                            updatedAtRepository.insertUpdatedAtEntity(
-                                UpdatedAtEntity(filterId, ownerId = ownerId)
-                            )
-                            null
-                        }
-                    fetchRecords(updatedAt = updatedAt,uuid =  uuid, filterId = filterId,  ownerId = ownerId)
-                }
-            } else {
-                fetchRecords(offset = null, uuid = uuid, filterId =  null,  ownerId = ownerId)
+            filterIds.forEach { filterId ->
+            //    val updatedAt = vaultRepository.getUpdatedAtByOid(filterId = filterId,ownerId = ownerId)
+                fetchRecords(uuid = uuid, filterId = filterId, ownerId = ownerId)
+       //         vaultRepository.updateUpdatedAtByOid(filterId = filterId, ownerId = ownerId, updatedAt = System.currentTimeMillis())
             }
 
             syncDocuments(filterIds, uuid, ownerId)
-            updateFilePath(ownerId =  ownerId)
+            updateFilePath(ownerId = ownerId)
             syncDeletedAndEditedDocuments(filterIds, ownerId)
 
             Result.success()
@@ -174,7 +161,6 @@ class SyncFileWorker(
         try {
             val vaultDocuments =
                 vaultRepository.getDeletedDocuments(ownerId = ownerId, filterIds = filterIds)
-
             vaultDocuments.forEach { vaultEntity ->
                 vaultEntity.documentId?.let {
                     val resp = myFileRepository.deleteDocument(
@@ -228,7 +214,7 @@ class SyncFileWorker(
 
     private suspend fun fetchRecords(
         offset: String? = null,
-        updatedAt: String? = null,
+        updatedAt: Long? = null,
         uuid: String?,
         filterId: String?,
         ownerId: String
@@ -245,16 +231,6 @@ class SyncFileWorker(
                 if (response == null) {
                     Log.w("SYNC_DOCUMENTS", "No response for filterId: $filterId")
                     break
-                }
-
-                // Extract Eka-Uat header
-                val ekaUat = response.headers().get("Eka-Uat")
-                if (ekaUat != null) {
-                    updatedAtRepository.updateUpdatedAtByOid(
-                        filterId = filterId,
-                        updatedAt = ekaUat,
-                        ownerId = ownerId
-                    )
                 }
 
                 val records = response.body()
@@ -312,7 +288,7 @@ class SyncFileWorker(
                         documentId = recordItem.documentId,
                         ownerId = ownerId,
                         filterId = recordItem.patientId,
-                        uuid = uuid,
+                        uuid = uuid ?: "",
                         filePath = null,
                         fileType = "",
                         thumbnail = null,

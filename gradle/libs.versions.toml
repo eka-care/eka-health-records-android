@@ -24,7 +24,6 @@ networkresponseadapter = "4.2.2"
 retrofit-version = "2.11.0"
 protobufJavalite = "3.23.0"
 protobufKotlinLite = "3.23.0"
-protobufGradlePlugin = "0.9.4"
 workRuntimeKtx = "2.8.1"
 
 ok2curl = "0.8.0"
