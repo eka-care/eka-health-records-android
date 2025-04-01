@@ -289,8 +289,7 @@ class SyncFileWorker(
         recordsResponse.items.forEach {
             val recordItem = it.record.item
             val entity = vaultRepository.getDocumentById(recordItem.documentId)
-            val documentDate =
-                recordItem.metadata?.documentDate ?: entity?.documentDate
+            val documentDate = if (recordItem.metadata?.documentDate == 0L) entity?.documentDate else recordItem.metadata?.documentDate
             if (!entity?.localId.isNullOrEmpty()) {
                 vaultRepository.storeDocument(
                     localId = entity?.localId ?: "",
@@ -319,7 +318,7 @@ class SyncFileWorker(
                         documentType = docTypes.find { it.id == recordItem.documentType }?.idNew
                             ?: -1,
                         tags = recordItem.metadata?.tags?.joinToString(",") ?: "",
-                        documentDate = documentDate,
+                        documentDate = if (recordItem.metadata?.documentDate == 0L) null else recordItem.metadata?.documentDate,
                         hashId = null,
                         isAnalyzing = false,
                         cta = null,
