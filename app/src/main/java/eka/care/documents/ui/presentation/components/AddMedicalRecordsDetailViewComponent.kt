@@ -93,12 +93,6 @@ fun AddMedicalRecordsDetailViewComponent(
     paramsModel: RecordParamsModel,
     editDocument: Boolean
 ) {
-    init(
-        viewModel = viewModel,
-        filterId = paramsModel.filterId,
-        documentId = viewModel.cardClickData.value?.documentId,
-        context = LocalContext.current
-    )
     val context = LocalContext.current
     val compressedFiles by viewModel.compressedFiles.collectAsState(initial = emptyList())
     val initialSelectedDocType = viewModel.cardClickData.value?.documentType
@@ -398,13 +392,6 @@ fun AddMedicalRecordsDetailViewComponent(
             }
         }
     )
-}
-
-private fun init(viewModel: RecordsViewModel, documentId: String?, filterId: String, context: Context) {
-    if (documentId != null) {
-        viewModel.getTags(documentId = documentId, filterId = filterId)
-    }
-    viewModel.observeNetworkStatus(context = context)
 }
 
 enum class FileType {

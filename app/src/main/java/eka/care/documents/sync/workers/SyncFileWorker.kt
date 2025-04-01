@@ -13,6 +13,7 @@ import eka.care.documents.data.repository.VaultRepositoryImpl
 import eka.care.documents.data.utility.DocumentUtility.Companion.docTypes
 import eka.care.documents.sync.data.remote.dto.request.FileType
 import eka.care.documents.sync.data.remote.dto.request.UpdateFileDetailsRequest
+import eka.care.documents.sync.data.remote.dto.response.BatchResponse
 import eka.care.documents.sync.data.remote.dto.response.GetFilesResponse
 import eka.care.documents.sync.data.repository.AwsRepository
 import eka.care.documents.sync.data.repository.MyFileRepository
@@ -63,8 +64,7 @@ class SyncFileWorker(
 
     private suspend fun syncDocuments(filterIds: List<String>?, uuid: String?, ownerId: String) {
         try {
-            val vaultDocuments =
-                vaultRepository.getUnSyncedDocuments(filterIds = filterIds, ownerId = ownerId)
+            val vaultDocuments = vaultRepository.getUnSyncedDocuments(filterIds = filterIds, ownerId = ownerId)
             if (vaultDocuments.isEmpty()) return
 
             val tags = mutableListOf<String>()
@@ -79,9 +79,8 @@ class SyncFileWorker(
                     docTypes.find { it.idNew == docType }?.id ?: "ot"
                 } ?: "ot"
 
-                if (fileContentList.isNullOrEmpty()) {
-                    return
-                }
+                if (fileContentList.isNullOrEmpty()) return
+
                 val uploadInitResponse = uuid?.let {
                     awsRepository.fileUploadInit(
                         files = fileContentList,
@@ -92,77 +91,61 @@ class SyncFileWorker(
                         documentType = documentType
                     )
                 }
+
                 if (uploadInitResponse?.error == true) {
                     vaultRepository.updateDocumentStatus(
                         localId = vaultEntity.localId,
                         status = RecordsUtility.Companion.Status.UNSYNCED_DOCUMENT.value
                     )
-                    Log.d(
-                        "SYNC_DOCUMENTS",
-                        "Upload initialization error: ${uploadInitResponse.message}"
-                    )
+                    Log.d("SYNC_DOCUMENTS", "Upload initialization error: ${uploadInitResponse.message}")
                     return
                 }
 
                 val batchResponses = uploadInitResponse?.batchResponse ?: emptyList()
 
                 if (isMultiFile) {
-                    // Handle multi-file upload for the current document
-                    val batchResponse = batchResponses.firstOrNull()
-                    if (batchResponse != null) {
-                        vaultRepository.updateDocumentStatus(
-                            localId = vaultEntity.localId,
-                            status = RecordsUtility.Companion.Status.UPLOADING_DOCUMENT.value
-                        )
-                        val response =
-                            awsRepository.uploadFile(batch = batchResponse, fileList = files)
-                        if (response?.error == false) {
-                            response.documentId?.let { docId ->
-                                updateDocumentDetails(docId, vaultEntity.filterId, vaultEntity)
-                                vaultRepository.updateDocumentStatus(
-                                    localId = vaultEntity.localId,
-                                    status = RecordsUtility.Companion.Status.SYNCED_DOCUMENT.value
-                                )
-                            }
-                        } else {
-                            vaultRepository.updateDocumentStatus(
-                                localId = vaultEntity.localId,
-                                status = RecordsUtility.Companion.Status.UNSYNCED_DOCUMENT.value
-                            )
-                        }
+                    batchResponses.firstOrNull()?.let { batchResponse ->
+                        handleFileUpload(batchResponse, files, vaultEntity)
                     }
                 } else {
-                    // Handle single-file upload for the current document
                     vaultEntity.filePath?.forEachIndexed { index, path ->
                         val file = File(path)
-                        val batchResponse = batchResponses.getOrNull(index)
-                        if (batchResponse != null) {
-                            val response =
-                                awsRepository.uploadFile(file = file, batch = batchResponse)
-                            vaultRepository.updateDocumentStatus(
-                                localId = vaultEntity.localId,
-                                status = RecordsUtility.Companion.Status.UPLOADING_DOCUMENT.value
-                            )
-                            if (response?.error == false) {
-                                response.documentId?.let { docId ->
-                                    updateDocumentDetails(docId, vaultEntity.filterId, vaultEntity)
-                                    vaultRepository.updateDocumentStatus(
-                                        localId = vaultEntity.localId,
-                                        status = RecordsUtility.Companion.Status.SYNCED_DOCUMENT.value
-                                    )
-                                }
-                            } else {
-                                vaultRepository.updateDocumentStatus(
-                                    localId = vaultEntity.localId,
-                                    status = RecordsUtility.Companion.Status.UNSYNCED_DOCUMENT.value
-                                )
-                            }
+                        batchResponses.getOrNull(index)?.let { batchResponse ->
+                            handleFileUpload(batchResponse, listOf(file), vaultEntity)
                         }
                     }
                 }
             }
         } catch (e: Exception) {
             Log.e("SYNC_DOCUMENTS", "Error syncing documents: ${e.message}", e)
+        }
+    }
+
+    private suspend fun handleFileUpload(batchResponse: BatchResponse, files: List<File>, vaultEntity: VaultEntity) {
+        vaultRepository.updateDocumentStatus(
+            localId = vaultEntity.localId,
+            status = RecordsUtility.Companion.Status.UPLOADING_DOCUMENT.value
+        )
+
+        val response = if (files.size > 1) {
+            awsRepository.uploadFile(batch = batchResponse, fileList = files)
+        } else {
+            awsRepository.uploadFile(file = files.first(), batch = batchResponse)
+        }
+
+        if (response?.error == false) {
+            response.documentId?.let { docId ->
+                updateDocumentDetails(docId, vaultEntity.filterId, vaultEntity)
+                vaultRepository.updateDocumentStatus(
+                    localId = vaultEntity.localId,
+                    status = RecordsUtility.Companion.Status.SYNCED_DOCUMENT.value
+                )
+            }
+        } else {
+            vaultRepository.updateDocumentStatus(
+                localId = vaultEntity.localId,
+                status = RecordsUtility.Companion.Status.UNSYNCED_DOCUMENT.value
+            )
         }
     }
 

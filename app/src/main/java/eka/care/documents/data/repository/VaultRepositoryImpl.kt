@@ -49,12 +49,10 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
         filterId: String?,
         ownerId: String?,
         documentId: String
-    ): String? {
-        return withContext(Dispatchers.IO) {
-            val result = database.vaultDao().getSmartReport(documentId = documentId)
-            return@withContext result
-        }
+    ): String? = withContext(Dispatchers.IO) {
+        database.vaultDao().getSmartReport(documentId = documentId)
     }
+
 
     override suspend fun updateSmartReport(
         filterId: String?,

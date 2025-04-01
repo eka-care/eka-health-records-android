@@ -14,6 +14,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.reader.presentation.states.PdfSource
 import com.google.gson.Gson
 import eka.care.documents.data.db.database.DocumentDatabase
@@ -85,11 +86,15 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
     private val _photoUri = MutableStateFlow<Uri?>(null)
     val photoUri: StateFlow<Uri?> = _photoUri
 
+    init {
+        observeNetworkStatus(app)
+    }
+
     fun updatePhotoUri(uri: Uri?) {
         _photoUri.value = uri
     }
 
-    fun observeNetworkStatus(context: Context) {
+    private fun observeNetworkStatus(context: Context) {
         unregisterNetworkCallback(context)
 
         val connectivityManager =
