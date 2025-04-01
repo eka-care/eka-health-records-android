@@ -1,6 +1,7 @@
 *.iml
 .idea/*
 .idea/**/*
+.idea/kotlinc.xml
 /local.properties
 
 # Ignore Gradle files
