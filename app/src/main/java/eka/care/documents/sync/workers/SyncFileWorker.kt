@@ -13,6 +13,7 @@ import eka.care.documents.data.repository.VaultRepositoryImpl
 import eka.care.documents.data.utility.DocumentUtility.Companion.docTypes
 import eka.care.documents.sync.data.remote.dto.request.FileType
 import eka.care.documents.sync.data.remote.dto.request.UpdateFileDetailsRequest
+import eka.care.documents.sync.data.remote.dto.response.BatchResponse
 import eka.care.documents.sync.data.remote.dto.response.GetFilesResponse
 import eka.care.documents.sync.data.repository.AwsRepository
 import eka.care.documents.sync.data.repository.MyFileRepository
@@ -46,9 +47,9 @@ class SyncFileWorker(
             val filterIds = inputData.getString("filterIds")?.split(",") ?: emptyList()
 
             filterIds.forEach { filterId ->
-            //    val updatedAt = vaultRepository.getUpdatedAtByOid(filterId = filterId,ownerId = ownerId)
+                //    val updatedAt = vaultRepository.getUpdatedAtByOid(filterId = filterId,ownerId = ownerId)
                 fetchRecords(uuid = uuid, filterId = filterId, ownerId = ownerId)
-       //         vaultRepository.updateUpdatedAtByOid(filterId = filterId, ownerId = ownerId, updatedAt = System.currentTimeMillis())
+                //         vaultRepository.updateUpdatedAtByOid(filterId = filterId, ownerId = ownerId, updatedAt = System.currentTimeMillis())
             }
 
             syncDocuments(filterIds, uuid, ownerId)
@@ -79,9 +80,8 @@ class SyncFileWorker(
                     docTypes.find { it.idNew == docType }?.id ?: "ot"
                 } ?: "ot"
 
-                if (fileContentList.isNullOrEmpty()) {
-                    return
-                }
+                if (fileContentList.isNullOrEmpty()) return
+
                 val uploadInitResponse = uuid?.let {
                     awsRepository.fileUploadInit(
                         files = fileContentList,
@@ -92,7 +92,12 @@ class SyncFileWorker(
                         documentType = documentType
                     )
                 }
+
                 if (uploadInitResponse?.error == true) {
+                    vaultRepository.updateDocumentStatus(
+                        localId = vaultEntity.localId,
+                        status = RecordsUtility.Companion.Status.UNSYNCED_DOCUMENT.value
+                    )
                     Log.d(
                         "SYNC_DOCUMENTS",
                         "Upload initialization error: ${uploadInitResponse.message}"
@@ -103,36 +108,52 @@ class SyncFileWorker(
                 val batchResponses = uploadInitResponse?.batchResponse ?: emptyList()
 
                 if (isMultiFile) {
-                    // Handle multi-file upload for the current document
-                    val batchResponse = batchResponses.firstOrNull()
-                    if (batchResponse != null) {
-                        val response =
-                            awsRepository.uploadFile(batch = batchResponse, fileList = files)
-                        if (response?.error == false) {
-                            response.documentId?.let { docId ->
-                                updateDocumentDetails(docId, vaultEntity.filterId, vaultEntity)
-                            }
-                        }
+                    batchResponses.firstOrNull()?.let { batchResponse ->
+                        handleFileUpload(batchResponse, files, vaultEntity)
                     }
                 } else {
-                    // Handle single-file upload for the current document
                     vaultEntity.filePath?.forEachIndexed { index, path ->
                         val file = File(path)
-                        val batchResponse = batchResponses.getOrNull(index)
-                        if (batchResponse != null) {
-                            val response =
-                                awsRepository.uploadFile(file = file, batch = batchResponse)
-                            if (response?.error == false) {
-                                response.documentId?.let { docId ->
-                                    updateDocumentDetails(docId, vaultEntity.filterId, vaultEntity)
-                                }
-                            }
+                        batchResponses.getOrNull(index)?.let { batchResponse ->
+                            handleFileUpload(batchResponse, listOf(file), vaultEntity)
                         }
                     }
                 }
             }
         } catch (e: Exception) {
             Log.e("SYNC_DOCUMENTS", "Error syncing documents: ${e.message}", e)
+        }
+    }
+
+    private suspend fun handleFileUpload(
+        batchResponse: BatchResponse,
+        files: List<File>,
+        vaultEntity: VaultEntity
+    ) {
+        vaultRepository.updateDocumentStatus(
+            localId = vaultEntity.localId,
+            status = RecordsUtility.Companion.Status.UPLOADING_DOCUMENT.value
+        )
+
+        val response = if (files.size > 1) {
+            awsRepository.uploadFile(batch = batchResponse, fileList = files)
+        } else {
+            awsRepository.uploadFile(file = files.first(), batch = batchResponse)
+        }
+
+        if (response?.error == false) {
+            response.documentId?.let { docId ->
+                updateDocumentDetails(docId, vaultEntity.filterId, vaultEntity)
+                vaultRepository.updateDocumentStatus(
+                    localId = vaultEntity.localId,
+                    status = RecordsUtility.Companion.Status.SYNCED_DOCUMENT.value
+                )
+            }
+        } else {
+            vaultRepository.updateDocumentStatus(
+                localId = vaultEntity.localId,
+                status = RecordsUtility.Companion.Status.UNSYNCED_DOCUMENT.value
+            )
         }
     }
 
@@ -144,7 +165,7 @@ class SyncFileWorker(
                     val updateFileDetailsRequest = UpdateFileDetailsRequest(
                         filterId = vaultEntity.filterId,
                         documentType = docTypes.find { it.idNew == vaultEntity.documentType }?.id,
-                        documentDate = vaultEntity.documentDate.toString(),
+                        documentDate = vaultEntity.documentDate,
                         userTags = emptyList()
                     )
                     myFileRepository.updateFileDetails(
@@ -195,9 +216,10 @@ class SyncFileWorker(
             val updateFileDetailsRequest = UpdateFileDetailsRequest(
                 filterId = vaultEntity.filterId,
                 documentType = docTypes.find { it.idNew == vaultEntity.documentType }?.id,
-                documentDate = if (documentDate.isNotEmpty()) changeDateFormat(documentDate) else null,
+                documentDate = if (documentDate.isNotEmpty()) changeDateFormat(documentDate) else 0L,
                 userTags = emptyList()
             )
+
 
             myFileRepository.updateFileDetails(
                 documentId = documentId,
@@ -266,12 +288,11 @@ class SyncFileWorker(
         val vaultList = mutableListOf<VaultEntity>()
         recordsResponse.items.forEach {
             val recordItem = it.record.item
-            val localId = vaultRepository.getLocalId(recordItem.documentId)
-            val documentDate =
-                if (recordItem.metadata?.documentDate == 0L) null else recordItem.metadata?.documentDate
-            if (!localId.isNullOrEmpty()) {
+            val entity = vaultRepository.getDocumentById(recordItem.documentId)
+            val documentDate = if (recordItem.metadata?.documentDate == 0L) entity?.documentDate else recordItem.metadata?.documentDate
+            if (!entity?.localId.isNullOrEmpty()) {
                 vaultRepository.storeDocument(
-                    localId = localId,
+                    localId = entity?.localId ?: "",
                     cta = null,
                     isAnalysing = false,
                     docId = recordItem.documentId,
@@ -284,7 +305,7 @@ class SyncFileWorker(
             } else {
                 vaultList.add(
                     VaultEntity(
-                        localId = localId ?: UUID.randomUUID().toString(),
+                        localId = entity?.localId ?: UUID.randomUUID().toString(),
                         documentId = recordItem.documentId,
                         ownerId = ownerId,
                         filterId = recordItem.patientId,
@@ -297,11 +318,12 @@ class SyncFileWorker(
                         documentType = docTypes.find { it.id == recordItem.documentType }?.idNew
                             ?: -1,
                         tags = recordItem.metadata?.tags?.joinToString(",") ?: "",
-                        documentDate = documentDate,
+                        documentDate = if (recordItem.metadata?.documentDate == 0L) null else recordItem.metadata?.documentDate,
                         hashId = null,
                         isAnalyzing = false,
                         cta = null,
-                        autoTags = recordItem.metadata?.autoTags?.joinToString(",") ?: ""
+                        autoTags = recordItem.metadata?.autoTags?.joinToString(",") ?: "",
+                        status = RecordsUtility.Companion.Status.SYNCED_DOCUMENT.value
                     )
                 )
             }

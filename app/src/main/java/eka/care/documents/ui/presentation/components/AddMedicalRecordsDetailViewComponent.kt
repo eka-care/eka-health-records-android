@@ -2,6 +2,7 @@ package eka.care.documents.ui.presentation.components
 
 import android.app.Activity
 import android.app.Application
+import android.content.Context
 import android.content.Intent
 import android.util.Log
 import androidx.compose.foundation.BorderStroke
@@ -72,6 +73,7 @@ import eka.care.documents.ui.presentation.model.RecordParamsModel
 import eka.care.documents.ui.presentation.viewmodel.RecordsViewModel
 import eka.care.documents.ui.touchBodyBold
 import eka.care.documents.ui.touchHeadlineBold
+import eka.care.documents.ui.utility.RecordsUtility
 import eka.care.documents.ui.utility.RecordsUtility.Companion.formatLocalDateToCustomFormat
 import eka.care.documents.ui.utility.RecordsUtility.Companion.timestampToLong
 import eka.care.documents.ui.utility.ThumbnailGenerator
@@ -91,11 +93,6 @@ fun AddMedicalRecordsDetailViewComponent(
     paramsModel: RecordParamsModel,
     editDocument: Boolean
 ) {
-    init(
-        viewModel = viewModel,
-        filterId = paramsModel.filterId,
-        documentId = viewModel.cardClickData.value?.documentId
-    )
     val context = LocalContext.current
     val compressedFiles by viewModel.compressedFiles.collectAsState(initial = emptyList())
     val initialSelectedDocType = viewModel.cardClickData.value?.documentType
@@ -103,6 +100,7 @@ fun AddMedicalRecordsDetailViewComponent(
     val selectedDate = remember { mutableStateOf("") }
     val openDialogRecord = remember { mutableStateOf(false) }
     val selectedTags by viewModel.selectedTags.collectAsState()
+    val isOnline = viewModel.isOnline.collectAsState().value
 
     LaunchedEffect(Unit) {
         viewModel.compressFile(fileList, context)
@@ -154,6 +152,7 @@ fun AddMedicalRecordsDetailViewComponent(
                     null
                 }
                 val unixTimestamp = parsedDate?.time?.div(1000)
+                val status = if (isOnline) RecordsUtility.Companion.Status.WAITING_TO_UPLOAD.value else RecordsUtility.Companion.Status.WAITING_FOR_NETWORK.value
                 val vaultEntity = VaultEntity(
                     localId = UUID.randomUUID().toString(),
                     documentId = null,
@@ -180,7 +179,8 @@ fun AddMedicalRecordsDetailViewComponent(
                     autoTags = selectedTags.joinToString(",").trimStart(','),
                     hashId = null,
                     cta = null,
-                    isAnalyzing = false
+                    isAnalyzing = false,
+                    status = status
                 )
 
                 viewModel.createVaultRecord(vaultEntity)
@@ -356,7 +356,7 @@ fun AddMedicalRecordsDetailViewComponent(
                     )
                     Spacer(modifier = Modifier.width(16.dp))
                     Text(
-                        text = date ?: "",
+                        text = date,
                         color = MaterialTheme.colorScheme.onSurface,
                         style = touchBodyBold
                     )
@@ -374,7 +374,7 @@ fun AddMedicalRecordsDetailViewComponent(
             Button(
                 colors = ButtonDefaults.buttonColors(
                     contentColor = DarwinTouchNeutral0,
-                    containerColor =  if (selectedChipId != null) DarwinTouchPrimary else DarwinTouchNeutral600
+                    containerColor = if (selectedChipId != null) DarwinTouchPrimary else DarwinTouchNeutral600
                 ),
                 onClick = {
                     if (selectedChipId != null) onAddMedicalRecord()
@@ -392,12 +392,6 @@ fun AddMedicalRecordsDetailViewComponent(
             }
         }
     )
-}
-
-private fun init(viewModel: RecordsViewModel, documentId: String?, filterId: String) {
-    if (documentId != null) {
-        viewModel.getTags(documentId = documentId, filterId = filterId)
-    }
 }
 
 enum class FileType {

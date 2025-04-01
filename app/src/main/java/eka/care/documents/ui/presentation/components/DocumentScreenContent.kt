@@ -1,7 +1,5 @@
 package eka.care.documents.ui.presentation.components
 
-import android.content.Context
-import android.content.Intent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -42,7 +40,6 @@ import eka.care.documents.ui.DarwinTouchNeutral1000
 import eka.care.documents.ui.presentation.model.RecordModel
 import eka.care.documents.ui.presentation.model.RecordParamsModel
 import eka.care.documents.ui.presentation.screens.DocumentEmptyStateScreen
-import eka.care.documents.ui.presentation.screens.Mode
 import eka.care.documents.ui.presentation.state.GetRecordsState
 import eka.care.documents.ui.presentation.viewmodel.RecordsViewModel
 import kotlinx.coroutines.Job

@@ -49,12 +49,10 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
         filterId: String?,
         ownerId: String?,
         documentId: String
-    ): String? {
-        return withContext(Dispatchers.IO) {
-            val result = database.vaultDao().getSmartReport(documentId = documentId)
-            return@withContext result
-        }
+    ): String? = withContext(Dispatchers.IO) {
+        database.vaultDao().getSmartReport(documentId = documentId)
     }
+
 
     override suspend fun updateSmartReport(
         filterId: String?,
@@ -201,5 +199,16 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
         ownerId: String?
     ) {
         database.vaultDao().updateUpdatedAtByOid(filterId = filterId, updatedAt = updatedAt, ownerId = ownerId)
+    }
+    override suspend fun updateDocumentStatus(localId: String, status: Int) {
+        database.vaultDao().updateDocumentStatus(localId, status)
+    }
+
+    override fun getStatusCount(
+        ownerId: String?,
+        filterId: String?,
+        status: Int?
+    ): Flow<Int> {
+        return database.vaultDao().getVaultEntityCount(ownerId = ownerId, filterId = filterId, status = status).flowOn(Dispatchers.IO)
     }
 }
