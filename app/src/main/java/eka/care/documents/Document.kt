@@ -28,7 +28,9 @@ import eka.care.documents.ui.presentation.model.RecordModel
 import eka.care.documents.ui.presentation.screens.DocumentSortEnum
 import eka.care.documents.ui.utility.RecordsUtility
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.runBlocking
+import java.util.UUID
 
 object Document {
     private var appContext: Context? = null
@@ -120,26 +122,45 @@ object Document {
         ownerId: String,
         filterIds: List<String>?,
         docType: Int = -1,
-        sortBy : DocumentSortEnum
-    ): Flow<List<VaultEntity>>? {
-        return if (sortBy == DocumentSortEnum.UPLOAD_DATE) {
-            documentRepository?.fetchDocuments(
-                ownerId = ownerId,
-                filterIds = filterIds,
-                docType = docType
-            )
+        sortBy: DocumentSortEnum
+    ): Flow<List<RecordModel>>? {
+        return (if (sortBy == DocumentSortEnum.UPLOAD_DATE) {
+            documentRepository?.fetchDocuments(ownerId = ownerId,filterIds = filterIds,docType = docType)
         } else {
-            documentRepository?.fetchDocumentsByDocDate(
-                ownerId = ownerId,
-                filterIds = filterIds,
-                docType = docType
-            )
+            documentRepository?.fetchDocumentsByDocDate(ownerId = ownerId, filterIds =  filterIds, docType = docType)
+        })?.map { vaultList ->
+            vaultList.map { vaultEntity ->
+                vaultEntity.toRecordModel()
+            }
         }
     }
 
-    suspend fun storeDocuments(vaultEntityList: List<VaultEntity>) {
+    suspend fun storeDocuments(recordModelList: List<RecordModel>, uuid : String) {
+        val vaultEntityList = recordModelList.map { record ->
+            VaultEntity(
+                localId = record.localId ?: UUID.randomUUID().toString(),
+                documentId = null,
+                ownerId = record.ownerId,
+                documentType = record.documentType,
+                documentDate = record.documentDate,
+                createdAt = record.createdAt ?: System.currentTimeMillis(),
+                thumbnail = record.thumbnail,
+                filePath = record.filePath,
+                fileType = record.fileType ?: "8",
+                cta = Gson().toJson(record.cta),
+                tags = record.tags,
+                autoTags = record.autoTags,
+                source = record.source,
+                isAnalyzing = record.isAnalyzing ?: false,
+                status = record.status,
+                uuid = uuid,
+                filterId = null,
+                hashId = null,
+            )
+        }
         documentRepository?.storeDocuments(vaultEntityList)
     }
+
 
     suspend fun deleteDocument(localId: String) {
         documentRepository?.deleteDocument(localId = localId)

@@ -186,7 +186,7 @@ interface VaultDao {
     WHERE doc_id IS NULL 
     AND is_deleted = 0 
     AND owner_id = :ownerId
-    AND status IN (2, 4)
+    AND status != 0
     AND (filter_id IN (:filterIds) OR filter_id IS NULL)
     """
     )
