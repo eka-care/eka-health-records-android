@@ -1,6 +1,5 @@
 package eka.care.documents.data.repository
 
-import android.util.Log
 import eka.care.documents.data.db.database.DocumentDatabase
 import eka.care.documents.data.db.entity.VaultEntity
 import eka.care.documents.data.db.model.AvailableDocTypes
@@ -93,7 +92,6 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
 
     override suspend fun deleteDocument(localId: String) {
         database.vaultDao().deleteDocument(localId = localId)
-        return
     }
 
     override suspend fun editDocument(
@@ -184,15 +182,25 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
 
     override suspend fun removeDocument(localId: String, filterId: String?) {
         database.vaultDao().removeDocument(localId = localId, filterId = filterId)
-        return
     }
 
     override suspend fun getDocumentsWithoutFilePath(
-        ownerId: String,
-        filterIds: List<String>?
+        ownerId: String
     ): List<VaultEntity> {
         return database.vaultDao()
-            .fetchDocumentsWithoutFilePath(ownerId = ownerId, filterIds = filterIds)
+            .fetchDocumentsWithoutFilePath(ownerId = ownerId)
+    }
+
+    override suspend fun getUpdatedAtByOid(filterId: String?, ownerId: String?): Long? {
+        return database.vaultDao().getUpdatedAtByOid(filterId = filterId, ownerId = ownerId)
+    }
+
+    override suspend fun updateUpdatedAtByOid(
+        filterId: String?,
+        updatedAt: Long,
+        ownerId: String?
+    ) {
+        database.vaultDao().updateUpdatedAtByOid(filterId = filterId, updatedAt = updatedAt, ownerId = ownerId)
     }
     override suspend fun updateDocumentStatus(localId: String, status: Int) {
         database.vaultDao().updateDocumentStatus(localId, status)

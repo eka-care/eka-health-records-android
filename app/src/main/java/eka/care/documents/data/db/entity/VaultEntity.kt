@@ -8,7 +8,7 @@ import androidx.room.PrimaryKey
 data class VaultEntity(
     @PrimaryKey @ColumnInfo(name = "local_id") var localId: String,
     @ColumnInfo(name = "doc_id") var documentId: String?,
-    @ColumnInfo(name = "uuid") var uuid: String?,
+    @ColumnInfo(name = "uuid") var uuid: String,
     @ColumnInfo(name = "owner_id") var ownerId: String? = null, // doctorId new
     @ColumnInfo(name = "filter_id") var filterId: String? = null, // app_oid, patient_id
     @ColumnInfo(name = "file_path") var filePath: List<String>?,
@@ -26,5 +26,6 @@ data class VaultEntity(
     @ColumnInfo(name = "hash_id") var hashId: String?,
     @ColumnInfo(name = "is_analyzing") var isAnalyzing: Boolean,
     @ColumnInfo(name = "smart_report_field") var smartReportField : String? = null,
+    @ColumnInfo(name = "updated_at") var updatedAt : Long? = null,
     @ColumnInfo(name = "status") var status : Int? = null
 )
