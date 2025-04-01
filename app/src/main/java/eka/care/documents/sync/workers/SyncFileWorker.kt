@@ -47,9 +47,9 @@ class SyncFileWorker(
             val filterIds = inputData.getString("filterIds")?.split(",") ?: emptyList()
 
             filterIds.forEach { filterId ->
-            //    val updatedAt = vaultRepository.getUpdatedAtByOid(filterId = filterId,ownerId = ownerId)
+                //    val updatedAt = vaultRepository.getUpdatedAtByOid(filterId = filterId,ownerId = ownerId)
                 fetchRecords(uuid = uuid, filterId = filterId, ownerId = ownerId)
-       //         vaultRepository.updateUpdatedAtByOid(filterId = filterId, ownerId = ownerId, updatedAt = System.currentTimeMillis())
+                //         vaultRepository.updateUpdatedAtByOid(filterId = filterId, ownerId = ownerId, updatedAt = System.currentTimeMillis())
             }
 
             syncDocuments(filterIds, uuid, ownerId)
@@ -64,7 +64,8 @@ class SyncFileWorker(
 
     private suspend fun syncDocuments(filterIds: List<String>?, uuid: String?, ownerId: String) {
         try {
-            val vaultDocuments = vaultRepository.getUnSyncedDocuments(filterIds = filterIds, ownerId = ownerId)
+            val vaultDocuments =
+                vaultRepository.getUnSyncedDocuments(filterIds = filterIds, ownerId = ownerId)
             if (vaultDocuments.isEmpty()) return
 
             val tags = mutableListOf<String>()
@@ -97,7 +98,10 @@ class SyncFileWorker(
                         localId = vaultEntity.localId,
                         status = RecordsUtility.Companion.Status.UNSYNCED_DOCUMENT.value
                     )
-                    Log.d("SYNC_DOCUMENTS", "Upload initialization error: ${uploadInitResponse.message}")
+                    Log.d(
+                        "SYNC_DOCUMENTS",
+                        "Upload initialization error: ${uploadInitResponse.message}"
+                    )
                     return
                 }
 
@@ -121,7 +125,11 @@ class SyncFileWorker(
         }
     }
 
-    private suspend fun handleFileUpload(batchResponse: BatchResponse, files: List<File>, vaultEntity: VaultEntity) {
+    private suspend fun handleFileUpload(
+        batchResponse: BatchResponse,
+        files: List<File>,
+        vaultEntity: VaultEntity
+    ) {
         vaultRepository.updateDocumentStatus(
             localId = vaultEntity.localId,
             status = RecordsUtility.Companion.Status.UPLOADING_DOCUMENT.value
@@ -157,7 +165,7 @@ class SyncFileWorker(
                     val updateFileDetailsRequest = UpdateFileDetailsRequest(
                         filterId = vaultEntity.filterId,
                         documentType = docTypes.find { it.idNew == vaultEntity.documentType }?.id,
-                        documentDate = vaultEntity.documentDate.toString(),
+                        documentDate = vaultEntity.documentDate,
                         userTags = emptyList()
                     )
                     myFileRepository.updateFileDetails(
@@ -208,9 +216,10 @@ class SyncFileWorker(
             val updateFileDetailsRequest = UpdateFileDetailsRequest(
                 filterId = vaultEntity.filterId,
                 documentType = docTypes.find { it.idNew == vaultEntity.documentType }?.id,
-                documentDate = if (documentDate.isNotEmpty()) changeDateFormat(documentDate) else null,
+                documentDate = if (documentDate.isNotEmpty()) changeDateFormat(documentDate) else 0L,
                 userTags = emptyList()
             )
+
 
             myFileRepository.updateFileDetails(
                 documentId = documentId,
@@ -279,12 +288,12 @@ class SyncFileWorker(
         val vaultList = mutableListOf<VaultEntity>()
         recordsResponse.items.forEach {
             val recordItem = it.record.item
-            val localId = vaultRepository.getLocalId(recordItem.documentId)
+            val entity = vaultRepository.getDocumentById(recordItem.documentId)
             val documentDate =
-                if (recordItem.metadata?.documentDate == 0L) null else recordItem.metadata?.documentDate
-            if (!localId.isNullOrEmpty()) {
+                recordItem.metadata?.documentDate ?: entity?.documentDate
+            if (!entity?.localId.isNullOrEmpty()) {
                 vaultRepository.storeDocument(
-                    localId = localId,
+                    localId = entity?.localId ?: "",
                     cta = null,
                     isAnalysing = false,
                     docId = recordItem.documentId,
@@ -297,7 +306,7 @@ class SyncFileWorker(
             } else {
                 vaultList.add(
                     VaultEntity(
-                        localId = localId ?: UUID.randomUUID().toString(),
+                        localId = entity?.localId ?: UUID.randomUUID().toString(),
                         documentId = recordItem.documentId,
                         ownerId = ownerId,
                         filterId = recordItem.patientId,

@@ -315,7 +315,6 @@ fun DocumentScreen(
         status = if (!isOnline) RecordsUtility.Companion.Status.WAITING_FOR_NETWORK.value
         else RecordsUtility.Companion.Status.UNSYNCED_DOCUMENT.value
     ).collectAsState(initial = 0)
-    Log.d("AYUSHI", count.toString())
     val resp = (recordsState as? GetRecordsState.Success)?.resp ?: emptyList()
     ModalBottomSheetLayout(
         sheetState = modalBottomSheetState, sheetContent = {
@@ -370,20 +369,30 @@ fun DocumentScreen(
                             closeSheet()
                         },
                         trailingText = if (mode == Mode.SELECTION) stringResource(id = R.string.done) else "",
+                        trailingIcon1 = R.drawable.ic_arrows_rotate_solid,
                         onTrailingTextClick = {
-                            onBackClick()
                             if (mode == Mode.SELECTION) {
+                                onBackClick()
                                 viewModel.documentBottomSheetType = null
                                 selectedRecords?.invoke(selectedItems.toList())
                             }
-                        })
+                        },
+                        onTrailingIcon1Click = {
+                            initData(
+                                filterIds = filterIdsToProcess,
+                                ownerId = params.ownerId,
+                                context = context,
+                                patientUuid = params.uuid
+                            )
+                        }
+                    )
                     AnimatedVisibility(
                         visible = count >= 1,
                         enter = fadeIn(),
                         exit = fadeOut()
                     ) {
                         DocumentStatus(icon = R.drawable.ic_cloud_slash_solid,
-                            buttonText =if(isOnline) "Try Again" else null,
+                            buttonText = if (isOnline) "Try Again" else null,
                             text = if (!isOnline) "$count file${if (count > 1) "s" else ""} pending upload. Connect to the internet."
                             else "$count document${if (count > 1) "s" else ""} failed to upload",
                             onClick = {
