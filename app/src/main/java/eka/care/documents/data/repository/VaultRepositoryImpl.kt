@@ -202,7 +202,6 @@ class VaultRepositoryImpl(private val database: DocumentDatabase) : VaultReposit
     }
     override suspend fun updateDocumentStatus(localId: String, status: Int) {
         database.vaultDao().updateDocumentStatus(localId, status)
-        return
     }
 
     override fun getStatusCount(
