@@ -27,6 +27,7 @@ import eka.care.documents.ui.presentation.model.CTA
 import eka.care.documents.ui.presentation.model.RecordModel
 import eka.care.documents.ui.presentation.screens.DocumentSortEnum
 import eka.care.documents.ui.utility.RecordsUtility
+import eka.care.records.sync.RecordsSync
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.runBlocking
 
@@ -90,6 +91,19 @@ object Document {
         WorkManager.getInstance(context)
             .enqueueUniqueWork(
                 uniqueWorkName,
+                ExistingWorkPolicy.KEEP,
+                uniqueSyncWorkRequest
+            )
+
+        val syncRequest =
+            OneTimeWorkRequestBuilder<RecordsSync>()
+                .setInputData(inputData)
+                .setConstraints(constraints)
+                .build()
+
+        WorkManager.getInstance(context)
+            .enqueueUniqueWork(
+                "sync_records_${patientUuid}",
                 ExistingWorkPolicy.KEEP,
                 uniqueSyncWorkRequest
             )

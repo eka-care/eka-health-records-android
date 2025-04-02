@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
+    alias(libs.plugins.kotlin.compose.compiler)
 }
 
 android {
@@ -41,21 +42,11 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
-//    compileOptions {
-//        sourceCompatibility = JavaVersion.VERSION_1_8
-//        targetCompatibility = JavaVersion.VERSION_1_8
-//    }
-//    kotlinOptions {
-//        jvmTarget = "1.8"
-//    }
     kotlin {
         jvmToolchain(17)
     }
     buildFeatures {
         compose = true
-    }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.4.3"
     }
     packaging {
         resources {

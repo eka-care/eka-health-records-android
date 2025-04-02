@@ -30,7 +30,6 @@ class AwsRepository {
         files: List<FileType>,
         isMultiFile: Boolean = false,
         isEncrypted: Boolean = false,
-        patientUuid: String,
         patientOid: String?,
         documentType : String,
         tags : List<String>

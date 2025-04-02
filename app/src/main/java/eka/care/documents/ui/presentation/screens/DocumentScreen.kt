@@ -44,10 +44,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.work.Constraints
 import androidx.work.Data
-import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkManager
 import com.example.reader.presentation.states.PdfSource
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionStatus
@@ -481,12 +479,12 @@ fun initData(
             .setConstraints(constraints)
             .build()
 
-    WorkManager.getInstance(context)
-        .enqueueUniqueWork(
-            uniqueWorkName,
-            ExistingWorkPolicy.KEEP,
-            uniqueSyncWorkRequest
-        )
-    viewModel.syncDeletedDocuments(filterIds = filterIds, ownerId = ownerId)
-    viewModel.syncEditedDocuments(filterIds = filterIds, ownerId = ownerId)
+//    WorkManager.getInstance(context)
+//        .enqueueUniqueWork(
+//            uniqueWorkName,
+//            ExistingWorkPolicy.KEEP,
+//            uniqueSyncWorkRequest
+//        )
+//    viewModel.syncDeletedDocuments(filterIds = filterIds, ownerId = ownerId)
+//    viewModel.syncEditedDocuments(filterIds = filterIds, ownerId = ownerId)
 }

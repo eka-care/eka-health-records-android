@@ -7,6 +7,7 @@ plugins {
     id("kotlin-kapt")
     id("kotlin-parcelize")
     kotlin("android")
+    alias(libs.plugins.kotlin.compose.compiler)
 }
 
 android {
@@ -64,9 +65,6 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.4.3"
-    }
 }
 
 afterEvaluate {
@@ -80,7 +78,7 @@ afterEvaluate {
 
                 groupId = "com.eka.records"
                 artifactId = "eka-records"
-                version = "3.2.1"
+                version = "3.2.2"
             }
         }
     }

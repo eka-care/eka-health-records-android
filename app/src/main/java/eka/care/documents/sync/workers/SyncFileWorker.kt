@@ -95,16 +95,14 @@ class SyncFileWorker(
                 if (fileContentList.isNullOrEmpty()) {
                     return
                 }
-                val uploadInitResponse = uuid?.let {
+                val uploadInitResponse =
                     awsRepository.fileUploadInit(
                         files = fileContentList,
                         patientOid = vaultEntity.filterId,
-                        patientUuid = uuid,
                         isMultiFile = isMultiFile,
                         tags = tags,
                         documentType = documentType
                     )
-                }
                 if (uploadInitResponse?.error == true) {
                     Log.d(
                         "SYNC_DOCUMENTS",
