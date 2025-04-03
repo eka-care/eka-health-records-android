@@ -19,14 +19,14 @@ class SyncRecordsRepository(val app: Application) {
     )
 
     suspend fun getRecords(
-        updatedAt: String?,
+        updatedAt: Long?,
         offset: String? = null,
         oid: String?
     ): Response<GetFilesResponse>? {
         return withContext(Dispatchers.IO) {
             try {
                 val response = recordsProtoService.getFiles(
-                    updatedAt = updatedAt,
+                    updatedAt = updatedAt ?: 0L,
                     offset = offset,
                     filterId = oid
                 )

@@ -7,6 +7,7 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
+import eka.care.records.client.model.RecordModel
 import eka.care.records.client.model.SortOrder
 import eka.care.records.data.entity.RecordEntity
 import eka.care.records.data.repository.RecordsRepositoryImpl
@@ -74,7 +75,7 @@ class Records private constructor() {
         includeDeleted: Boolean = false,
         documentType: String? = null,
         sortOrder: SortOrder,
-    ): Flow<List<Record>> {
+    ): Flow<List<RecordModel>> {
         return recordsRepository.readRecords(
             ownerId = ownerId,
             filterIds = filterIds,
@@ -88,7 +89,7 @@ class Records private constructor() {
         recordsRepository.updateRecords(records = records)
     }
 
-    suspend fun deleteRecords() {
-        recordsRepository.deleteRecords()
+    suspend fun deleteRecords(ids: List<String>) {
+        recordsRepository.deleteRecords(ids = ids)
     }
 }

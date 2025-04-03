@@ -18,7 +18,7 @@ import androidx.room.PrimaryKey
     ]
 )
 data class RecordFile(
-    @ColumnInfo(name = "_id") @PrimaryKey(autoGenerate = true) val id: String,
+    @ColumnInfo(name = "_id") @PrimaryKey(autoGenerate = true) val id: Long = 0,
     @ColumnInfo(name = "local_id") val localId: String,
     @ColumnInfo(name = "file_path") val filePath: String?,
     @ColumnInfo(name = "file_type") var fileType: String?,

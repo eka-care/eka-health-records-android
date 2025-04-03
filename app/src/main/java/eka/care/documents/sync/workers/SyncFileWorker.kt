@@ -235,7 +235,7 @@ class SyncFileWorker(
         do {
             try {
                 val response = recordsRepository.getRecords(
-                    updatedAt = updatedAt,
+                    updatedAt = updatedAt?.toLongOrNull() ?: 0L,
                     offset = currentOffset,
                     oid = filterId
                 )

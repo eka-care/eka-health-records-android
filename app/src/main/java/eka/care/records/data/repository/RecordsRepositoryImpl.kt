@@ -4,14 +4,18 @@ import android.content.Context
 import androidx.sqlite.db.SupportSQLiteQueryBuilder
 import eka.care.documents.data.db.database.DocumentDatabase
 import eka.care.records.client.Logger
+import eka.care.records.client.model.RecordModel
 import eka.care.records.client.model.SortOrder
 import eka.care.records.client.repository.RecordsRepository
 import eka.care.records.data.entity.RecordEntity
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 
 internal class RecordsRepositoryImpl(context: Context) : RecordsRepository {
     private var dao = DocumentDatabase.getInstance(context).recordsDao()
+    private var recordFilesDao = DocumentDatabase.getInstance(context).recordFilesDao()
 
     override suspend fun createRecords(records: List<RecordEntity>) {
         dao.createRecords(records)
@@ -23,13 +27,14 @@ internal class RecordsRepositoryImpl(context: Context) : RecordsRepository {
         includeDeleted: Boolean,
         documentType: String?,
         sortOrder: SortOrder,
-    ): Flow<List<Record>> = flow {
+    ): Flow<List<RecordModel>> = flow {
+        Logger.i("ReadRecords with ownerId: $ownerId, filterIds: $filterIds, includeDeleted: $includeDeleted, documentType: $documentType, sortOrder: $sortOrder")
         try {
             val selection = StringBuilder()
             val selectionArgs = mutableListOf<String>()
 
             if (!includeDeleted) {
-                selection.append("IS_DELETED = 0 AND ")
+                selection.append("IS_ARCHIVED = 0 AND ")
             }
 
             selection.append("OWNER_ID = ? ")
@@ -55,8 +60,22 @@ internal class RecordsRepositoryImpl(context: Context) : RecordsRepository {
                 .create()
 
             Logger.i("Query: ${query.sql}")
+            Logger.i("Params: ${selectionArgs.joinToString(",")}")
 
-            dao.readRecords(query)
+            val dataFlow = dao.readRecords(query).map { records ->
+                records.map {
+                    RecordModel(
+                        id = it.id,
+                        thumbnail = it.thumbnail,
+                        createdAt = it.createdAt,
+                        updatedAt = it.updatedAt,
+                        documentType = it.documentType,
+                        documentDate = it.documentDate,
+                        smartReport = it.smartReport
+                    )
+                }
+            }
+            emitAll(dataFlow)
         } catch (e: Exception) {
             Logger.e(e.localizedMessage ?: "Error reading records")
             emit(emptyList())
@@ -69,8 +88,8 @@ internal class RecordsRepositoryImpl(context: Context) : RecordsRepository {
         dao.updateRecords(records)
     }
 
-    override suspend fun deleteRecords() {
-
+    override suspend fun deleteRecords(ids: List<String>) {
+        dao.deleteRecords(ids)
     }
 
     override suspend fun getLatestRecordUpdatedAt(ownerId: String, filterId: String?): Long? {

@@ -1,7 +1,6 @@
 package eka.care.records.data.dao
 
 import androidx.room.Dao
-import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -19,7 +18,7 @@ interface RecordsDao {
     @RawQuery(observedEntities = [RecordEntity::class])
     fun readRecords(query: SupportSQLiteQuery): Flow<List<RecordEntity>>
 
-    @Query("SELECT * FROM EKA_RECORDS_TABLE WHERE RECORD_ID = :id")
+    @Query("SELECT * FROM EKA_RECORDS_TABLE WHERE DOCUMENT_ID = :id")
     suspend fun getRecordByDocumentId(id: String): RecordEntity?
 
     @Query("SELECT MAX(UPDATED_AT) FROM EKA_RECORDS_TABLE WHERE OWNER_ID = :ownerId AND FILTER_ID = :filterId OR FILTER_ID IS NULL")
@@ -28,6 +27,6 @@ interface RecordsDao {
     @Update
     suspend fun updateRecords(records: List<RecordEntity>)
 
-    @Delete
-    suspend fun deleteRecords(records: List<RecordEntity>)
+    @Query("DELETE FROM EKA_RECORDS_TABLE WHERE LOCAL_ID IN (:ids)")
+    suspend fun deleteRecords(ids: List<String>)
 }

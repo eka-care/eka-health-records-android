@@ -10,14 +10,17 @@ import eka.care.documents.data.dao.VaultDao
 import eka.care.documents.data.db.converter.Converters
 import eka.care.documents.data.db.entity.UpdatedAtEntity
 import eka.care.documents.data.db.entity.VaultEntity
+import eka.care.records.data.dao.RecordFilesDao
 import eka.care.records.data.dao.RecordsDao
 import eka.care.records.data.entity.RecordEntity
+import eka.care.records.data.entity.RecordFile
 
 @Database(
     entities = [
         VaultEntity::class,
         UpdatedAtEntity::class,
-        RecordEntity::class
+        RecordEntity::class,
+        RecordFile::class
     ],
     version = 15,
     exportSchema = false
@@ -27,6 +30,7 @@ abstract class DocumentDatabase : RoomDatabase() {
     abstract fun vaultDao(): VaultDao
     abstract fun updatedAtDao(): UpdatedAtDao
     abstract fun recordsDao(): RecordsDao
+    abstract fun recordFilesDao(): RecordFilesDao
 
     companion object {
         private var mInstance: DocumentDatabase? = null

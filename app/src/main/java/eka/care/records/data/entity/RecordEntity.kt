@@ -16,7 +16,7 @@ import androidx.room.PrimaryKey
 )
 data class RecordEntity(
     @ColumnInfo(name = "local_id") @PrimaryKey val id: String,
-    @ColumnInfo(name = "record_id") val recordId: String? = null,
+    @ColumnInfo(name = "document_id") val documentId: String? = null,
     @ColumnInfo(name = "owner_id") var ownerId: String,
     @ColumnInfo(name = "filter_id") var filterId: String? = null,
     @ColumnInfo(name = "thumbnail") var thumbnail: String? = null,
@@ -27,4 +27,5 @@ data class RecordEntity(
     @ColumnInfo(name = "document_hash") var documentHash: String? = null,
     @ColumnInfo(name = "is_dirty") var isDirty: Boolean = false,
     @ColumnInfo(name = "is_archived") var isDeleted: Boolean = false,
+    @ColumnInfo(name = "smart_report_field") var smartReport: String? = null,
 )
