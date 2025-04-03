@@ -28,7 +28,7 @@ interface MyFileService {
         @Path("document_id") documentId: String,
         @Query("p_oid") filterId: String?,
         @Body updateFileDetailsRequest: UpdateFileDetailsRequest,
-    ): NetworkResponse<Unit, NetworkResponse.ServerError<Unit>>
+    ): NetworkResponse<Unit, Unit>
 
     @Streaming
     @GET
@@ -38,11 +38,11 @@ interface MyFileService {
     suspend fun getDocument(
         @Path("document_id") documentId: String,
         @Query("p_oid") filterId: String?,
-    ): NetworkResponse<Document, NetworkResponse.NetworkError>
+    ): NetworkResponse<Document, Document>
 
     @DELETE("api/v1/docs/{document_id}")
     suspend fun deleteDocument(
         @Path("document_id") documentId: String,
         @Query("p_oid") filterId: String?,
-    ): NetworkResponse<Unit, NetworkResponse.ServerError<Unit>>
+    ): NetworkResponse<Unit, Unit>
 }
