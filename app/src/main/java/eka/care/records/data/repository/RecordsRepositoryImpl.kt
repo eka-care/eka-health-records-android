@@ -1,24 +1,82 @@
 package eka.care.records.data.repository
 
+import android.app.Application
 import android.content.Context
 import androidx.sqlite.db.SupportSQLiteQueryBuilder
 import eka.care.documents.data.db.database.DocumentDatabase
+import eka.care.documents.ui.utility.ThumbnailGenerator
 import eka.care.records.client.Logger
 import eka.care.records.client.model.RecordModel
 import eka.care.records.client.model.SortOrder
 import eka.care.records.client.repository.RecordsRepository
 import eka.care.records.data.entity.RecordEntity
+import eka.care.records.data.entity.RecordFile
+import id.zelory.compressor.Compressor
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.supervisorScope
+import java.io.File
+import java.util.UUID
 
-internal class RecordsRepositoryImpl(context: Context) : RecordsRepository {
+internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepository {
     private var dao = DocumentDatabase.getInstance(context).recordsDao()
-    private var recordFilesDao = DocumentDatabase.getInstance(context).recordFilesDao()
+    private var filesDao = DocumentDatabase.getInstance(context).recordFilesDao()
 
     override suspend fun createRecords(records: List<RecordEntity>) {
         dao.createRecords(records)
+    }
+
+    override suspend fun createRecords(
+        files: List<File>,
+        ownerId: String,
+        filterId: String?,
+        documentType: String
+    ) = supervisorScope {
+        if(files.isEmpty()) {
+            Logger.e("No files to create records")
+            return@supervisorScope
+        }
+
+        val time = System.currentTimeMillis() / 1000
+        val id = UUID.randomUUID().toString()
+        val record = RecordEntity(
+            id = id,
+            ownerId = ownerId,
+            filterId = filterId,
+            createdAt = time,
+            updatedAt = time,
+            documentDate = time,
+        )
+        dao.createRecords(listOf(record))
+        files.forEach { file ->
+            val compressedFile = Compressor.compress(context, file)
+            val path = compressedFile.path
+            val type = compressedFile.extension
+            insertRecordFile(
+                RecordFile(
+                    localId = record.id,
+                    filePath = path,
+                    fileType = type
+                )
+            )
+        }
+        val thumbnail = if (files.first().extension.lowercase() in listOf(
+                "jpg",
+                "jpeg",
+                "png",
+                "webp"
+            )
+        ) {
+            files.first().path
+        } else {
+            ThumbnailGenerator.getThumbnailFromPdf(
+                app = context.applicationContext as Application,
+                files.first()
+            )
+        }
+        dao.updateRecords(listOf(record.copy(thumbnail = thumbnail)))
     }
 
     override fun readRecords(
@@ -94,5 +152,13 @@ internal class RecordsRepositoryImpl(context: Context) : RecordsRepository {
 
     override suspend fun getLatestRecordUpdatedAt(ownerId: String, filterId: String?): Long? {
         return dao.getLatestRecordUpdatedAt(ownerId = ownerId, filterId = filterId)
+    }
+
+    override suspend fun insertRecordFile(file: RecordFile): Long {
+        return filesDao.insert(recordFile = file)
+    }
+
+    override suspend fun getRecordFile(localId: String): List<RecordFile>? {
+        return filesDao.getRecordFile(localId = localId)
     }
 }

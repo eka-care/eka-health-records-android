@@ -14,7 +14,6 @@ import eka.care.documents.ui.utility.RecordsUtility.Companion.downloadThumbnail
 import eka.care.records.client.Logger
 import eka.care.records.data.entity.RecordEntity
 import eka.care.records.data.entity.RecordFile
-import eka.care.records.data.repository.RecordFileRepositoryImpl
 import eka.care.records.data.repository.RecordsRepositoryImpl
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -29,7 +28,6 @@ class RecordsSync(
 
     private val syncRepository = SyncRecordsRepository(appContext as Application)
     private val recordsRepository = RecordsRepositoryImpl(appContext as Application)
-    private val recordFileRepository = RecordFileRepositoryImpl(appContext as Application)
     private val myFileRepository = MyFileRepository()
 
     override suspend fun doWork(): Result {
@@ -57,7 +55,8 @@ class RecordsSync(
     }
 
     private fun syncLocalRecords() {
-
+        // Sync documents with is_dirty flags
+        // Sync documents with no details, like file path or thumbnail
     }
 
     private suspend fun fetchRecordsFromServer(
@@ -100,7 +99,7 @@ class RecordsSync(
                 documentId = recordItem.documentId,
                 filterId = recordItem.patientId,
                 createdAt = recordItem.uploadDate ?: 0L,
-                updatedAt = System.currentTimeMillis(),
+                updatedAt = System.currentTimeMillis() / 1000,
                 documentDate = recordItem.metadata?.documentDate,
                 documentType = recordItem.documentType ?: "ot",
             )
@@ -153,7 +152,7 @@ class RecordsSync(
                         context = applicationContext,
                         type = file.fileType
                     )
-                    recordFileRepository.insertRecordFile(
+                    recordsRepository.insertRecordFile(
                         RecordFile(
                             localId = record.id,
                             filePath = filePath,

@@ -13,6 +13,7 @@ import eka.care.records.data.entity.RecordEntity
 import eka.care.records.data.repository.RecordsRepositoryImpl
 import eka.care.records.sync.RecordsSync
 import kotlinx.coroutines.flow.Flow
+import java.io.File
 
 class Records private constructor() {
     private lateinit var recordsRepository: RecordsRepositoryImpl
@@ -63,6 +64,20 @@ class Records private constructor() {
                 ExistingWorkPolicy.KEEP,
                 syncRequest
             )
+    }
+
+    suspend fun createRecord(
+        files: List<File>,
+        ownerId: String,
+        filterId: String? = null,
+        documentType: String = "ot"
+    ) {
+        recordsRepository.createRecords(
+            files = files,
+            ownerId = ownerId,
+            filterId = filterId,
+            documentType = documentType
+        )
     }
 
     suspend fun addRecords(records: List<RecordEntity>) {
