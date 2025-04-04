@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface RecordsDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    fun createRecords(records: List<RecordEntity>)
+    suspend fun createRecords(records: List<RecordEntity>)
 
     @RawQuery(observedEntities = [RecordEntity::class])
     fun readRecords(query: SupportSQLiteQuery): Flow<List<RecordEntity>>
