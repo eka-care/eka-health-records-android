@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import java.io.File
 import java.util.UUID
@@ -50,18 +51,6 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
             documentDate = time,
         )
         dao.createRecords(listOf(record))
-        files.forEach { file ->
-            val compressedFile = Compressor.compress(context, file)
-            val path = compressedFile.path
-            val type = compressedFile.extension
-            insertRecordFile(
-                RecordFile(
-                    localId = record.id,
-                    filePath = path,
-                    fileType = type
-                )
-            )
-        }
         val thumbnail = if (files.first().extension.lowercase() in listOf(
                 "jpg",
                 "jpeg",
@@ -77,6 +66,20 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
             )
         }
         dao.updateRecords(listOf(record.copy(thumbnail = thumbnail)))
+        files.forEach { file ->
+            launch {
+                val compressedFile = Compressor.compress(context, file)
+                val path = compressedFile.path
+                val type = compressedFile.extension
+                insertRecordFile(
+                    RecordFile(
+                        localId = record.id,
+                        filePath = path,
+                        fileType = type
+                    )
+                )
+            }
+        }
     }
 
     override fun readRecords(
