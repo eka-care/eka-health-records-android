@@ -1,5 +1,3 @@
-import com.google.protobuf.gradle.proto
-
 plugins {
     id("com.google.protobuf")
     id("com.android.library")
@@ -127,7 +125,7 @@ dependencies {
     api(libs.play.services.mlkit.document.scanner)
     implementation(libs.zelory.compressor)
     implementation(libs.google.gson)
-    implementation("com.github.Saroj-EkaCare:Jet-Pdf-Reader:1.1.4")
+//    implementation("com.github.Saroj-EkaCare:Jet-Pdf-Reader:1.1.4")
     implementation("com.github.eka-care:eka-network-android:1.0.3") {
         exclude(group = "com.google.protobuf", module = "protobuf-java")
     }

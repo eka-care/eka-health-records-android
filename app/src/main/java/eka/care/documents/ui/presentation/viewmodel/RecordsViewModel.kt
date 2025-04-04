@@ -14,7 +14,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.reader.presentation.states.PdfSource
+//import com.example.reader.presentation.states.PdfSource
 import com.google.gson.Gson
 import eka.care.documents.data.db.database.DocumentDatabase
 import eka.care.documents.data.db.entity.VaultEntity
@@ -75,7 +75,7 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
     private val _compressedFiles = MutableStateFlow<List<File>>(emptyList())
     val compressedFiles: StateFlow<List<File>> = _compressedFiles
 
-    var pdfSource by mutableStateOf<PdfSource?>(null)
+//    var pdfSource by mutableStateOf<PdfSource?>(null)
 
     var documentBottomSheetType by mutableStateOf<DocumentBottomSheetType?>(null)
 

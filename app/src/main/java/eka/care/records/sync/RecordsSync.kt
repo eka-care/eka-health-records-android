@@ -42,7 +42,7 @@ class RecordsSync(
         val ownerId = inputData.getString("ownerId") ?: return
 
         val filterIds = inputData.getStringArray("filterIds")?.toList() ?: emptyList()
-        Logger.i("Getting records for ownerId: $ownerId, filterIds: $filterIds")
+        Logger.i("Fetching records for ownerId: $ownerId, filterIds: $filterIds")
 
         (filterIds.ifEmpty { listOf(null) }).forEach { filterId ->
             val updatedAt = recordsRepository.getLatestRecordUpdatedAt(ownerId, filterId)

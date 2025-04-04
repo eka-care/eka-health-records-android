@@ -46,7 +46,7 @@ import androidx.work.Constraints
 import androidx.work.Data
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
-import com.example.reader.presentation.states.PdfSource
+//import com.example.reader.presentation.states.PdfSource
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionStatus
 import com.google.accompanist.permissions.rememberPermissionState
@@ -188,7 +188,7 @@ fun DocumentScreen(
         contract = ActivityResultContracts.OpenDocument(),
         onResult = { uri ->
             uri?.let {
-                viewModel.pdfSource = PdfSource.Uri(it)
+//                viewModel.pdfSource = PdfSource.Uri(it)
                 Intent(context, FileViewerActivity::class.java).apply {
                     putExtra("PDF_URI", it.toString())
                     putExtra(PARAM_RECORD_PARAMS_MODEL, params)

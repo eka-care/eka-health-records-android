@@ -1,11 +1,9 @@
 package eka.care.documents.ui.presentation.components
 
 import android.net.Uri
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
@@ -18,7 +16,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import com.example.reader.PdfReaderManager
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.rememberPagerState
@@ -44,7 +41,7 @@ fun SmartReportViewComponent(
     initData(viewModel, docId, userId, localId, doctorId = doctorId)
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val pdfManager = PdfReaderManager(context)
+//    val pdfManager = PdfReaderManager(context)
     val pagerState = rememberPagerState(initialPage = SmartViewTab.SMARTREPORT.ordinal)
     var selectedUri by remember { mutableStateOf<Uri?>(null) }
     val state by viewModel.documentSmart.collectAsState()
@@ -120,12 +117,12 @@ fun SmartReportViewComponent(
 
                         DocumentPreviewState.Loading -> LoadingState()
                         is DocumentPreviewState.Success -> {
-                            DocumentSuccessState(
-                                state = (filePathState as? DocumentPreviewState.Success),
-                                pdfManager = pdfManager,
-                                paddingValues = PaddingValues(),
-                                onUriSelected = { uri -> selectedUri = uri }
-                            )
+//                            DocumentSuccessState(
+//                                state = (filePathState as? DocumentPreviewState.Success),
+//                                pdfManager = pdfManager,
+//                                paddingValues = PaddingValues(),
+//                                onUriSelected = { uri -> selectedUri = uri }
+//                            )
                         }
                     }
                 }
