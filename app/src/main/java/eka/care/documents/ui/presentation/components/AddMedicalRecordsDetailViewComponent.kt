@@ -3,7 +3,6 @@ package eka.care.documents.ui.presentation.components
 import android.app.Activity
 import android.app.Application
 import android.content.Intent
-import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -147,13 +146,6 @@ fun AddMedicalRecordsDetailViewComponent(
             onClick(CTA(action = "onBackClick"))
         } else {
             if (selectedChipId != null && fileList.isNotEmpty()) {
-                val sdf = SimpleDateFormat("EEE, dd MMM, yyyy", Locale.getDefault())
-                val parsedDate = try {
-                    sdf.parse(selectedDate.value)
-                } catch (e: Exception) {
-                    null
-                }
-                val unixTimestamp = parsedDate?.time?.div(1000)
                 val vaultEntity = VaultEntity(
                     localId = UUID.randomUUID().toString(),
                     documentId = null,
@@ -175,7 +167,7 @@ fun AddMedicalRecordsDetailViewComponent(
                     createdAt = System.currentTimeMillis() / 1000,
                     source = null,
                     documentType = selectedChipId,
-                    documentDate = unixTimestamp,
+                    documentDate = timestampToLong(selectedDate.value),
                     tags = selectedTags.joinToString(",").trimStart(','),
                     autoTags = selectedTags.joinToString(",").trimStart(','),
                     hashId = null,

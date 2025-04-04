@@ -187,15 +187,10 @@ class SyncFileWorker(
     ) {
         vaultRepository.updateDocumentId(documentId, vaultEntity.localId)
         try {
-            val documentDate = vaultEntity.documentDate?.let { timestamp ->
-                val date = Date(timestamp * 1000)
-                SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(date)
-            } ?: ""
-
             val updateFileDetailsRequest = UpdateFileDetailsRequest(
                 filterId = vaultEntity.filterId,
                 documentType = docTypes.find { it.idNew == vaultEntity.documentType }?.id,
-                documentDate = if (documentDate.isNotEmpty()) changeDateFormat(documentDate) else 0L,
+                documentDate = if (vaultEntity.documentDate != null) vaultEntity.documentDate else 0L,
                 userTags = emptyList()
             )
 
