@@ -139,7 +139,6 @@ class SyncFileWorker(
     private suspend fun syncDeletedAndEditedDocuments(filterIds: List<String>?, ownerId: String) {
         try {
             val resp = vaultRepository.getEditedDocuments(filterIds = filterIds, ownerId = ownerId)
-            Log.d("SYNC_DOCUMENT_EDIT", resp.toString())
             resp.forEach { vaultEntity ->
                 vaultEntity.documentId?.let {
                     val updateFileDetailsRequest = UpdateFileDetailsRequest(
@@ -153,7 +152,6 @@ class SyncFileWorker(
                         oid = vaultEntity.filterId,
                         updateFileDetailsRequest = updateFileDetailsRequest
                     )
-                    Log.d("SYNC_DOCUMENT_EDIT", "done")
                 }
             }
         } catch (e: Exception) {
