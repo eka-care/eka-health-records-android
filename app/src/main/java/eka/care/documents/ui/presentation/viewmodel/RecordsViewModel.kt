@@ -30,7 +30,6 @@ import eka.care.documents.ui.presentation.model.RecordModel
 import eka.care.documents.ui.presentation.screens.DocumentSortEnum
 import eka.care.documents.ui.presentation.state.GetAvailableDocTypesState
 import eka.care.documents.ui.presentation.state.GetRecordsState
-import eka.care.documents.ui.utility.RecordsUtility.Companion.convertLongToFormattedDate
 import id.zelory.compressor.Compressor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -269,10 +268,11 @@ class RecordsViewModel(app: Application) : AndroidViewModel(app) {
                 val updateFileDetailsRequest = UpdateFileDetailsRequest(
                     filterId = filterId,
                     documentType = docTypes.find { it.idNew == docType }?.id,
-                    documentDate = convertLongToFormattedDate(docDate),
+                    documentDate = docDate,
                     userTags = emptyList(),
                     linkAbha = false
                 )
+
                 cardClickData.value?.documentId?.let {
                     myFileRepository.updateFileDetails(
                         documentId = it,

@@ -15,6 +15,7 @@ import kotlinx.coroutines.withContext
 import okhttp3.ResponseBody
 import java.io.File
 import java.io.IOException
+import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -38,14 +39,6 @@ class RecordsUtility {
             }
             return bitmap
         }
-        fun convertLongToFormattedDate(timestamp: Long?): String? {
-            if (timestamp == null) {
-                return null
-            }
-            val date = Date(timestamp * 1000)
-            val outputFormat = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
-            return outputFormat.format(date)
-        }
 
         fun timestampToLong(timestamp: String, format: String = "EEE, dd MMM, yyyy"): Long? {
             if (timestamp == "Add Date") {
@@ -61,11 +54,14 @@ class RecordsUtility {
             return formatter.format(date)
         }
 
-        fun changeDateFormat(inputDate: String?): String {
-            val inputFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-            val outputFormat = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
-            val date = inputFormat.parse(inputDate)
-            return date?.let { outputFormat.format(it) } ?: ""
+        fun changeDateFormat(inputDate: String?): Long {
+            return try {
+                val inputFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                val date = inputDate?.let { inputFormat.parse(it) }
+                date?.time ?: 0L
+            } catch (e: ParseException) {
+                0L
+            }
         }
 
         fun convertLongToDateString(time: Long?): String {

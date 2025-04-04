@@ -139,12 +139,13 @@ class SyncFileWorker(
     private suspend fun syncDeletedAndEditedDocuments(filterIds: List<String>?, ownerId: String) {
         try {
             val resp = vaultRepository.getEditedDocuments(filterIds = filterIds, ownerId = ownerId)
+            Log.d("SYNC_DOCUMENT_EDIT", resp.toString())
             resp.forEach { vaultEntity ->
                 vaultEntity.documentId?.let {
                     val updateFileDetailsRequest = UpdateFileDetailsRequest(
                         filterId = vaultEntity.filterId,
                         documentType = docTypes.find { it.idNew == vaultEntity.documentType }?.id,
-                        documentDate = vaultEntity.documentDate.toString(),
+                        documentDate = vaultEntity.documentDate,
                         userTags = emptyList()
                     )
                     myFileRepository.updateFileDetails(
@@ -152,6 +153,7 @@ class SyncFileWorker(
                         oid = vaultEntity.filterId,
                         updateFileDetailsRequest = updateFileDetailsRequest
                     )
+                    Log.d("SYNC_DOCUMENT_EDIT", "done")
                 }
             }
         } catch (e: Exception) {
@@ -195,7 +197,7 @@ class SyncFileWorker(
             val updateFileDetailsRequest = UpdateFileDetailsRequest(
                 filterId = vaultEntity.filterId,
                 documentType = docTypes.find { it.idNew == vaultEntity.documentType }?.id,
-                documentDate = if (documentDate.isNotEmpty()) changeDateFormat(documentDate) else null,
+                documentDate = if (documentDate.isNotEmpty()) changeDateFormat(documentDate) else 0L,
                 userTags = emptyList()
             )
 
@@ -266,12 +268,11 @@ class SyncFileWorker(
         val vaultList = mutableListOf<VaultEntity>()
         recordsResponse.items.forEach {
             val recordItem = it.record.item
-            val localId = vaultRepository.getLocalId(recordItem.documentId)
-            val documentDate =
-                if (recordItem.metadata?.documentDate == 0L) null else recordItem.metadata?.documentDate
-            if (!localId.isNullOrEmpty()) {
+            val entity = vaultRepository.getDocumentById(recordItem.documentId)
+            val documentDate = recordItem.metadata?.documentDate ?: entity?.documentDate
+            if (!entity?.localId.isNullOrEmpty()) {
                 vaultRepository.storeDocument(
-                    localId = localId,
+                    localId = entity?.localId ?: "",
                     cta = null,
                     isAnalysing = false,
                     docId = recordItem.documentId,
@@ -284,7 +285,7 @@ class SyncFileWorker(
             } else {
                 vaultList.add(
                     VaultEntity(
-                        localId = localId ?: UUID.randomUUID().toString(),
+                        localId = entity?.localId ?: UUID.randomUUID().toString(),
                         documentId = recordItem.documentId,
                         ownerId = ownerId,
                         filterId = recordItem.patientId,
@@ -297,7 +298,7 @@ class SyncFileWorker(
                         documentType = docTypes.find { it.id == recordItem.documentType }?.idNew
                             ?: -1,
                         tags = recordItem.metadata?.tags?.joinToString(",") ?: "",
-                        documentDate = documentDate,
+                        documentDate = if (recordItem.metadata?.documentDate == 0L) null else recordItem.metadata?.documentDate,
                         hashId = null,
                         isAnalyzing = false,
                         cta = null,
