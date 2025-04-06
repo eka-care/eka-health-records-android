@@ -114,11 +114,12 @@ fun AddMedicalRecordsDetailViewComponent(
     val dateInMillis = unixTimestamp?.times(1000)
     val sdf = SimpleDateFormat("EEE, dd MMM, yyyy", Locale.getDefault())
 
-    val date = if (editDocument) {
-        if (selectedDate.value.length > 1) selectedDate.value else dateInMillis?.let { Date(it) }
-            ?.let { sdf.format(it) } ?: "Add Date"
-    } else {
-        if (selectedDate.value.length > 1) selectedDate.value else "Add Date"
+    val date = when {
+        // If user has selected a date (in either mode), use that
+        selectedDate.value.length > 1 -> selectedDate.value
+        // If in edit mode and we have an existing date, format it
+        editDocument && dateInMillis != null -> sdf.format(Date(dateInMillis))
+        else -> "Add Date"
     }
     val filterIdsToProcess = mutableListOf<String>().apply {
         if (paramsModel.filterId.isNotEmpty()) {
@@ -138,7 +139,10 @@ fun AddMedicalRecordsDetailViewComponent(
                 localId = viewModel.cardClickData.value?.localId ?: "",
                 docType = selectedChipId,
                 filterId = paramsModel.filterId,
-                docDate = timestampToLong(date),
+                docDate = if (date.isNotEmpty() && date != "Add Date")
+                    timestampToLong(date)
+                else
+                    null,
                 tags = selectedTags.joinToString(separator = ","),
                 ownerId = paramsModel.ownerId,
                 allFilterIds = filterIdsToProcess
@@ -167,7 +171,10 @@ fun AddMedicalRecordsDetailViewComponent(
                     createdAt = System.currentTimeMillis() / 1000,
                     source = null,
                     documentType = selectedChipId,
-                    documentDate = timestampToLong(selectedDate.value),
+                    documentDate = if (selectedDate.value.isNotEmpty() && selectedDate.value != "Add Date")
+                        timestampToLong(selectedDate.value)
+                    else
+                        null,
                     tags = selectedTags.joinToString(",").trimStart(','),
                     autoTags = selectedTags.joinToString(",").trimStart(','),
                     hashId = null,

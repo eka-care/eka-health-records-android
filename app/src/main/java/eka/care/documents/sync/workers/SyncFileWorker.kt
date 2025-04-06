@@ -262,7 +262,7 @@ class SyncFileWorker(
         recordsResponse.items.forEach {
             val recordItem = it.record.item
             val entity = vaultRepository.getDocumentById(recordItem.documentId)
-            val documentDate = recordItem.metadata?.documentDate ?: entity?.documentDate
+            val documentDate = if (recordItem.metadata?.documentDate == 0L) entity?.documentDate else recordItem.metadata?.documentDate
             if (!entity?.localId.isNullOrEmpty()) {
                 vaultRepository.storeDocument(
                     localId = entity?.localId ?: "",
