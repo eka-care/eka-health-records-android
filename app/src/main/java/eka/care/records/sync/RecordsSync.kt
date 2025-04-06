@@ -1,6 +1,5 @@
 package eka.care.records.sync
 
-import android.app.Application
 import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
@@ -16,6 +15,7 @@ import eka.care.records.data.entity.RecordEntity
 import eka.care.records.data.entity.RecordFile
 import eka.care.records.data.repository.RecordsRepositoryImpl
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withContext
@@ -26,9 +26,11 @@ class RecordsSync(
     params: WorkerParameters
 ) : CoroutineWorker(appContext, params) {
 
-    private val syncRepository = SyncRecordsRepository(appContext as Application)
-    private val recordsRepository = RecordsRepositoryImpl(appContext as Application)
+    private val syncRepository = SyncRecordsRepository(appContext.applicationContext)
+    private val recordsRepository = RecordsRepositoryImpl(appContext.applicationContext)
     private val myFileRepository = MyFileRepository()
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val limitedDispatcher = Dispatchers.IO.limitedParallelism(5)
 
     override suspend fun doWork(): Result {
         return withContext(Dispatchers.IO) {
@@ -46,6 +48,7 @@ class RecordsSync(
 
         (filterIds.ifEmpty { listOf(null) }).forEach { filterId ->
             val updatedAt = recordsRepository.getLatestRecordUpdatedAt(ownerId, filterId)
+            Logger.i("Records updated till: $updatedAt")
             fetchRecordsFromServer(
                 updatedAt = updatedAt,
                 filterId = filterId,
@@ -85,7 +88,7 @@ class RecordsSync(
         ownerId: String,
     ) = supervisorScope {
         recordsResponse.items.forEach {
-            launch { storeRecord(record = it, ownerId = ownerId) }
+            launch(limitedDispatcher) { storeRecord(record = it, ownerId = ownerId) }
         }
     }
 
@@ -108,12 +111,12 @@ class RecordsSync(
             recordsRepository.updateRecords(
                 listOf(getRecordEntity(record.id))
             )
-            Logger.i("Updating record for ownerId: $ownerId")
+            Logger.i("Updated record for ownerId: $ownerId")
         } else {
             recordsRepository.createRecords(
                 listOf(getRecordEntity(id = UUID.randomUUID().toString()))
             )
-            Logger.i("Storing record for ownerId: $ownerId")
+            Logger.i("Stored record for ownerId: $ownerId")
         }
         storeThumbnail(
             recordId = recordItem.documentId,
@@ -171,5 +174,6 @@ class RecordsSync(
         val localRecord = recordsRepository.getRecordByDocumentId(recordId) ?: return
         val path = downloadThumbnail(thumbnail, context = context)
         recordsRepository.updateRecords(listOf(localRecord.copy(thumbnail = path)))
+        Logger.i("Stored thumbnail for: $recordId, thumbnail: $thumbnail")
     }
 }

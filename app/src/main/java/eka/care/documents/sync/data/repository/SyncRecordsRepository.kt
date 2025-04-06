@@ -1,6 +1,6 @@
 package eka.care.documents.sync.data.repository
 
-import android.app.Application
+import android.content.Context
 import com.eka.network.Networking
 import eka.care.documents.sync.data.remote.api.MyFileService
 import eka.care.documents.sync.data.remote.dto.response.GetFilesResponse
@@ -8,7 +8,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import retrofit2.Response
 
-class SyncRecordsRepository(val app: Application) {
+class SyncRecordsRepository(val app: Context) {
 
     private val recordsProtoService: MyFileService = Networking.create(
         MyFileService::class.java,

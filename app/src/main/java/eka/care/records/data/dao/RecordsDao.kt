@@ -21,8 +21,8 @@ interface RecordsDao {
     @Query("SELECT * FROM EKA_RECORDS_TABLE WHERE DOCUMENT_ID = :id")
     suspend fun getRecordByDocumentId(id: String): RecordEntity?
 
-    @Query("SELECT MAX(UPDATED_AT) FROM EKA_RECORDS_TABLE WHERE OWNER_ID = :ownerId AND FILTER_ID = :filterId OR FILTER_ID IS NULL")
-    suspend fun getLatestRecordUpdatedAt(ownerId: String, filterId: String?): Long
+    @Query("SELECT MAX(UPDATED_AT) FROM EKA_RECORDS_TABLE WHERE OWNER_ID = :ownerId AND (FILTER_ID = :filterId OR FILTER_ID IS NULL)")
+    fun getLatestRecordUpdatedAt(ownerId: String, filterId: String?): Long?
 
     @Update
     suspend fun updateRecords(records: List<RecordEntity>)
