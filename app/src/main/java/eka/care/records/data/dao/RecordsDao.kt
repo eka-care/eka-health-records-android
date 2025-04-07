@@ -7,6 +7,7 @@ import androidx.room.Query
 import androidx.room.RawQuery
 import androidx.room.Update
 import androidx.sqlite.db.SupportSQLiteQuery
+import eka.care.records.client.model.DocumentTypeCount
 import eka.care.records.data.entity.RecordEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -27,7 +28,10 @@ interface RecordsDao {
     @Query("SELECT MAX(UPDATED_AT) FROM EKA_RECORDS_TABLE WHERE OWNER_ID = :ownerId AND (FILTER_ID = :filterId OR FILTER_ID IS NULL)")
     fun getLatestRecordUpdatedAt(ownerId: String, filterId: String?): Long?
 
-    @Update
+    @RawQuery(observedEntities = [RecordEntity::class])
+    fun getDocumentTypeCounts(query: SupportSQLiteQuery): Flow<List<DocumentTypeCount>>
+
+    @Update(onConflict = OnConflictStrategy.REPLACE)
     suspend fun updateRecords(records: List<RecordEntity>)
 
     @Query("DELETE FROM EKA_RECORDS_TABLE WHERE LOCAL_ID IN (:ids)")

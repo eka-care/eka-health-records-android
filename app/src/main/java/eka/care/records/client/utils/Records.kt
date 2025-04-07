@@ -7,10 +7,10 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
+import eka.care.records.client.model.DocumentTypeCount
 import eka.care.records.client.model.RecordModel
 import eka.care.records.client.model.SortOrder
 import eka.care.records.data.db.RecordsDatabase
-import eka.care.records.data.entity.RecordEntity
 import eka.care.records.data.repository.RecordsRepositoryImpl
 import eka.care.records.sync.RecordsSync
 import kotlinx.coroutines.flow.Flow
@@ -83,10 +83,6 @@ class Records private constructor() {
         )
     }
 
-    suspend fun addRecords(records: List<RecordEntity>) {
-        recordsRepository.createRecords(records = records)
-    }
-
     fun fetchRecords(
         ownerId: String,
         filterIds: List<String>? = null,
@@ -103,12 +99,30 @@ class Records private constructor() {
         )
     }
 
-    suspend fun getRecordDetails(id: String): RecordModel? {
-        return recordsRepository.getRecordDetails(id = id)
+    fun getRecordTypeCounts(
+        ownerId: String,
+        filterIds: List<String>? = null
+    ): Flow<List<DocumentTypeCount>> {
+        return recordsRepository.getRecordTypeCounts(
+            ownerId = ownerId,
+            filterIds = filterIds
+        )
     }
 
-    suspend fun updateRecords(records: List<RecordEntity>) {
-        recordsRepository.updateRecords(records = records)
+    suspend fun updateRecord(
+        id: String,
+        documentDate: Long? = null,
+        documentType: String? = null,
+    ) {
+        recordsRepository.updateRecord(
+            id = id,
+            documentDate = documentDate,
+            documentType = documentType
+        )
+    }
+
+    suspend fun getRecordDetails(id: String): RecordModel? {
+        return recordsRepository.getRecordDetails(id = id)
     }
 
     suspend fun deleteRecords(ids: List<String>) {

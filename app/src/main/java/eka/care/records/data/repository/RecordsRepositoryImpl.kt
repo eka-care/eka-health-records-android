@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.Context
 import androidx.sqlite.db.SupportSQLiteQueryBuilder
 import com.google.gson.Gson
+import eka.care.records.client.model.DocumentTypeCount
 import eka.care.records.client.model.RecordModel
 import eka.care.records.client.model.SortOrder
 import eka.care.records.client.repository.RecordsRepository
@@ -155,7 +156,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
         val documentId = record.documentId ?: return null
 
         val files = getRecordFile(record.id)
-        if(files?.isNotEmpty() == true) {
+        if (files?.isNotEmpty() == true) {
             Logger.i("Found local files for record: $id")
             return RecordModel(
                 id = record.id,
@@ -228,8 +229,61 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
         )
     }
 
+    override fun getRecordTypeCounts(
+        ownerId: String,
+        filterIds: List<String>?
+    ): Flow<List<DocumentTypeCount>> = flow {
+        Logger.i("GetRecordTypeCounts with ownerId: $ownerId, filterIds: $filterIds")
+        try {
+            val selection = StringBuilder()
+            val selectionArgs = mutableListOf<String>()
+
+            selection.append("IS_ARCHIVED = 0 AND ")
+            selection.append("OWNER_ID = ? ")
+            selectionArgs.add(ownerId)
+
+            if (!filterIds.isNullOrEmpty()) {
+                val placeholders = filterIds.joinToString(",") { "?" }
+                selection.append("AND (FILTER_ID IN ($placeholders) OR FILTER_ID IS NULL) ")
+                selectionArgs.addAll(filterIds)
+            } else {
+                selection.append("AND FILTER_ID IS NULL ")
+            }
+
+            val query = SupportSQLiteQueryBuilder
+                .builder("EKA_RECORDS_TABLE")
+                .columns(arrayOf("DOCUMENT_TYPE", "COUNT(*) as count"))
+                .selection(selection.toString().trim(), selectionArgs.toTypedArray())
+                .groupBy("DOCUMENT_TYPE")
+                .create()
+
+            Logger.i("Query: ${query.sql}")
+            Logger.i("Params: ${selectionArgs.joinToString(",")}")
+
+            emitAll(dao.getDocumentTypeCounts(query))
+        } catch (e: Exception) {
+            Logger.e(e.localizedMessage ?: "Error reading records")
+            emit(emptyList())
+        }
+    }
+
     override suspend fun updateRecords(records: List<RecordEntity>) {
         dao.updateRecords(records)
+    }
+
+    override suspend fun updateRecord(id: String, documentDate: Long?, documentType: String?) {
+        Logger.i("UpdateRecord with id: $id, documentDate: $documentDate, documentType: $documentType")
+        if (documentDate == null && documentType == null) {
+            return
+        }
+
+        val record = getRecordById(id) ?: return
+        val updatedRecord = record.copy(
+            documentDate = documentDate ?: record.documentDate,
+            documentType = documentType ?: record.documentType
+        )
+        dao.updateRecords(listOf(updatedRecord))
+        Logger.i("Update record: $updatedRecord")
     }
 
     override suspend fun deleteRecords(ids: List<String>) {
