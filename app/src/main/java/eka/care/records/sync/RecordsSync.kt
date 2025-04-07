@@ -3,11 +3,11 @@ package eka.care.records.sync
 import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import eka.care.documents.sync.data.remote.dto.response.GetFilesResponse
-import eka.care.documents.sync.data.remote.dto.response.Item
-import eka.care.documents.sync.data.repository.SyncRecordsRepository
-import eka.care.documents.ui.utility.RecordsUtility.Companion.downloadThumbnail
-import eka.care.records.client.Logger
+import eka.care.records.data.remote.dto.response.GetFilesResponse
+import eka.care.records.data.remote.dto.response.Item
+import eka.care.records.data.repository.SyncRecordsRepository
+import eka.care.records.client.utils.RecordsUtility.Companion.downloadThumbnail
+import eka.care.records.client.utils.Logger
 import eka.care.records.data.entity.RecordEntity
 import eka.care.records.data.repository.RecordsRepositoryImpl
 import kotlinx.coroutines.Dispatchers

@@ -4,14 +4,13 @@ import android.app.Application
 import android.content.Context
 import androidx.sqlite.db.SupportSQLiteQueryBuilder
 import com.google.gson.Gson
-import eka.care.documents.data.db.database.DocumentDatabase
-import eka.care.documents.sync.data.repository.MyFileRepository
-import eka.care.documents.ui.utility.RecordsUtility
-import eka.care.documents.ui.utility.ThumbnailGenerator
-import eka.care.records.client.Logger
 import eka.care.records.client.model.RecordModel
 import eka.care.records.client.model.SortOrder
 import eka.care.records.client.repository.RecordsRepository
+import eka.care.records.client.utils.Logger
+import eka.care.records.client.utils.RecordsUtility
+import eka.care.records.client.utils.ThumbnailGenerator
+import eka.care.records.data.db.RecordsDatabase
 import eka.care.records.data.entity.RecordEntity
 import eka.care.records.data.entity.RecordFile
 import id.zelory.compressor.Compressor
@@ -25,8 +24,8 @@ import java.io.File
 import java.util.UUID
 
 internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepository {
-    private var dao = DocumentDatabase.getInstance(context).recordsDao()
-    private var filesDao = DocumentDatabase.getInstance(context).recordFilesDao()
+    private var dao = RecordsDatabase.getInstance(context).recordsDao()
+    private var filesDao = RecordsDatabase.getInstance(context).recordFilesDao()
     private val myFileRepository = MyFileRepository()
 
     override suspend fun createRecords(records: List<RecordEntity>) {
