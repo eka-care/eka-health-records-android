@@ -3,16 +3,12 @@ package eka.care.records.sync
 import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import com.google.gson.Gson
 import eka.care.documents.sync.data.remote.dto.response.GetFilesResponse
 import eka.care.documents.sync.data.remote.dto.response.Item
-import eka.care.documents.sync.data.repository.MyFileRepository
 import eka.care.documents.sync.data.repository.SyncRecordsRepository
-import eka.care.documents.ui.utility.RecordsUtility
 import eka.care.documents.ui.utility.RecordsUtility.Companion.downloadThumbnail
 import eka.care.records.client.Logger
 import eka.care.records.data.entity.RecordEntity
-import eka.care.records.data.entity.RecordFile
 import eka.care.records.data.repository.RecordsRepositoryImpl
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -28,7 +24,6 @@ class RecordsSync(
 
     private val syncRepository = SyncRecordsRepository(appContext.applicationContext)
     private val recordsRepository = RecordsRepositoryImpl(appContext.applicationContext)
-    private val myFileRepository = MyFileRepository()
     @OptIn(ExperimentalCoroutinesApi::class)
     private val limitedDispatcher = Dispatchers.IO.limitedParallelism(5)
 
@@ -123,48 +118,6 @@ class RecordsSync(
             thumbnail = recordItem.metadata?.thumbnail,
             context = applicationContext
         )
-        updateRecordWithDetails(recordItem.documentId)
-    }
-
-    private suspend fun updateRecordWithDetails(documentId: String) {
-        val record = recordsRepository.getRecordByDocumentId(documentId) ?: return
-
-        val response = myFileRepository.getDocument(
-            documentId = documentId,
-            filterId = record.filterId
-        )
-        if (response == null) {
-            return
-        }
-
-        supervisorScope {
-            launch {
-                val smartReportField = response.smartReport?.let {
-                    Gson().toJson(it)
-                }
-                val updatedRecord = record.copy(
-                    smartReport = smartReportField
-                )
-                recordsRepository.updateRecords(listOf(updatedRecord))
-            }
-            response.files.forEach { file ->
-                launch {
-                    val fileType = response.files.firstOrNull()?.fileType ?: ""
-                    val filePath = RecordsUtility.downloadFile(
-                        file.assetUrl,
-                        context = applicationContext,
-                        type = file.fileType
-                    )
-                    recordsRepository.insertRecordFile(
-                        RecordFile(
-                            localId = record.id,
-                            filePath = filePath,
-                            fileType = fileType
-                        )
-                    )
-                }
-            }
-        }
     }
 
     private suspend fun storeThumbnail(recordId: String, thumbnail: String?, context: Context) {

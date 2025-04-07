@@ -8,5 +8,12 @@ data class RecordModel(
     val documentDate: Long? = null,
     val documentType: String = "ot",
     val isSmart: Boolean = false,
-    var smartReport: String? = null,
-)
+    val smartReport: String? = null,
+    val files: List<File> = emptyList(),
+) {
+    data class File(
+        val id: Long,
+        val filePath: String?,
+        val fileType: String,
+    )
+}

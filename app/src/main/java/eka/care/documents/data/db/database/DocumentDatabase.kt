@@ -22,7 +22,7 @@ import eka.care.records.data.entity.RecordFile
         RecordEntity::class,
         RecordFile::class
     ],
-    version = 15,
+    version = 1,
     exportSchema = false
 )
 @TypeConverters(Converters::class)

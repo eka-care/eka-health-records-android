@@ -100,6 +100,10 @@ class Records private constructor() {
         )
     }
 
+    suspend fun getRecordDetails(documentId: String): RecordModel? {
+        return recordsRepository.getRecordDetails(documentId = documentId)
+    }
+
     suspend fun updateRecords(records: List<RecordEntity>) {
         recordsRepository.updateRecords(records = records)
     }

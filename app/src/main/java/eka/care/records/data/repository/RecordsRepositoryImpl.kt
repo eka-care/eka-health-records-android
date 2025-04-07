@@ -3,7 +3,10 @@ package eka.care.records.data.repository
 import android.app.Application
 import android.content.Context
 import androidx.sqlite.db.SupportSQLiteQueryBuilder
+import com.google.gson.Gson
 import eka.care.documents.data.db.database.DocumentDatabase
+import eka.care.documents.sync.data.repository.MyFileRepository
+import eka.care.documents.ui.utility.RecordsUtility
 import eka.care.documents.ui.utility.ThumbnailGenerator
 import eka.care.records.client.Logger
 import eka.care.records.client.model.RecordModel
@@ -24,6 +27,7 @@ import java.util.UUID
 internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepository {
     private var dao = DocumentDatabase.getInstance(context).recordsDao()
     private var filesDao = DocumentDatabase.getInstance(context).recordFilesDao()
+    private val myFileRepository = MyFileRepository()
 
     override suspend fun createRecords(records: List<RecordEntity>) {
         dao.createRecords(records)
@@ -35,7 +39,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
         filterId: String?,
         documentType: String
     ) = supervisorScope {
-        if(files.isEmpty()) {
+        if (files.isEmpty()) {
             Logger.e("No files to create records")
             return@supervisorScope
         }
@@ -144,6 +148,78 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
     }
 
     override suspend fun getRecordByDocumentId(id: String) = dao.getRecordByDocumentId(id = id)
+
+    override suspend fun getRecordDetails(documentId: String): RecordModel? {
+        val record = getRecordByDocumentId(documentId) ?: return null
+        val files = getRecordFile(record.id)
+        if(files?.isNotEmpty() == true) {
+            return RecordModel(
+                id = record.id,
+                thumbnail = record.thumbnail,
+                createdAt = record.createdAt,
+                updatedAt = record.updatedAt,
+                documentDate = record.documentDate,
+                documentType = record.documentType,
+                isSmart = false,
+                smartReport = null,
+                files = files.map { file ->
+                    RecordModel.File(
+                        id = file.id,
+                        filePath = file.filePath,
+                        fileType = file.fileType
+                    )
+                }
+            )
+        }
+
+        val response = myFileRepository.getDocument(
+            documentId = documentId,
+            filterId = record.filterId
+        )
+        if (response == null) {
+            return null
+        }
+
+        val smartReportField = response.smartReport?.let {
+            Gson().toJson(it)
+        }
+        val updatedRecord = record.copy(
+            smartReport = smartReportField
+        )
+        updateRecords(listOf(updatedRecord))
+        response.files.forEach { file ->
+            val fileType = response.files.firstOrNull()?.fileType ?: ""
+            val filePath = RecordsUtility.downloadFile(
+                file.assetUrl,
+                context = context.applicationContext,
+                type = file.fileType
+            )
+            insertRecordFile(
+                RecordFile(
+                    localId = record.id,
+                    filePath = filePath,
+                    fileType = fileType
+                )
+            )
+        }
+        return RecordModel(
+            id = record.id,
+            thumbnail = record.thumbnail,
+            createdAt = record.createdAt,
+            updatedAt = record.updatedAt,
+            documentDate = record.documentDate,
+            documentType = record.documentType,
+            isSmart = response.smartReport != null,
+            smartReport = smartReportField,
+            files = getRecordFile(record.id)?.map { file ->
+                RecordModel.File(
+                    id = file.id,
+                    filePath = file.filePath,
+                    fileType = file.fileType
+                )
+            } ?: emptyList()
+        )
+    }
 
     override suspend fun updateRecords(records: List<RecordEntity>) {
         dao.updateRecords(records)
