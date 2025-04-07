@@ -18,6 +18,9 @@ interface RecordsDao {
     @RawQuery(observedEntities = [RecordEntity::class])
     fun readRecords(query: SupportSQLiteQuery): Flow<List<RecordEntity>>
 
+    @Query("SELECT * FROM EKA_RECORDS_TABLE WHERE LOCAL_ID = :id")
+    suspend fun getRecordById(id: String): RecordEntity?
+
     @Query("SELECT * FROM EKA_RECORDS_TABLE WHERE DOCUMENT_ID = :id")
     suspend fun getRecordByDocumentId(id: String): RecordEntity?
 

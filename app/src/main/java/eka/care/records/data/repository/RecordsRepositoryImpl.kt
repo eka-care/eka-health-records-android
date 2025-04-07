@@ -147,12 +147,17 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
         }
     }
 
+    override suspend fun getRecordById(id: String) = dao.getRecordById(id = id)
+
     override suspend fun getRecordByDocumentId(id: String) = dao.getRecordByDocumentId(id = id)
 
-    override suspend fun getRecordDetails(documentId: String): RecordModel? {
-        val record = getRecordByDocumentId(documentId) ?: return null
+    override suspend fun getRecordDetails(id: String): RecordModel? {
+        val record = getRecordById(id) ?: return null
+        val documentId = record.documentId ?: return null
+
         val files = getRecordFile(record.id)
         if(files?.isNotEmpty() == true) {
+            Logger.i("Found local files for record: $id")
             return RecordModel(
                 id = record.id,
                 thumbnail = record.thumbnail,
@@ -160,7 +165,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                 updatedAt = record.updatedAt,
                 documentDate = record.documentDate,
                 documentType = record.documentType,
-                isSmart = false,
+                isSmart = record.isSmart,
                 smartReport = null,
                 files = files.map { file ->
                     RecordModel.File(
@@ -177,6 +182,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
             filterId = record.filterId
         )
         if (response == null) {
+            Logger.e("Error fetching document details for: $documentId")
             return null
         }
 
@@ -194,6 +200,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                 context = context.applicationContext,
                 type = file.fileType
             )
+            Logger.i("Downloaded file: $filePath for record: $documentId")
             insertRecordFile(
                 RecordFile(
                     localId = record.id,
@@ -201,6 +208,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                     fileType = fileType
                 )
             )
+            Logger.i("Inserted file: $filePath for record: $documentId")
         }
         return RecordModel(
             id = record.id,
@@ -209,7 +217,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
             updatedAt = record.updatedAt,
             documentDate = record.documentDate,
             documentType = record.documentType,
-            isSmart = response.smartReport != null,
+            isSmart = record.isSmart,
             smartReport = smartReportField,
             files = getRecordFile(record.id)?.map { file ->
                 RecordModel.File(

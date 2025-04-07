@@ -100,6 +100,7 @@ class RecordsSync(
                 updatedAt = System.currentTimeMillis() / 1000,
                 documentDate = recordItem.metadata?.documentDate,
                 documentType = recordItem.documentType ?: "ot",
+                isSmart = recordItem.metadata?.autoTags?.contains("1") == true,
             )
         }
         if (record != null) {

@@ -22,8 +22,9 @@ interface RecordsRepository {
         documentType: String?,
         sortOrder: SortOrder
     ): Flow<List<RecordModel>>
+    suspend fun getRecordById(id: String): RecordEntity?
     suspend fun getRecordByDocumentId(id: String): RecordEntity?
-    suspend fun getRecordDetails(documentId: String): RecordModel?
+    suspend fun getRecordDetails(id: String): RecordModel?
     suspend fun updateRecords(records: List<RecordEntity>)
     suspend fun deleteRecords(ids: List<String>)
     suspend fun getLatestRecordUpdatedAt(ownerId: String, filterId: String?): Long?

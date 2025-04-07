@@ -27,5 +27,6 @@ data class RecordEntity(
     @ColumnInfo(name = "document_hash") var documentHash: String? = null,
     @ColumnInfo(name = "is_dirty") var isDirty: Boolean = false,
     @ColumnInfo(name = "is_archived") var isDeleted: Boolean = false,
+    @ColumnInfo(name = "is_smart") var isSmart: Boolean = false,
     @ColumnInfo(name = "smart_report_field") var smartReport: String? = null,
 )
