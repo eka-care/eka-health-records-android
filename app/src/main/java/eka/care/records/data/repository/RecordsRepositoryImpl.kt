@@ -15,7 +15,11 @@ import eka.care.records.data.db.RecordsDatabase
 import eka.care.records.data.entity.RecordEntity
 import eka.care.records.data.entity.RecordFile
 import id.zelory.compressor.Compressor
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
@@ -28,6 +32,24 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
     private var dao = RecordsDatabase.getInstance(context).recordsDao()
     private var filesDao = RecordsDatabase.getInstance(context).recordFilesDao()
     private val myFileRepository = MyFileRepository()
+    private var syncJob: Job? = null
+
+    private fun startAutoSync() {
+        syncJob?.cancel()
+        syncJob = CoroutineScope(Dispatchers.IO).launch {
+            dao.observeDirtyRecords()
+                .distinctUntilChanged()
+                .collect { dirtyRecords ->
+                    if (dirtyRecords.isNotEmpty()) {
+                        syncToServer(dirtyRecords)
+                    }
+                }
+        }
+    }
+
+    private fun syncToServer(dirtyRecords: List<RecordEntity>) {
+        Logger.i("Syncing dirty records to server: $dirtyRecords")
+    }
 
     override suspend fun createRecords(records: List<RecordEntity>) {
         dao.createRecords(records)
@@ -94,6 +116,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
         sortOrder: SortOrder,
     ): Flow<List<RecordModel>> = flow {
         Logger.i("ReadRecords with ownerId: $ownerId, filterIds: $filterIds, includeDeleted: $includeDeleted, documentType: $documentType, sortOrder: $sortOrder")
+        startAutoSync()
         try {
             val selection = StringBuilder()
             val selectionArgs = mutableListOf<String>()

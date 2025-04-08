@@ -25,6 +25,7 @@ data class RecordEntity(
     @ColumnInfo(name = "document_date") var documentDate: Long? = null,
     @ColumnInfo(name = "document_type") var documentType: String = "ot",
     @ColumnInfo(name = "document_hash") var documentHash: String? = null,
+    @ColumnInfo(name = "source") var source: String? = null,
     @ColumnInfo(name = "is_dirty") var isDirty: Boolean = false,
     @ColumnInfo(name = "is_archived") var isDeleted: Boolean = false,
     @ColumnInfo(name = "is_smart") var isSmart: Boolean = false,
