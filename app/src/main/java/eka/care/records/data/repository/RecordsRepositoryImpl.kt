@@ -41,14 +41,25 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                 .distinctUntilChanged()
                 .collect { dirtyRecords ->
                     if (dirtyRecords.isNotEmpty()) {
-                        syncToServer(dirtyRecords)
+                        syncUpdatedRecordsToServer(dirtyRecords)
+                    }
+                }
+            dao.observeDeletedRecords()
+                .distinctUntilChanged()
+                .collect { deletedRecords ->
+                    if (deletedRecords.isNotEmpty()) {
+                        syncDeletedRecordsToServer(deletedRecords)
                     }
                 }
         }
     }
 
-    private fun syncToServer(dirtyRecords: List<RecordEntity>) {
+    private fun syncUpdatedRecordsToServer(dirtyRecords: List<RecordEntity>) {
         Logger.i("Syncing dirty records to server: $dirtyRecords")
+    }
+
+    private fun syncDeletedRecordsToServer(deletedRecords: List<RecordEntity>) {
+        Logger.i("Syncing deleted records to server: $deletedRecords")
     }
 
     override suspend fun createRecords(records: List<RecordEntity>) {
@@ -311,7 +322,15 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
     }
 
     override suspend fun deleteRecords(ids: List<String>) {
-        dao.deleteRecords(ids)
+        ids.forEach { id ->
+            val record = getRecordById(id)
+            Logger.i("DeleteRecord with id: $id")
+            record?.let {
+                dao.updateRecords(
+                    listOf(it.copy(isDeleted = true))
+                )
+            }
+        }
     }
 
     override suspend fun getLatestRecordUpdatedAt(ownerId: String, filterId: String?): Long? {

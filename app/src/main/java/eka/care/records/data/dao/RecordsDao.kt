@@ -39,4 +39,7 @@ interface RecordsDao {
 
     @Query("SELECT * FROM EKA_RECORDS_TABLE WHERE IS_DIRTY = 1")
     fun observeDirtyRecords(): Flow<List<RecordEntity>>
+
+    @Query("SELECT * FROM EKA_RECORDS_TABLE WHERE IS_ARCHIVED = 1")
+    fun observeDeletedRecords(): Flow<List<RecordEntity>>
 }

@@ -51,11 +51,6 @@ class RecordsSync(
         }
     }
 
-    private fun syncLocalRecords() {
-        // Sync documents with is_dirty flags
-        // Sync documents with no details, like file path or thumbnail
-    }
-
     private suspend fun fetchRecordsFromServer(
         offset: String? = null,
         updatedAt: Long? = null,

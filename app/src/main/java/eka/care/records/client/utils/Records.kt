@@ -46,7 +46,7 @@ class Records private constructor() {
         }
     }
 
-    fun syncData(context: Context, ownerId: String?, filterIds: List<String>? = null) {
+    fun refreshRecords(context: Context, ownerId: String?, filterIds: List<String>? = null) {
         val inputData = Data.Builder()
             .putString("ownerId", ownerId)
             .putStringArray("filterIds", filterIds?.toTypedArray() ?: emptyArray())
@@ -69,7 +69,7 @@ class Records private constructor() {
             )
     }
 
-    suspend fun createRecord(
+    suspend fun addNewRecord(
         files: List<File>,
         ownerId: String,
         filterId: String? = null,
@@ -99,7 +99,7 @@ class Records private constructor() {
         )
     }
 
-    fun getRecordTypeCounts(
+    fun getRecordsCountGroupByType(
         ownerId: String,
         filterIds: List<String>? = null
     ): Flow<List<DocumentTypeCount>> {
@@ -121,7 +121,7 @@ class Records private constructor() {
         )
     }
 
-    suspend fun getRecordDetails(id: String): RecordModel? {
+    suspend fun getRecordDetailsById(id: String): RecordModel? {
         return recordsRepository.getRecordDetails(id = id)
     }
 
@@ -129,7 +129,7 @@ class Records private constructor() {
         recordsRepository.deleteRecords(ids = ids)
     }
 
-    fun destroy() {
+    fun clearAllData() {
         db.clearAllTables()
     }
 }
