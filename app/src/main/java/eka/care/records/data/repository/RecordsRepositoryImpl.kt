@@ -280,7 +280,8 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
         val record = getRecordById(id) ?: return
         val updatedRecord = record.copy(
             documentDate = documentDate ?: record.documentDate,
-            documentType = documentType ?: record.documentType
+            documentType = documentType ?: record.documentType,
+            isDirty = true
         )
         dao.updateRecords(listOf(updatedRecord))
         Logger.i("Update record: $updatedRecord")
