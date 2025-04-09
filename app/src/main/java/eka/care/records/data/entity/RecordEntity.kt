@@ -4,6 +4,7 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import eka.care.records.client.model.RecordStatus
 
 @Entity(
     tableName = "eka_records_table",
@@ -17,6 +18,7 @@ import androidx.room.PrimaryKey
 data class RecordEntity(
     @ColumnInfo(name = "local_id") @PrimaryKey val id: String,
     @ColumnInfo(name = "document_id") val documentId: String? = null,
+    @ColumnInfo(name = "status") val status: RecordStatus = RecordStatus.NONE,
     @ColumnInfo(name = "owner_id") var ownerId: String,
     @ColumnInfo(name = "filter_id") var filterId: String? = null,
     @ColumnInfo(name = "thumbnail") var thumbnail: String? = null,

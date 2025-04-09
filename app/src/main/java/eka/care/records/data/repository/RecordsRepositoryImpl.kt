@@ -6,14 +6,19 @@ import androidx.sqlite.db.SupportSQLiteQueryBuilder
 import com.google.gson.Gson
 import eka.care.records.client.model.DocumentTypeCount
 import eka.care.records.client.model.RecordModel
+import eka.care.records.client.model.RecordStatus
 import eka.care.records.client.model.SortOrder
 import eka.care.records.client.repository.RecordsRepository
 import eka.care.records.client.utils.Logger
 import eka.care.records.client.utils.RecordsUtility
+import eka.care.records.client.utils.RecordsUtility.Companion.getMimeType
+import eka.care.records.client.utils.RecordsUtility.Companion.md5
 import eka.care.records.client.utils.ThumbnailGenerator
 import eka.care.records.data.db.RecordsDatabase
 import eka.care.records.data.entity.RecordEntity
 import eka.care.records.data.entity.RecordFile
+import eka.care.records.data.remote.dto.request.FileType
+import eka.care.records.data.remote.dto.request.UpdateFileDetailsRequest
 import id.zelory.compressor.Compressor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -32,6 +37,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
     private var dao = RecordsDatabase.getInstance(context).recordsDao()
     private var filesDao = RecordsDatabase.getInstance(context).recordFilesDao()
     private val myFileRepository = MyFileRepository()
+    private val awsRepository = AwsRepository()
     private var syncJob: Job? = null
 
     private fun startAutoSync() {
@@ -54,23 +60,51 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
         }
     }
 
-    private fun syncUpdatedRecordsToServer(dirtyRecords: List<RecordEntity>) {
-        Logger.i("Syncing dirty records to server: $dirtyRecords")
-    }
+    private suspend fun syncUpdatedRecordsToServer(dirtyRecords: List<RecordEntity>) =
+        supervisorScope {
+            Logger.i("Syncing dirty records to server: $dirtyRecords")
+            dirtyRecords.forEach { record ->
+                launch {
+                    val documentId = record.documentId
+                    if (documentId != null) {
+                        myFileRepository.updateFileDetails(
+                            documentId = documentId,
+                            oid = record.filterId,
+                            request = UpdateFileDetailsRequest(
+                                filterId = record.filterId,
+                                documentType = record.documentType,
+                                documentDate = record.documentDate?.toString(),
+                            )
+                        )
+                    } else {
+                        uploadRecord(id = record.id)
+                    }
+                }
+            }
+        }
 
-    private fun syncDeletedRecordsToServer(deletedRecords: List<RecordEntity>) {
-        Logger.i("Syncing deleted records to server: $deletedRecords")
-    }
+    private suspend fun syncDeletedRecordsToServer(deletedRecords: List<RecordEntity>) =
+        supervisorScope {
+            Logger.i("Syncing deleted records to server: $deletedRecords")
+            deletedRecords.forEach { record ->
+                launch {
+                    record.documentId?.let {
+                        myFileRepository.deleteDocument(it, record.filterId)
+                    }
+                }
+            }
+        }
 
     override suspend fun createRecords(records: List<RecordEntity>) {
         dao.createRecords(records)
     }
 
-    override suspend fun createRecords(
+    override suspend fun createRecord(
         files: List<File>,
         ownerId: String,
         filterId: String?,
-        documentType: String
+        documentType: String,
+        tags: List<String>
     ) = supervisorScope {
         if (files.isEmpty()) {
             Logger.e("No files to create records")
@@ -86,6 +120,8 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
             createdAt = time,
             updatedAt = time,
             documentDate = time,
+            documentHash = files.first().md5(),
+            status = RecordStatus.SYNCING
         )
         dao.createRecords(listOf(record))
         val thumbnail = if (files.first().extension.lowercase() in listOf(
@@ -117,6 +153,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                 )
             }
         }
+        uploadRecord(id = record.id)
     }
 
     override fun readRecords(
@@ -186,8 +223,16 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
     override suspend fun getRecordByDocumentId(id: String) = dao.getRecordByDocumentId(id = id)
 
     override suspend fun getRecordDetails(id: String): RecordModel? {
-        val record = getRecordById(id) ?: return null
-        val documentId = record.documentId ?: return null
+        val record = getRecordById(id)
+        if (record == null) {
+            Logger.e("Error fetching record details for: $id")
+            return null
+        }
+        val documentId = record.documentId
+        if (documentId == null) {
+            Logger.e("Error fetching documentId for record: $id")
+            return null
+        }
 
         val files = getRecordFile(record.id)
         if (files?.isNotEmpty() == true) {
@@ -343,5 +388,49 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
 
     override suspend fun getRecordFile(localId: String): List<RecordFile>? {
         return filesDao.getRecordFile(localId = localId)
+    }
+
+    private suspend fun uploadRecord(id: String) = supervisorScope {
+        val record = getRecordById(id)
+        if (record == null) {
+            Logger.e("Upload error: No document found for documentId: $id")
+            return@supervisorScope
+        }
+
+        val files = filesDao.getRecordFile(id)?.map { File(it.filePath) }
+        if (files.isNullOrEmpty()) {
+            Logger.e("Upload error: No file for the given documentId: $id")
+            return@supervisorScope
+        }
+
+        val fileContentList =
+            files.map { FileType(contentType = it.getMimeType() ?: "", fileSize = it.length()) }
+        val uploadInitResponse =
+            awsRepository.fileUploadInit(
+                files = fileContentList,
+                patientOid = record.filterId,
+                isMultiFile = files.size > 1,
+                tags = emptyList(), // TODO add tags from the user tags table
+                documentType = record.documentType
+            )
+        if (uploadInitResponse?.error == true) {
+            Logger.e("Upload initialization error: ${uploadInitResponse.message}")
+            dao.updateRecords(listOf(record.copy(status = RecordStatus.SYNC_FAILED)))
+            return@supervisorScope
+        }
+        val batchResponse = uploadInitResponse?.batchResponse?.firstOrNull()
+        if (batchResponse == null) {
+            Logger.e("Batch response is null")
+            dao.updateRecords(listOf(record.copy(status = RecordStatus.SYNC_FAILED)))
+            return@supervisorScope
+        }
+        val uploadResponse =
+            awsRepository.uploadFile(batch = batchResponse, fileList = files)
+        if (uploadResponse?.error == true) {
+            Logger.e("Upload error: ${uploadResponse.message}")
+            dao.updateRecords(listOf(record.copy(status = RecordStatus.SYNC_FAILED)))
+            return@supervisorScope
+        }
+        dao.updateRecords(listOf(record.copy(status = RecordStatus.SYNC_SUCCESS)))
     }
 }

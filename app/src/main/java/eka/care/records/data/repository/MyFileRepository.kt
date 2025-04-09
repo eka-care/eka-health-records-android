@@ -18,15 +18,15 @@ class MyFileRepository {
     suspend fun updateFileDetails(
         documentId: String,
         oid: String?,
-        updateFileDetailsRequest: UpdateFileDetailsRequest,
+        request: UpdateFileDetailsRequest,
     ): Int? {
         return withContext(Dispatchers.IO) {
             val errorCode = when (
                 val response =
                     myFileService.updateFileDetails(
                         documentId = documentId,
-                        updateFileDetailsRequest = updateFileDetailsRequest,
-                         filterId =  oid
+                        updateFileDetailsRequest = request,
+                        filterId = oid
                     )) {
                 is NetworkResponse.Success -> response.code
                 is NetworkResponse.ServerError -> response.code // handleServerError(response.code)
@@ -52,7 +52,8 @@ class MyFileRepository {
     suspend fun getDocument(documentId: String, filterId: String?): Document? {
         return withContext(Dispatchers.IO) {
             val myDocument =
-                when (val response = myFileService.getDocument(documentId = documentId,filterId = filterId)) {
+                when (val response =
+                    myFileService.getDocument(documentId = documentId, filterId = filterId)) {
                     is NetworkResponse.Success -> response.body
                     is NetworkResponse.ServerError -> null // handleServerError(response.code)
                     is NetworkResponse.NetworkError -> null //handleNetworkError(response.error)
@@ -65,7 +66,8 @@ class MyFileRepository {
     suspend fun deleteDocument(documentId: String, filterId: String?): Int? {
         return withContext(Dispatchers.IO) {
             val errorCode =
-                when (val response = myFileService.deleteDocument(documentId = documentId, filterId = filterId)) {
+                when (val response =
+                    myFileService.deleteDocument(documentId = documentId, filterId = filterId)) {
                     is NetworkResponse.Success -> response.code
                     is NetworkResponse.ServerError -> response.code // handleServerError(response.code)
                     is NetworkResponse.NetworkError -> null //handleNetworkError(response.error)

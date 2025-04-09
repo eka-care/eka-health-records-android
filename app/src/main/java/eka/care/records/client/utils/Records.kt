@@ -73,13 +73,15 @@ class Records private constructor() {
         files: List<File>,
         ownerId: String,
         filterId: String? = null,
-        documentType: String = "ot"
+        documentType: String = "ot",
+        tags: List<String> = emptyList()
     ) {
-        recordsRepository.createRecords(
+        recordsRepository.createRecord(
             files = files,
             ownerId = ownerId,
             filterId = filterId,
-            documentType = documentType
+            documentType = documentType,
+            tags = tags
         )
     }
 

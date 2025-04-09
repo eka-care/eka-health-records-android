@@ -15,10 +15,14 @@ import androidx.room.PrimaryKey
             childColumns = ["local_id"],
             onDelete = CASCADE
         )
+    ],
+    indices = [
+        androidx.room.Index(value = ["local_id"]),
+        androidx.room.Index(value = ["tag"])
     ]
 )
 data class UserTags(
     @ColumnInfo(name = "_id") @PrimaryKey(autoGenerate = true) val tagId: Int,
     @ColumnInfo(name = "local_id") val localId: String,
-    @ColumnInfo(name = "tag") val tag: String? = null,
+    @ColumnInfo(name = "tag") val tag: String,
 )

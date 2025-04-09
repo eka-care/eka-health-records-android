@@ -8,6 +8,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.ResponseBody
 import java.io.File
+import java.io.FileInputStream
+import java.security.MessageDigest
 import java.util.UUID
 
 class RecordsUtility {
@@ -48,6 +50,22 @@ class RecordsUtility {
                 }
             }
         }
+
+        fun File.md5(): String {
+            val buffer = ByteArray(1024 * 4)
+            val md = MessageDigest.getInstance("MD5")
+
+            FileInputStream(this).use { fis ->
+                var bytesRead: Int
+                while (fis.read(buffer).also { bytesRead = it } != -1) {
+                    md.update(buffer, 0, bytesRead)
+                }
+            }
+
+            val digest = md.digest()
+            return digest.joinToString("") { "%02x".format(it) }
+        }
+
         fun File.getMimeType(): String? =
             MimeTypeMap.getSingleton().getMimeTypeFromExtension(this.extension)
     }

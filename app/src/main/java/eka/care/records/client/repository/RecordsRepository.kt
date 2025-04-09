@@ -9,11 +9,12 @@ import kotlinx.coroutines.flow.Flow
 import java.io.File
 
 interface RecordsRepository {
-    suspend fun createRecords(
+    suspend fun createRecord(
         files: List<File>,
         ownerId: String,
         filterId: String? = null,
-        documentType: String = "ot"
+        documentType: String = "ot",
+        tags: List<String>
     )
     suspend fun createRecords(records: List<RecordEntity>)
     fun readRecords(
