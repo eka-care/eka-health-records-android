@@ -34,9 +34,6 @@ interface RecordsDao {
     @Update(onConflict = OnConflictStrategy.REPLACE)
     suspend fun updateRecords(records: List<RecordEntity>)
 
-    @Query("DELETE FROM EKA_RECORDS_TABLE WHERE LOCAL_ID IN (:ids)")
-    suspend fun deleteRecords(ids: List<String>)
-
     @Query("SELECT * FROM EKA_RECORDS_TABLE WHERE IS_DIRTY = 1")
     fun observeDirtyRecords(): Flow<List<RecordEntity>>
 

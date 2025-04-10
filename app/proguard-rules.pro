@@ -20,4 +20,3 @@
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
 -keep class vault.records.** { *; }
--keep class * extends com.google.protobuf.GeneratedMessageLite { *; }

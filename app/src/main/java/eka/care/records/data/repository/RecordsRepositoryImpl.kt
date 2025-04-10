@@ -331,7 +331,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
 
             val query = SupportSQLiteQueryBuilder
                 .builder("EKA_RECORDS_TABLE")
-                .columns(arrayOf("document_type as documentType", "COUNT(*) as count"))
+                .columns(arrayOf("document_type as documentType", "COUNT(local_id) as count"))
                 .selection(selection.toString().trim(), selectionArgs.toTypedArray())
                 .groupBy("document_type")
                 .create()

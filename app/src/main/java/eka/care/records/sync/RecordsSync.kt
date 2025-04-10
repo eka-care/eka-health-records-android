@@ -22,7 +22,7 @@ class RecordsSync(
     params: WorkerParameters
 ) : CoroutineWorker(appContext, params) {
 
-    private val syncRepository = SyncRecordsRepository(appContext.applicationContext)
+    private val syncRepository = SyncRecordsRepository()
     private val recordsRepository = RecordsRepositoryImpl(appContext.applicationContext)
     @OptIn(ExperimentalCoroutinesApi::class)
     private val limitedDispatcher = Dispatchers.IO.limitedParallelism(5)

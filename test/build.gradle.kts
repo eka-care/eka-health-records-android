@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "eka.care.test"
-    compileSdk = 35
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "eka.care.test"
@@ -53,15 +53,8 @@ android {
 
 dependencies {
     implementation(libs.androidx.core.ktx)
-    implementation(project(":app")) {
-        exclude(group = "Documents", module = "protobuf")
-        exclude(group = "androidx.constraintlayout")
-        exclude(group = "androidx.appcompat", module = "appcompat")
-    }
     implementation(libs.google.gson)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
-    implementation("com.github.eka-care:eka-network-android:1.0.3") {
-        exclude(group = "com.google.protobuf", module = "protobuf-java")
-    }
+    implementation("com.github.eka-care:eka-network-android:1.0.3")
 }
