@@ -207,6 +207,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                         updatedAt = it.updatedAt,
                         documentType = it.documentType,
                         documentDate = it.documentDate,
+                        isSmart = it.isSmart,
                         smartReport = it.smartReport
                     )
                 }
