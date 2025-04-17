@@ -18,14 +18,10 @@ import eka.care.documents.sync.data.repository.AwsRepository
 import eka.care.documents.sync.data.repository.MyFileRepository
 import eka.care.documents.sync.data.repository.SyncRecordsRepository
 import eka.care.documents.ui.utility.RecordsUtility
-import eka.care.documents.ui.utility.RecordsUtility.Companion.changeDateFormat
 import eka.care.documents.ui.utility.RecordsUtility.Companion.downloadThumbnail
 import eka.care.documents.ui.utility.RecordsUtility.Companion.getMimeType
 import kotlinx.coroutines.coroutineScope
 import java.io.File
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 import java.util.UUID
 
 class SyncFileWorker(
@@ -41,17 +37,16 @@ class SyncFileWorker(
 
     override suspend fun doWork(): Result = coroutineScope {
         try {
-            val uuid = inputData.getString("p_uuid")
             val ownerId = inputData.getString("ownerId") ?: return@coroutineScope Result.failure()
             val filterIds = inputData.getString("filterIds")?.split(",") ?: emptyList()
 
             filterIds.forEach { filterId ->
-            //    val updatedAt = vaultRepository.getUpdatedAtByOid(filterId = filterId,ownerId = ownerId)
-                fetchRecords(uuid = uuid, filterId = filterId, ownerId = ownerId)
-       //         vaultRepository.updateUpdatedAtByOid(filterId = filterId, ownerId = ownerId, updatedAt = System.currentTimeMillis())
+                //    val updatedAt = vaultRepository.getUpdatedAtByOid(filterId = filterId,ownerId = ownerId)
+                fetchRecords(filterId = filterId, ownerId = ownerId)
+                //         vaultRepository.updateUpdatedAtByOid(filterId = filterId, ownerId = ownerId, updatedAt = System.currentTimeMillis())
             }
 
-            syncDocuments(filterIds, uuid, ownerId)
+            syncDocuments(filterIds, ownerId)
             updateFilePath(ownerId = ownerId)
             syncDeletedAndEditedDocuments(filterIds, ownerId)
 
@@ -61,7 +56,7 @@ class SyncFileWorker(
         }
     }
 
-    private suspend fun syncDocuments(filterIds: List<String>?, uuid: String?, ownerId: String) {
+    private suspend fun syncDocuments(filterIds: List<String>?, ownerId: String) {
         try {
             val vaultDocuments =
                 vaultRepository.getUnSyncedDocuments(filterIds = filterIds, ownerId = ownerId)
@@ -82,16 +77,13 @@ class SyncFileWorker(
                 if (fileContentList.isNullOrEmpty()) {
                     return
                 }
-                val uploadInitResponse = uuid?.let {
-                    awsRepository.fileUploadInit(
-                        files = fileContentList,
-                        patientOid = vaultEntity.filterId,
-                        patientUuid = uuid,
-                        isMultiFile = isMultiFile,
-                        tags = tags,
-                        documentType = documentType
-                    )
-                }
+                val uploadInitResponse = awsRepository.fileUploadInit(
+                    files = fileContentList,
+                    patientOid = vaultEntity.filterId,
+                    isMultiFile = isMultiFile,
+                    tags = tags,
+                    documentType = documentType
+                )
                 if (uploadInitResponse?.error == true) {
                     Log.d(
                         "SYNC_DOCUMENTS",
@@ -190,7 +182,7 @@ class SyncFileWorker(
             val updateFileDetailsRequest = UpdateFileDetailsRequest(
                 filterId = vaultEntity.filterId,
                 documentType = docTypes.find { it.idNew == vaultEntity.documentType }?.id,
-                documentDate = if (vaultEntity.documentDate != null) vaultEntity.documentDate else 0L,
+                documentDate = if (vaultEntity.documentDate != null) vaultEntity.documentDate else null,
                 userTags = emptyList()
             )
 
@@ -210,7 +202,6 @@ class SyncFileWorker(
     private suspend fun fetchRecords(
         offset: String? = null,
         updatedAt: Long? = null,
-        uuid: String?,
         filterId: String?,
         ownerId: String
     ) {
@@ -234,7 +225,6 @@ class SyncFileWorker(
                     storeRecords(
                         recordsResponse = records,
                         ownerId = ownerId,
-                        uuid = uuid,
                         context = applicationContext
                     )
                 }
@@ -255,14 +245,14 @@ class SyncFileWorker(
     private suspend fun storeRecords(
         recordsResponse: GetFilesResponse,
         ownerId: String?,
-        uuid: String?,
         context: Context
     ) {
         val vaultList = mutableListOf<VaultEntity>()
         recordsResponse.items.forEach {
             val recordItem = it.record.item
             val entity = vaultRepository.getDocumentById(recordItem.documentId)
-            val documentDate = if (recordItem.metadata?.documentDate == 0L) entity?.documentDate else recordItem.metadata?.documentDate
+            val documentDate =
+                if (recordItem.metadata?.documentDate == 0L) entity?.documentDate else recordItem.metadata?.documentDate
             if (!entity?.localId.isNullOrEmpty()) {
                 vaultRepository.storeDocument(
                     localId = entity?.localId ?: "",
@@ -282,7 +272,6 @@ class SyncFileWorker(
                         documentId = recordItem.documentId,
                         ownerId = ownerId,
                         filterId = recordItem.patientId,
-                        uuid = uuid ?: "",
                         filePath = null,
                         fileType = "",
                         thumbnail = null,
