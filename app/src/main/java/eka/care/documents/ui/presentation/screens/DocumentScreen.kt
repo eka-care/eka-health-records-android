@@ -103,7 +103,6 @@ fun DocumentScreen(
             filterId = param.get(MedicalRecordParams.FILTER_ID.key)?.asString ?: "",
             ownerId = param.get(MedicalRecordParams.OWNER_ID.key)?.asString ?: "",
             name = param.get(MedicalRecordParams.PATIENT_NAME.key)?.asString,
-            uuid = param.get(MedicalRecordParams.PATIENT_UUID.key)?.asString ?: "",
             age = param.get(MedicalRecordParams.PATIENT_AGE.key)?.asInt,
             gender = param.get(MedicalRecordParams.PATIENT_GENDER.key)?.asString,
             links = param.get(MedicalRecordParams.LINKS.key)?.asString
@@ -127,8 +126,7 @@ fun DocumentScreen(
             filterIds = filterIdsToProcess,
             ownerId = params.ownerId,
             viewModel = viewModel,
-            context = context,
-            patientUuid = params.uuid
+            context = context
         )
         viewModel.getLocalRecords(
             filterIds = filterIdsToProcess,
@@ -160,8 +158,7 @@ fun DocumentScreen(
                     filterIds = filterIdsToProcess,
                     ownerId = params.ownerId,
                     viewModel = viewModel,
-                    context = context,
-                    patientUuid = params.uuid
+                    context = context
                 )
             }
         }
@@ -273,8 +270,7 @@ fun DocumentScreen(
                 filterIds = filterIdsToProcess,
                 ownerId = params.ownerId,
                 viewModel = viewModel,
-                context = context,
-                patientUuid = params.uuid
+                context = context
             )
         }
     )
@@ -285,8 +281,7 @@ fun DocumentScreen(
                 filterIds = filterIdsToProcess,
                 ownerId = params.ownerId,
                 viewModel = viewModel,
-                context = context,
-                patientUuid = params.uuid
+                context = context
             )
         }
     }
@@ -458,14 +453,12 @@ fun DocumentScreen(
 }
 
 fun initData(
-    patientUuid: String,
     filterIds: List<String>,
     ownerId: String,
     viewModel: RecordsViewModel,
     context: Context,
 ) {
     val inputData = Data.Builder()
-        .putString("p_uuid", patientUuid)
         .putString("ownerId", ownerId)
         .putString("filterIds", filterIds.joinToString(","))
         .build()
@@ -474,7 +467,7 @@ fun initData(
         .setRequiredNetworkType(NetworkType.CONNECTED)
         .build()
 
-    val uniqueWorkName = "syncFileWorker_${patientUuid}_$filterIds$ownerId"
+    val uniqueWorkName = "syncFileWorker_$filterIds$ownerId"
     val uniqueSyncWorkRequest =
         OneTimeWorkRequestBuilder<SyncFileWorker>()
             .setInputData(inputData)

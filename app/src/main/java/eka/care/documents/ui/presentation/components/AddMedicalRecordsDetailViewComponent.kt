@@ -153,7 +153,6 @@ fun AddMedicalRecordsDetailViewComponent(
                 val vaultEntity = VaultEntity(
                     localId = UUID.randomUUID().toString(),
                     documentId = null,
-                    uuid = paramsModel.uuid,
                     ownerId = paramsModel.ownerId,
                     filterId = paramsModel.filterId,
                     filePath = if (fileType == FileType.IMAGE.ordinal) compressedFiles.map { it.path } else fileList.map { it.path },

@@ -50,7 +50,6 @@ class DocumentActivity : AppCompatActivity() {
                 ownerId = params[MedicalRecordParams.OWNER_ID.key]?.asString ?: "",
                 viewModel = viewModel,
                 context = context,
-                patientUuid = params[MedicalRecordParams.PATIENT_UUID.key]?.asString ?: "",
                 filterIds = listOf()
             )
             DocumentScreen(

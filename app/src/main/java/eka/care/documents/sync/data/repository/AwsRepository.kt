@@ -1,6 +1,5 @@
 package eka.care.documents.sync.data.repository
 
-import android.util.Log
 import android.webkit.MimeTypeMap
 import com.eka.network.ConverterFactoryType
 import com.eka.network.Networking
@@ -30,7 +29,6 @@ class AwsRepository {
         files: List<FileType>,
         isMultiFile: Boolean = false,
         isEncrypted: Boolean = false,
-        patientUuid: String,
         patientOid: String?,
         documentType : String,
         tags : List<String>
