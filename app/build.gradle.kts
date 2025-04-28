@@ -71,6 +71,7 @@ afterEvaluate {
 }
 
 dependencies {
+    implementation("androidx.activity:activity:1.6.0-alpha05")
     implementation(libs.androidx.work.runtime.ktx)
     kapt(libs.room.compiler)
     implementation(libs.room.runtime)

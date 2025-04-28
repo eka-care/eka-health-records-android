@@ -9,9 +9,9 @@ data class RecordModel(
     val documentType: String = "ot",
     val isSmart: Boolean = false,
     val smartReport: String? = null,
-    val files: List<File> = emptyList(),
+    val files: List<RecordFile> = emptyList(),
 ) {
-    data class File(
+    data class RecordFile(
         val id: Long,
         val filePath: String?,
         val fileType: String,

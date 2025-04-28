@@ -1,6 +1,5 @@
 package eka.care.records.data.repository
 
-import android.app.Application
 import android.content.Context
 import androidx.sqlite.db.SupportSQLiteQueryBuilder
 import com.google.gson.Gson
@@ -13,7 +12,7 @@ import eka.care.records.client.utils.Logger
 import eka.care.records.client.utils.RecordsUtility
 import eka.care.records.client.utils.RecordsUtility.Companion.getMimeType
 import eka.care.records.client.utils.RecordsUtility.Companion.md5
-import eka.care.records.client.utils.ThumbnailGenerator
+import eka.care.records.data.core.FileStorageManagerImpl
 import eka.care.records.data.db.RecordsDatabase
 import eka.care.records.data.entity.RecordEntity
 import eka.care.records.data.entity.RecordFile
@@ -37,10 +36,11 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
     private var dao = RecordsDatabase.getInstance(context).recordsDao()
     private var filesDao = RecordsDatabase.getInstance(context).recordFilesDao()
     private val myFileRepository = MyFileRepository()
+    private val fileStorageManager = FileStorageManagerImpl(context)
     private val awsRepository = AwsRepository()
     private var syncJob: Job? = null
 
-    private fun startAutoSync() {
+    fun startAutoSync() {
         syncJob?.cancel()
         syncJob = CoroutineScope(Dispatchers.IO).launch {
             dao.observeDirtyRecords()
@@ -133,9 +133,8 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
         ) {
             files.first().path
         } else {
-            ThumbnailGenerator.getThumbnailFromPdf(
-                app = context.applicationContext as Application,
-                files.first()
+            fileStorageManager.generateThumbnail(
+                filePath = files.first().path
             )
         }
         dao.updateRecords(listOf(record.copy(thumbnail = thumbnail)))
@@ -248,7 +247,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                 isSmart = record.isSmart,
                 smartReport = null,
                 files = files.map { file ->
-                    RecordModel.File(
+                    RecordModel.RecordFile(
                         id = file.id,
                         filePath = file.filePath,
                         fileType = file.fileType
@@ -300,7 +299,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
             isSmart = record.isSmart,
             smartReport = smartReportField,
             files = getRecordFile(record.id)?.map { file ->
-                RecordModel.File(
+                RecordModel.RecordFile(
                     id = file.id,
                     filePath = file.filePath,
                     fileType = file.fileType

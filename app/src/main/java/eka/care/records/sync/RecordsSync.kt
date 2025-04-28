@@ -30,6 +30,7 @@ class RecordsSync(
     override suspend fun doWork(): Result {
         return withContext(Dispatchers.IO) {
             fetchRecords()
+            recordsRepository.startAutoSync()
             Result.success()
         }
     }

@@ -85,7 +85,7 @@ class Records private constructor() {
         )
     }
 
-    fun fetchRecords(
+    fun getRecords(
         ownerId: String,
         filterIds: List<String>? = null,
         includeDeleted: Boolean = false,
