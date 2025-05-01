@@ -6,5 +6,5 @@ import androidx.annotation.Keep
 data class AwsUploadResponse(
     val error: Boolean,
     val message: String?,
-    val documentId: String?
+    val documentId: String
 )

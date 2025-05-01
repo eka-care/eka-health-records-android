@@ -18,7 +18,7 @@ data class FilesUploadInitResponse(
 @Keep
 data class BatchResponse(
     @SerializedName("document_id")
-    val documentId: String?,
+    val documentId: String,
     @SerializedName("forms")
     val forms: List<Form>
 )

@@ -29,18 +29,24 @@ class RecordsSync(
 
     override suspend fun doWork(): Result {
         return withContext(Dispatchers.IO) {
-            fetchRecords()
-            recordsRepository.startAutoSync()
+            val ownerId = inputData.getString("ownerId") ?: return@withContext Result.failure()
+            val filterIds = inputData.getStringArray("filterIds")?.toList() ?: emptyList()
+
+            Logger.i("Starting sync for ownerId: $ownerId, filterIds: $filterIds")
+
+            fetchRecords(
+                ownerId = ownerId,
+                filterIds = filterIds
+            )
+            recordsRepository.startAutoSync(
+                ownerId = ownerId,
+                filterIds = filterIds
+            )
             Result.success()
         }
     }
 
-    private suspend fun fetchRecords() {
-        val ownerId = inputData.getString("ownerId") ?: return
-
-        val filterIds = inputData.getStringArray("filterIds")?.toList() ?: emptyList()
-        Logger.i("Fetching records for ownerId: $ownerId, filterIds: $filterIds")
-
+    private suspend fun fetchRecords(ownerId: String, filterIds: List<String>) {
         (filterIds.ifEmpty { listOf(null) }).forEach { filterId ->
             val updatedAt = recordsRepository.getLatestRecordUpdatedAt(ownerId, filterId)
             Logger.i("Records updated till: $updatedAt")

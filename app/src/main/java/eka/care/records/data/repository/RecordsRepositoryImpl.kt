@@ -23,7 +23,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
@@ -34,29 +33,20 @@ import java.util.UUID
 
 internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepository {
     private var dao = RecordsDatabase.getInstance(context).recordsDao()
-    private var filesDao = RecordsDatabase.getInstance(context).recordFilesDao()
     private val myFileRepository = MyFileRepository()
     private val fileStorageManager = FileStorageManagerImpl(context)
     private val awsRepository = AwsRepository()
     private var syncJob: Job? = null
 
-    fun startAutoSync() {
+    fun startAutoSync(ownerId: String, filterIds: List<String>) {
         syncJob?.cancel()
         syncJob = CoroutineScope(Dispatchers.IO).launch {
-            dao.observeDirtyRecords()
-                .distinctUntilChanged()
-                .collect { dirtyRecords ->
-                    if (dirtyRecords.isNotEmpty()) {
-                        syncUpdatedRecordsToServer(dirtyRecords)
-                    }
-                }
-            dao.observeDeletedRecords()
-                .distinctUntilChanged()
-                .collect { deletedRecords ->
-                    if (deletedRecords.isNotEmpty()) {
-                        syncDeletedRecordsToServer(deletedRecords)
-                    }
-                }
+            dao.getDirtyRecords(ownerId, filterIds)?.also {
+                syncUpdatedRecordsToServer(it)
+            }
+            dao.getDeletedRecords(ownerId, filterIds)?.also {
+                syncDeletedRecordsToServer(it)
+            }
         }
     }
 
@@ -67,7 +57,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                 launch {
                     val documentId = record.documentId
                     if (documentId != null) {
-                        myFileRepository.updateFileDetails(
+                        val result = myFileRepository.updateFileDetails(
                             documentId = documentId,
                             oid = record.filterId,
                             request = UpdateFileDetailsRequest(
@@ -76,6 +66,21 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                                 documentDate = record.documentDate?.toString(),
                             )
                         )
+                        result?.let {
+                            if (it != 200) {
+                                Logger.e("Error updating record: Response code: $it")
+                                dao.updateRecords(listOf(record.copy(status = RecordStatus.SYNC_FAILED)))
+                            } else {
+                                dao.updateRecords(
+                                    listOf(
+                                        record.copy(
+                                            status = RecordStatus.SYNC_SUCCESS,
+                                            isDirty = false
+                                        )
+                                    )
+                                )
+                            }
+                        }
                     } else {
                         uploadRecord(id = record.id)
                     }
@@ -89,14 +94,19 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
             deletedRecords.forEach { record ->
                 launch {
                     record.documentId?.let {
-                        myFileRepository.deleteDocument(it, record.filterId)
+                        val result = myFileRepository.deleteDocument(it, record.filterId)
+                        if(result in (200..299)) {
+                            dao.deleteRecord(record)
+                        }
                     }
                 }
             }
         }
 
     override suspend fun createRecords(records: List<RecordEntity>) {
-        dao.createRecords(records)
+        records.forEach {
+            dao.insertRecordWithFiles(it, emptyList())
+        }
     }
 
     override suspend fun createRecord(
@@ -113,17 +123,6 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
 
         val time = System.currentTimeMillis() / 1000
         val id = UUID.randomUUID().toString()
-        val record = RecordEntity(
-            id = id,
-            ownerId = ownerId,
-            filterId = filterId,
-            createdAt = time,
-            updatedAt = time,
-            documentDate = time,
-            documentHash = files.first().md5(),
-            status = RecordStatus.SYNCING
-        )
-        dao.createRecords(listOf(record))
         val thumbnail = if (files.first().extension.lowercase() in listOf(
                 "jpg",
                 "jpeg",
@@ -137,22 +136,31 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                 filePath = files.first().path
             )
         }
-        dao.updateRecords(listOf(record.copy(thumbnail = thumbnail)))
-        files.forEach { file ->
-            launch {
+        val record = RecordEntity(
+            id = id,
+            ownerId = ownerId,
+            filterId = filterId,
+            thumbnail = thumbnail,
+            createdAt = time,
+            updatedAt = time,
+            documentDate = time,
+            documentHash = files.first().md5(),
+            isDirty = true,
+            status = RecordStatus.SYNCING
+        )
+        dao.insertRecordWithFiles(
+            record = record,
+            files = files.map { file ->
                 val compressedFile = Compressor.compress(context, file)
                 val path = compressedFile.path
                 val type = compressedFile.extension
-                insertRecordFile(
-                    RecordFile(
-                        localId = record.id,
-                        filePath = path,
-                        fileType = type
-                    )
+                RecordFile(
+                    localId = record.id,
+                    filePath = path,
+                    fileType = type
                 )
             }
-        }
-        uploadRecord(id = record.id)
+        )
     }
 
     override fun readRecords(
@@ -163,7 +171,6 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
         sortOrder: SortOrder,
     ): Flow<List<RecordModel>> = flow {
         Logger.i("ReadRecords with ownerId: $ownerId, filterIds: $filterIds, includeDeleted: $includeDeleted, documentType: $documentType, sortOrder: $sortOrder")
-        startAutoSync()
         try {
             val selection = StringBuilder()
             val selectionArgs = mutableListOf<String>()
@@ -201,7 +208,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                 records.map {
                     RecordModel(
                         id = it.id,
-                        thumbnail = it.thumbnail,
+                        thumbnail = it.thumbnail ?: dao.getRecordFile(it.id)?.firstOrNull()?.filePath,
                         createdAt = it.createdAt,
                         updatedAt = it.updatedAt,
                         documentType = it.documentType,
@@ -383,11 +390,11 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
     }
 
     override suspend fun insertRecordFile(file: RecordFile): Long {
-        return filesDao.insert(recordFile = file)
+        return dao.insertRecordFile(recordFile = file)
     }
 
     override suspend fun getRecordFile(localId: String): List<RecordFile>? {
-        return filesDao.getRecordFile(localId = localId)
+        return dao.getRecordFile(localId = localId)
     }
 
     private suspend fun uploadRecord(id: String) = supervisorScope {
@@ -397,7 +404,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
             return@supervisorScope
         }
 
-        val files = filesDao.getRecordFile(id)?.map { File(it.filePath) }
+        val files = dao.getRecordFile(id)?.map { File(it.filePath) }
         if (files.isNullOrEmpty()) {
             Logger.e("Upload error: No file for the given documentId: $id")
             return@supervisorScope
@@ -431,6 +438,19 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
             dao.updateRecords(listOf(record.copy(status = RecordStatus.SYNC_FAILED)))
             return@supervisorScope
         }
-        dao.updateRecords(listOf(record.copy(status = RecordStatus.SYNC_SUCCESS)))
+        if (uploadResponse == null) {
+            Logger.e("Upload response is null")
+            dao.updateRecords(listOf(record.copy(status = RecordStatus.SYNC_FAILED)))
+            return@supervisorScope
+        }
+        dao.updateRecords(
+            listOf(
+                record.copy(
+                    status = RecordStatus.SYNC_SUCCESS,
+                    documentId = uploadResponse.documentId,
+                    isDirty = false
+                )
+            )
+        )
     }
 }

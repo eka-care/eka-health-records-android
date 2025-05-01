@@ -5,7 +5,6 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
-import eka.care.records.data.dao.RecordFilesDao
 import eka.care.records.data.dao.RecordsDao
 import eka.care.records.data.entity.RecordEntity
 import eka.care.records.data.entity.RecordFile
@@ -21,7 +20,6 @@ import eka.care.records.data.entity.RecordFile
 @TypeConverters(Converters::class)
 abstract class RecordsDatabase : RoomDatabase() {
     abstract fun recordsDao(): RecordsDao
-    abstract fun recordFilesDao(): RecordFilesDao
 
     companion object {
         private var mInstance: RecordsDatabase? = null
