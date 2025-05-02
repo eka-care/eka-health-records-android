@@ -18,6 +18,7 @@ import eka.care.records.data.entity.RecordEntity
 import eka.care.records.data.entity.RecordFile
 import eka.care.records.data.remote.dto.request.FileType
 import eka.care.records.data.remote.dto.request.UpdateFileDetailsRequest
+import eka.care.records.data.utility.isNetworkAvailable
 import id.zelory.compressor.Compressor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -57,6 +58,12 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                 launch {
                     val documentId = record.documentId
                     if (documentId != null) {
+                        if(isNetworkAvailable(context = context)) {
+                            dao.updateRecords(listOf(record.copy(status = RecordStatus.SYNCING)))
+                        } else {
+                            dao.updateRecords(listOf(record.copy(status = RecordStatus.WAITING_FOR_NETWORK)))
+                            return@launch
+                        }
                         val result = myFileRepository.updateFileDetails(
                             documentId = documentId,
                             oid = record.filterId,
@@ -95,7 +102,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                 launch {
                     record.documentId?.let {
                         val result = myFileRepository.deleteDocument(it, record.filterId)
-                        if(result in (200..299)) {
+                        if (result in (200..299)) {
                             dao.deleteRecord(record)
                         }
                     }
@@ -114,6 +121,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
         ownerId: String,
         filterId: String?,
         documentType: String,
+        documentDate: Long?,
         tags: List<String>
     ) = supervisorScope {
         if (files.isEmpty()) {
@@ -141,17 +149,22 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
             ownerId = ownerId,
             filterId = filterId,
             thumbnail = thumbnail,
+            documentType = documentType,
             createdAt = time,
             updatedAt = time,
-            documentDate = time,
+            documentDate = documentDate ?: time,
             documentHash = files.first().md5(),
             isDirty = true,
-            status = RecordStatus.SYNCING
+            status = RecordStatus.WAITING_TO_UPLOAD
         )
         dao.insertRecordWithFiles(
             record = record,
             files = files.map { file ->
-                val compressedFile = Compressor.compress(context, file)
+                val compressedFile =
+                    if (file.extension.lowercase() == "pdf") file else Compressor.compress(
+                        context,
+                        file
+                    )
                 val path = compressedFile.path
                 val type = compressedFile.extension
                 RecordFile(
@@ -208,7 +221,9 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                 records.map {
                     RecordModel(
                         id = it.id,
-                        thumbnail = it.thumbnail ?: dao.getRecordFile(it.id)?.firstOrNull()?.filePath,
+                        thumbnail = it.thumbnail ?: dao.getRecordFile(it.id)
+                            ?.firstOrNull()?.filePath,
+                        status = it.status,
                         createdAt = it.createdAt,
                         updatedAt = it.updatedAt,
                         documentType = it.documentType,
@@ -399,8 +414,16 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
 
     private suspend fun uploadRecord(id: String) = supervisorScope {
         val record = getRecordById(id)
+
         if (record == null) {
             Logger.e("Upload error: No document found for documentId: $id")
+            return@supervisorScope
+        }
+
+        if(isNetworkAvailable(context = context)) {
+            dao.updateRecords(listOf(record.copy(status = RecordStatus.SYNCING)))
+        } else {
+            dao.updateRecords(listOf(record.copy(status = RecordStatus.WAITING_FOR_NETWORK)))
             return@supervisorScope
         }
 

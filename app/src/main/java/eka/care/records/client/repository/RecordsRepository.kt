@@ -14,6 +14,7 @@ interface RecordsRepository {
         ownerId: String,
         filterId: String? = null,
         documentType: String = "ot",
+        documentDate: Long? = null,
         tags: List<String>
     )
     suspend fun createRecords(records: List<RecordEntity>)

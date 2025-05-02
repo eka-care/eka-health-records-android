@@ -74,12 +74,14 @@ class Records private constructor() {
         ownerId: String,
         filterId: String? = null,
         documentType: String = "ot",
+        documentDate: Long? = null,
         tags: List<String> = emptyList()
     ) {
         recordsRepository.createRecord(
             files = files,
             ownerId = ownerId,
             filterId = filterId,
+            documentDate = documentDate,
             documentType = documentType,
             tags = tags
         )
