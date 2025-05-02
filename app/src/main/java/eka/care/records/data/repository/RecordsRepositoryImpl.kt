@@ -70,11 +70,11 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                             request = UpdateFileDetailsRequest(
                                 filterId = record.filterId,
                                 documentType = record.documentType,
-                                documentDate = record.documentDate?.toString(),
+                                documentDate = record.documentDate,
                             )
                         )
                         result?.let {
-                            if (it != 200) {
+                            if (it !in 200..299) {
                                 Logger.e("Error updating record: Response code: $it")
                                 dao.updateRecords(listOf(record.copy(status = RecordStatus.SYNC_FAILED)))
                             } else {
@@ -441,7 +441,8 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                 patientOid = record.filterId,
                 isMultiFile = files.size > 1,
                 tags = emptyList(), // TODO add tags from the user tags table
-                documentType = record.documentType
+                documentType = record.documentType,
+                documentDate = record.documentDate,
             )
         if (uploadInitResponse?.error == true) {
             Logger.e("Upload initialization error: ${uploadInitResponse.message}")

@@ -10,7 +10,7 @@ data class UpdateFileDetailsRequest(
     @SerializedName("dt")
     val documentType: String? = null,
     @SerializedName("dd_e")
-    val documentDate: String? = null,
+    val documentDate: Long? = null,
     @SerializedName("tg")
     val userTags: List<String>? = null,
     @SerializedName("dtg_del")

@@ -16,7 +16,7 @@ data class Batch(
     @SerializedName("dt")
     val documentType: String,
     @SerializedName("dd")
-    val documentDate: String? = null,
+    val documentDate: Long? = null,
     @SerializedName("sh")
     val sharable: Boolean = true,
     @SerializedName("tg")

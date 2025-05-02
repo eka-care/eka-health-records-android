@@ -29,6 +29,7 @@ class AwsRepository {
         isEncrypted: Boolean = false,
         patientOid: String?,
         documentType: String,
+        documentDate: Long? = null,
         tags: List<String>
     ): FilesUploadInitResponse? {
         val batch = mutableListOf<Batch>()
@@ -40,7 +41,8 @@ class AwsRepository {
                     isEncrypted = isEncrypted,
                     sharable = false,
                     tags = tags,
-                    documentType = documentType
+                    documentType = documentType,
+                    documentDate = documentDate
                 )
             )
         } else {
@@ -51,7 +53,8 @@ class AwsRepository {
                         isEncrypted = isEncrypted,
                         sharable = false,
                         tags = tags,
-                        documentType = documentType
+                        documentType = documentType,
+                        documentDate = documentDate
                     )
                 )
             }
