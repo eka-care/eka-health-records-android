@@ -267,7 +267,8 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                 documentDate = record.documentDate,
                 documentType = record.documentType,
                 isSmart = record.isSmart,
-                smartReport = null,
+                smartReport = record.smartReport,
+                status = record.status,
                 files = files.map { file ->
                     RecordModel.RecordFile(
                         id = file.id,
