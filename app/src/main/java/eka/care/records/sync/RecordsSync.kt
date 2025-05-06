@@ -38,10 +38,7 @@ class RecordsSync(
                 ownerId = ownerId,
                 filterIds = filterIds
             )
-            recordsRepository.startAutoSync(
-                ownerId = ownerId,
-                filterIds = filterIds
-            )
+            recordsRepository.startAutoSync(ownerId = ownerId)
             Result.success()
         }
     }

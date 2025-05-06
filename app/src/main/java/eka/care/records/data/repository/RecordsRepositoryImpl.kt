@@ -39,13 +39,13 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
     private val awsRepository = AwsRepository()
     private var syncJob: Job? = null
 
-    fun startAutoSync(ownerId: String, filterIds: List<String>) {
+    fun startAutoSync(ownerId: String) {
         syncJob?.cancel()
         syncJob = CoroutineScope(Dispatchers.IO).launch {
-            dao.getDirtyRecords(ownerId, filterIds)?.also {
+            dao.getDirtyRecords(ownerId)?.also {
                 syncUpdatedRecordsToServer(it)
             }
-            dao.getDeletedRecords(ownerId, filterIds)?.also {
+            dao.getDeletedRecords(ownerId)?.also {
                 syncDeletedRecordsToServer(it)
             }
         }
@@ -251,10 +251,6 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
             return null
         }
         val documentId = record.documentId
-        if (documentId == null) {
-            Logger.e("Error fetching documentId for record: $id")
-            return null
-        }
 
         val files = getRecordFile(record.id)
         if (files?.isNotEmpty() == true) {
@@ -277,6 +273,11 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                     )
                 }
             )
+        }
+
+        if (documentId == null) {
+            Logger.e("Error fetching documentId for record: $id")
+            return null
         }
 
         val response = myFileRepository.getDocument(

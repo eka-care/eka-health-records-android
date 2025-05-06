@@ -46,11 +46,11 @@ interface RecordsDao {
     @Delete
     suspend fun deleteRecord(record: RecordEntity)
 
-    @Query("SELECT * FROM EKA_RECORDS_TABLE WHERE OWNER_ID = :ownerId AND FILTER_ID IN (:filterIds) AND IS_DIRTY = 1")
-    suspend fun getDirtyRecords(ownerId: String, filterIds: List<String>): List<RecordEntity>?
+    @Query("SELECT * FROM EKA_RECORDS_TABLE WHERE OWNER_ID = :ownerId AND IS_DIRTY = 1")
+    suspend fun getDirtyRecords(ownerId: String): List<RecordEntity>?
 
-    @Query("SELECT * FROM EKA_RECORDS_TABLE WHERE OWNER_ID = :ownerId AND FILTER_ID IN (:filterIds) AND IS_ARCHIVED = 1")
-    suspend fun getDeletedRecords(ownerId: String, filterIds: List<String>): List<RecordEntity>?
+    @Query("SELECT * FROM EKA_RECORDS_TABLE WHERE OWNER_ID = :ownerId AND IS_ARCHIVED = 1")
+    suspend fun getDeletedRecords(ownerId: String): List<RecordEntity>?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertRecordFile(recordFile: RecordFile): Long

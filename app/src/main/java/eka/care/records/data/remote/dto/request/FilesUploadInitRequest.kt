@@ -15,7 +15,7 @@ data class Batch(
     val files: List<FileType>,
     @SerializedName("dt")
     val documentType: String,
-    @SerializedName("dd")
+    @SerializedName("dd_e")
     val documentDate: Long? = null,
     @SerializedName("sh")
     val sharable: Boolean = true,
