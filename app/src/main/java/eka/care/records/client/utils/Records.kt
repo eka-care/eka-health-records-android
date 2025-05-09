@@ -121,8 +121,8 @@ class Records private constructor() {
         id: String,
         documentDate: Long? = null,
         documentType: String? = null,
-    ) {
-        recordsRepository.updateRecord(
+    ): String? {
+        return recordsRepository.updateRecord(
             id = id,
             documentDate = documentDate,
             documentType = documentType
