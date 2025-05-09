@@ -1,46 +1,38 @@
 package eka.care.records.client.utils
 
 import android.util.Log
+import eka.care.records.client.model.EventLog
+import eka.care.records.data.contract.LogInterceptor
 
 private const val TAG = "EkaRecords"
 
-object Logger {
+class Logger: LogInterceptor {
 
-    @JvmStatic
     var loggingEnabled = false
 
-    @JvmStatic
-    fun e(message: String) {
+    override fun logEvent(eventLog: EventLog) {
+        when (eventLog) {
+            is EventLog.Error -> e(eventLog.message)
+            is EventLog.Info -> i(eventLog.message)
+            is EventLog.Warning -> w(eventLog.message)
+        }
+    }
+
+    private fun e(message: String) {
         if (loggingEnabled && message.isNotEmpty()) {
             Log.e(TAG, message)
         }
     }
 
-    @JvmStatic
-    fun w(message: String) {
+    private fun w(message: String) {
         if (loggingEnabled && message.isNotEmpty()) {
             Log.w(TAG, message)
         }
     }
 
-    @JvmStatic
-    fun i(message: String) {
+    private fun i(message: String) {
         if (loggingEnabled && message.isNotEmpty()) {
             Log.i(TAG, message)
-        }
-    }
-
-    @JvmStatic
-    fun d(message: String?) {
-        if (loggingEnabled && message?.isNotEmpty() == true) {
-            Log.d(TAG, message)
-        }
-    }
-
-    @JvmStatic
-    fun v(message: String) {
-        if (loggingEnabled && message.isNotEmpty()) {
-            Log.v(TAG, message)
         }
     }
 }

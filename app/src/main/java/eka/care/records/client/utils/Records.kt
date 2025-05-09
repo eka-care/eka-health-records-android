@@ -10,6 +10,7 @@ import androidx.work.WorkManager
 import eka.care.records.client.model.DocumentTypeCount
 import eka.care.records.client.model.RecordModel
 import eka.care.records.client.model.SortOrder
+import eka.care.records.data.contract.LogInterceptor
 import eka.care.records.data.db.RecordsDatabase
 import eka.care.records.data.repository.RecordsRepositoryImpl
 import eka.care.records.sync.RecordsSync
@@ -20,14 +21,13 @@ class Records private constructor() {
     private lateinit var recordsRepository: RecordsRepositoryImpl
     private lateinit var db: RecordsDatabase
 
+    var logger: LogInterceptor? = null
+
     companion object {
         @Volatile
         private var INSTANCE: Records? = null
 
-        fun getInstance(
-            context: Context,
-            token: String
-        ): Records {
+        fun getInstance(context: Context, token: String): Records {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: buildClient().also {
                     it.db = RecordsDatabase.getInstance(context)
@@ -40,10 +40,10 @@ class Records private constructor() {
         private fun buildClient(): Records {
             return Records()
         }
+    }
 
-        fun enableLogging() {
-            Logger.loggingEnabled = true
-        }
+    fun setLogInterceptor(listener: LogInterceptor) {
+        logger = listener
     }
 
     fun refreshRecords(context: Context, ownerId: String?, filterIds: List<String>? = null) {
@@ -69,6 +69,10 @@ class Records private constructor() {
             )
     }
 
+    fun syncRecords(ownerId: String) {
+        recordsRepository.startAutoSync(ownerId = ownerId)
+    }
+
     suspend fun addNewRecord(
         files: List<File>,
         ownerId: String,
@@ -76,8 +80,8 @@ class Records private constructor() {
         documentType: String = "ot",
         documentDate: Long? = null,
         tags: List<String> = emptyList()
-    ) {
-        recordsRepository.createRecord(
+    ): String? {
+        return recordsRepository.createRecord(
             files = files,
             ownerId = ownerId,
             filterId = filterId,

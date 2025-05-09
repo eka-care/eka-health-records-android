@@ -16,7 +16,8 @@ interface RecordsRepository {
         documentType: String = "ot",
         documentDate: Long? = null,
         tags: List<String>
-    )
+    ): String?
+
     suspend fun createRecords(records: List<RecordEntity>)
     fun readRecords(
         ownerId: String,
@@ -25,10 +26,12 @@ interface RecordsRepository {
         documentType: String?,
         sortOrder: SortOrder
     ): Flow<List<RecordModel>>
+
     fun getRecordTypeCounts(
         ownerId: String,
         filterIds: List<String>?,
     ): Flow<List<DocumentTypeCount>>
+
     suspend fun getRecordById(id: String): RecordEntity?
     suspend fun getRecordByDocumentId(id: String): RecordEntity?
     suspend fun getRecordDetails(id: String): RecordModel?
@@ -37,7 +40,8 @@ interface RecordsRepository {
         id: String,
         documentDate: Long? = null,
         documentType: String? = null
-    )
+    ): String?
+
     suspend fun deleteRecords(ids: List<String>)
     suspend fun getLatestRecordUpdatedAt(ownerId: String, filterId: String?): Long?
     suspend fun insertRecordFile(file: RecordFile): Long

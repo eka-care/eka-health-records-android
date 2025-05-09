@@ -3,8 +3,10 @@ package eka.care.records.sync
 import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import eka.care.records.client.utils.Logger
+import eka.care.records.client.model.EventLog
+import eka.care.records.client.utils.Records
 import eka.care.records.client.utils.RecordsUtility.Companion.downloadThumbnail
+import eka.care.records.data.contract.LogInterceptor
 import eka.care.records.data.entity.RecordEntity
 import eka.care.records.data.remote.dto.response.GetFilesResponse
 import eka.care.records.data.remote.dto.response.Item
@@ -26,13 +28,17 @@ class RecordsSync(
     private val recordsRepository = RecordsRepositoryImpl(appContext.applicationContext)
     @OptIn(ExperimentalCoroutinesApi::class)
     private val limitedDispatcher = Dispatchers.IO.limitedParallelism(5)
+    private val logger: LogInterceptor? = Records.getInstance(appContext, "").logger
 
     override suspend fun doWork(): Result {
         return withContext(Dispatchers.IO) {
             val ownerId = inputData.getString("ownerId") ?: return@withContext Result.failure()
             val filterIds = inputData.getStringArray("filterIds")?.toList() ?: emptyList()
-
-            Logger.i("Starting sync for ownerId: $ownerId, filterIds: $filterIds")
+            logger?.logEvent(
+                EventLog.Info(
+                    "Starting sync for ownerId: $ownerId, filterIds: $filterIds"
+                )
+            )
 
             fetchRecords(
                 ownerId = ownerId,
@@ -46,7 +52,11 @@ class RecordsSync(
     private suspend fun fetchRecords(ownerId: String, filterIds: List<String>) {
         (filterIds.ifEmpty { listOf(null) }).forEach { filterId ->
             val updatedAt = recordsRepository.getLatestRecordUpdatedAt(ownerId, filterId)
-            Logger.i("Records updated till: $updatedAt")
+            logger?.logEvent(
+                EventLog.Info(
+                    "Records updated till: $updatedAt"
+                )
+            )
             fetchRecordsFromServer(
                 updatedAt = updatedAt,
                 filterId = filterId,
@@ -69,7 +79,11 @@ class RecordsSync(
                 oid = filterId
             )
             response?.body()?.let<GetFilesResponse, Unit> {
-                Logger.i("Got records for: owner: $ownerId, filterIds: $filterId, data: $it")
+                logger?.logEvent(
+                    EventLog.Info(
+                        "Got records for: owner: $ownerId, filterIds: $filterId, data: $it"
+                    )
+                )
                 storeRecords(recordsResponse = it, ownerId = ownerId)
                 currentOffset = it.nextToken
             }
@@ -105,12 +119,20 @@ class RecordsSync(
             recordsRepository.updateRecords(
                 listOf(getRecordEntity(record.id))
             )
-            Logger.i("Updated record for ownerId: $ownerId")
+            logger?.logEvent(
+                EventLog.Info(
+                    message = "Updated record for ownerId: $ownerId"
+                )
+            )
         } else {
             recordsRepository.createRecords(
                 listOf(getRecordEntity(id = UUID.randomUUID().toString()))
             )
-            Logger.i("Stored record for ownerId: $ownerId")
+            logger?.logEvent(
+                EventLog.Info(
+                    message = "Stored record for ownerId: $ownerId"
+                )
+            )
         }
         storeThumbnail(
             recordId = recordItem.documentId,
@@ -126,6 +148,10 @@ class RecordsSync(
         val localRecord = recordsRepository.getRecordByDocumentId(recordId) ?: return
         val path = downloadThumbnail(thumbnail, context = context)
         recordsRepository.updateRecords(listOf(localRecord.copy(thumbnail = path)))
-        Logger.i("Stored thumbnail for: $recordId, thumbnail: $thumbnail")
+        logger?.logEvent(
+            EventLog.Info(
+                message = "Stored thumbnail for: $recordId, thumbnail: $thumbnail"
+            )
+        )
     }
 }
