@@ -95,10 +95,9 @@ class FileStorageManagerImpl(
                     canvas.drawBitmap(bitmap, 0f, 0f, null)
                     page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
                     page.close()
-                    val file = File(fileDir, "image${System.currentTimeMillis()}.png")
-                    if (file.exists()) file.delete()
+                    val tempFile = File(fileDir, "image${System.currentTimeMillis()}.png")
                     try {
-                        val out = FileOutputStream(file)
+                        val out = FileOutputStream(tempFile)
                         bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
                         out.flush()
                         out.close()
@@ -110,13 +109,12 @@ class FileStorageManagerImpl(
                             )
                         )
                     }
-                    file.path
+                    tempFile.path
                 } else {
                     val thumbnailPath = "${file.parent}/thumbnail_${file.name}"
                     file.copyTo(File(thumbnailPath), overwrite = true)
                     return@withContext thumbnailPath
                 }
-                null
             } catch (e: Exception) {
                 logInterceptor?.logEvent(
                     EventLog.Error(
