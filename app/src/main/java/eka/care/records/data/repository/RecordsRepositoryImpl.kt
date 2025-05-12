@@ -96,6 +96,15 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                                 )
                                 dao.updateRecords(listOf(record.copy(status = RecordStatus.SYNC_FAILED)))
                             } else {
+                                Records.logEvent(
+                                    EventLog(
+                                        params = JSONObject().also {
+                                            it.put("documentId", documentId)
+                                            it.put("time", System.currentTimeMillis())
+                                        },
+                                        message = "Syncing dirty record success: $documentId",
+                                    )
+                                )
                                 dao.updateRecords(
                                     listOf(
                                         record.copy(
@@ -130,6 +139,15 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                         val result = myFileRepository.deleteDocument(it, record.filterId)
                         if (result in (200..299)) {
                             dao.deleteRecord(record)
+                            Records.logEvent(
+                                EventLog(
+                                    params = JSONObject().also {
+                                        it.put("documentId", it)
+                                        it.put("time", System.currentTimeMillis())
+                                    },
+                                    message = "Syncing deleted record success: $it",
+                                )
+                            )
                         } else {
                             Records.logEvent(
                                 EventLog(
