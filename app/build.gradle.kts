@@ -80,12 +80,16 @@ dependencies {
     implementation(libs.zelory.compressor)
     implementation(libs.google.gson)
     implementation(libs.play.services.mlkit.document.scanner)
-    implementation("com.github.eka-care:eka-network-android:1.0.3")
+    implementation("com.github.eka-care:eka-network-android:1.0.3") {
+        exclude(group = "com.google.protobuf", module = "protobuf-java")
+    }
     implementation(libs.androidx.core.ktx)
     implementation(libs.google.gson)
     implementation(libs.okhttp)
     implementation(libs.okhttp.urlconnection)
-    implementation(libs.retrofit)
+    implementation(libs.retrofit) {
+        exclude(group = "com.google.protobuf", module = "protobuf-java")
+    }
     implementation(libs.retrofit.gson)
     implementation(libs.haroldadmin.networkresponseadapter)
     testImplementation(libs.junit)
