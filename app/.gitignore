@@ -1,7 +1,7 @@
 # Ignore IntelliJ/Android Studio files
 *.iml
-.idea/*
-.idea/**/*
+/.idea/*
+.idea/
 /local.properties
 
 # Ignore Gradle files

@@ -1,0 +1,765 @@
+package eka.care.records.data.repository
+
+import android.content.Context
+import androidx.sqlite.db.SupportSQLiteQueryBuilder
+import com.google.gson.Gson
+import eka.care.records.client.model.DocumentTypeCount
+import eka.care.records.client.model.EventLog
+import eka.care.records.client.model.RecordModel
+import eka.care.records.client.model.RecordStatus
+import eka.care.records.client.model.SortOrder
+import eka.care.records.client.repository.RecordsRepository
+import eka.care.records.client.utils.Records
+import eka.care.records.client.utils.RecordsUtility
+import eka.care.records.client.utils.RecordsUtility.Companion.getMimeType
+import eka.care.records.client.utils.RecordsUtility.Companion.md5
+import eka.care.records.data.core.FileStorageManagerImpl
+import eka.care.records.data.db.RecordsDatabase
+import eka.care.records.data.entity.RecordEntity
+import eka.care.records.data.entity.RecordFile
+import eka.care.records.data.remote.dto.request.FileType
+import eka.care.records.data.remote.dto.request.UpdateFileDetailsRequest
+import eka.care.records.data.utility.isNetworkAvailable
+import id.zelory.compressor.Compressor
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
+import org.json.JSONObject
+import java.io.File
+import java.util.UUID
+
+internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepository {
+    private var dao = RecordsDatabase.getInstance(context).recordsDao()
+    private val myFileRepository = MyFileRepository()
+    private val fileStorageManager = FileStorageManagerImpl(context)
+    private val awsRepository = AwsRepository()
+    private var syncJob: Job? = null
+
+    fun startAutoSync(ownerId: String) {
+        syncJob?.cancel()
+        syncJob = CoroutineScope(Dispatchers.IO).launch {
+            dao.getDirtyRecords(ownerId)?.also {
+                syncUpdatedRecordsToServer(it)
+            }
+            dao.getDeletedRecords(ownerId)?.also {
+                syncDeletedRecordsToServer(it)
+            }
+        }
+    }
+
+    private suspend fun syncUpdatedRecordsToServer(dirtyRecords: List<RecordEntity>) =
+        supervisorScope {
+            Records.logEvent(
+                EventLog(
+                    params = JSONObject().also {
+                        it.put("dirty_records_count", dirtyRecords.size)
+                        it.put("time", System.currentTimeMillis())
+                    },
+                    message = "Syncing dirty records to server: $dirtyRecords",
+                )
+            )
+            dirtyRecords.forEach { record ->
+                launch {
+                    val documentId = record.documentId
+                    if (documentId != null) {
+                        if (isNetworkAvailable(context = context)) {
+                            dao.updateRecords(listOf(record.copy(status = RecordStatus.SYNCING)))
+                        } else {
+                            dao.updateRecords(listOf(record.copy(status = RecordStatus.WAITING_FOR_NETWORK)))
+                            return@launch
+                        }
+                        val result = myFileRepository.updateFileDetails(
+                            documentId = documentId,
+                            oid = record.filterId,
+                            request = UpdateFileDetailsRequest(
+                                filterId = record.filterId,
+                                documentType = record.documentType,
+                                documentDate = record.documentDate,
+                            )
+                        )
+                        result?.let {
+                            if (it !in 200..299) {
+                                Records.logEvent(
+                                    EventLog(
+                                        params = JSONObject().also {
+                                            it.put("documentId", documentId)
+                                            it.put("time", System.currentTimeMillis())
+                                        },
+                                        message = "Syncing failed code: $it",
+                                    )
+                                )
+                                dao.updateRecords(listOf(record.copy(status = RecordStatus.SYNC_FAILED)))
+                            } else {
+                                Records.logEvent(
+                                    EventLog(
+                                        params = JSONObject().also {
+                                            it.put("documentId", documentId)
+                                            it.put("time", System.currentTimeMillis())
+                                        },
+                                        message = "Syncing dirty record success: $documentId",
+                                    )
+                                )
+                                dao.updateRecords(
+                                    listOf(
+                                        record.copy(
+                                            status = RecordStatus.SYNC_SUCCESS,
+                                            isDirty = false
+                                        )
+                                    )
+                                )
+                            }
+                        }
+                    } else {
+                        uploadRecord(id = record.id)
+                    }
+                }
+            }
+        }
+
+    private suspend fun syncDeletedRecordsToServer(deletedRecords: List<RecordEntity>) =
+        supervisorScope {
+            Records.logEvent(
+                EventLog(
+                    params = JSONObject().also {
+                        it.put("deleted_records_count", deletedRecords.size)
+                        it.put("time", System.currentTimeMillis())
+                    },
+                    message = "Syncing deleted records to server: $deletedRecords",
+                )
+            )
+            deletedRecords.forEach { record ->
+                launch {
+                    record.documentId?.let {
+                        val result = myFileRepository.deleteDocument(it, record.filterId)
+                        if (result in (200..299)) {
+                            dao.deleteRecord(record)
+                            Records.logEvent(
+                                EventLog(
+                                    params = JSONObject().also {
+                                        it.put("documentId", it)
+                                        it.put("time", System.currentTimeMillis())
+                                    },
+                                    message = "Syncing deleted record success: $it",
+                                )
+                            )
+                        } else {
+                            Records.logEvent(
+                                EventLog(
+                                    params = JSONObject().also {
+                                        it.put("documentId", it)
+                                        it.put("time", System.currentTimeMillis())
+                                    },
+                                    message = "Syncing failed code: $result",
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+    override suspend fun createRecords(records: List<RecordEntity>) {
+        records.forEach {
+            dao.insertRecordWithFiles(it, emptyList())
+        }
+    }
+
+    override suspend fun createRecord(
+        files: List<File>,
+        ownerId: String,
+        filterId: String?,
+        documentType: String,
+        documentDate: Long?,
+        tags: List<String>
+    ): String? = supervisorScope {
+        if (files.isEmpty()) {
+            Records.logEvent(
+                EventLog(
+                    message = "No files to create records",
+                )
+            )
+            return@supervisorScope null
+        }
+
+        val time = System.currentTimeMillis() / 1000
+        val id = UUID.randomUUID().toString()
+        val thumbnail = if (files.first().extension.lowercase() in listOf(
+                "jpg",
+                "jpeg",
+                "png",
+                "webp"
+            )
+        ) {
+            files.first().path
+        } else {
+            fileStorageManager.generateThumbnail(
+                filePath = files.first().path
+            )
+        }
+        val record = RecordEntity(
+            id = id,
+            ownerId = ownerId,
+            filterId = filterId,
+            thumbnail = thumbnail,
+            documentType = documentType,
+            createdAt = time,
+            updatedAt = time,
+            documentDate = documentDate ?: time,
+            documentHash = files.first().md5(),
+            isDirty = true,
+            status = RecordStatus.WAITING_TO_UPLOAD
+        )
+        val files = files.map { file ->
+            val compressedFile =
+                if (file.extension.lowercase() == "pdf") file else Compressor.compress(
+                    context,
+                    file
+                )
+            val path = compressedFile.path
+            val type = compressedFile.extension
+            RecordFile(
+                localId = record.id,
+                filePath = path,
+                fileType = type
+            )
+        }
+        dao.insertRecordWithFiles(
+            record = record,
+            files = files
+        )
+
+        return@supervisorScope id
+    }
+
+    override fun readRecords(
+        ownerId: String,
+        filterIds: List<String>?,
+        includeDeleted: Boolean,
+        documentType: String?,
+        sortOrder: SortOrder,
+    ): Flow<List<RecordModel>> = flow {
+        Records.logEvent(
+            EventLog(
+                params = JSONObject().also {
+                    it.put("ownerId", ownerId)
+                    it.put("filterIds", filterIds)
+                    it.put("includeDeleted", includeDeleted)
+                    it.put("documentType", documentType)
+                    it.put("sortOrder", sortOrder)
+                },
+                message = "ReadRecords with ownerId: $ownerId, filterIds: $filterIds, includeDeleted: $includeDeleted, documentType: $documentType, sortOrder: $sortOrder"
+            )
+        )
+        try {
+            val selection = StringBuilder()
+            val selectionArgs = mutableListOf<String>()
+
+            if (!includeDeleted) {
+                selection.append("IS_ARCHIVED = 0 AND ")
+            }
+
+            selection.append("OWNER_ID = ? ")
+            selectionArgs.add(ownerId)
+
+            if (!documentType.isNullOrEmpty()) {
+                selection.append("AND DOCUMENT_TYPE = ? ")
+                selectionArgs.add(documentType)
+            }
+
+            if (!filterIds.isNullOrEmpty()) {
+                val placeholders = filterIds.joinToString(",") { "?" }
+                selection.append("AND (FILTER_ID IN ($placeholders) OR FILTER_ID IS NULL) ")
+                selectionArgs.addAll(filterIds)
+            } else {
+                selection.append("AND FILTER_ID IS NULL ")
+            }
+
+            val query = SupportSQLiteQueryBuilder
+                .builder("EKA_RECORDS_TABLE")
+                .selection(selection.toString().trim(), selectionArgs.toTypedArray())
+                .orderBy("${sortOrder.value} ${sortOrder.order}")
+                .create()
+
+            Records.logEvent(
+                EventLog(
+                    message = "Query: ${query.sql}",
+                )
+            )
+            Records.logEvent(
+                EventLog(
+                    message = "Params: ${selectionArgs.joinToString(",")}"
+                )
+            )
+
+            val dataFlow = dao.readRecords(query).map { records ->
+                records.map {
+                    RecordModel(
+                        id = it.id,
+                        thumbnail = it.thumbnail ?: dao.getRecordFile(it.id)
+                            ?.firstOrNull()?.filePath,
+                        status = it.status,
+                        createdAt = it.createdAt,
+                        updatedAt = it.updatedAt,
+                        documentType = it.documentType,
+                        documentDate = it.documentDate,
+                        isSmart = it.isSmart,
+                        smartReport = it.smartReport
+                    )
+                }
+            }
+            emitAll(dataFlow)
+        } catch (e: Exception) {
+            Records.logEvent(
+                EventLog(
+                    params = JSONObject().also {
+                        it.put("ownerId", ownerId)
+                        it.put("filterIds", filterIds)
+                        it.put("includeDeleted", includeDeleted)
+                        it.put("documentType", documentType)
+                        it.put("sortOrder", sortOrder)
+                    },
+                    message = "Error reading records: ${e.localizedMessage}",
+                )
+            )
+            emit(emptyList())
+        }
+    }
+
+    override suspend fun getRecordById(id: String) = dao.getRecordById(id = id)
+
+    override suspend fun getRecordByDocumentId(id: String) = dao.getRecordByDocumentId(id = id)
+
+    override suspend fun getRecordDetails(id: String): RecordModel? {
+        val record = getRecordById(id)
+        if (record == null) {
+            Records.logEvent(
+                EventLog(
+                    params = JSONObject().also {
+                        it.put("recordId", id)
+                        it.put("time", System.currentTimeMillis())
+                        it.put("documentId", null)
+                    },
+                    message = "Error fetching record details for: $id",
+                )
+            )
+            return null
+        }
+        val documentId = record.documentId
+
+        val files = getRecordFile(record.id)
+        if (files?.isNotEmpty() == true && !record.isSmart) {
+            Records.logEvent(
+                EventLog(
+                    params = JSONObject().also {
+                        it.put("recordId", id)
+                        it.put("time", System.currentTimeMillis())
+                        it.put("documentId", documentId)
+                    },
+                    message = "Found local files for record: $id",
+                )
+            )
+            return RecordModel(
+                id = record.id,
+                thumbnail = record.thumbnail,
+                createdAt = record.createdAt,
+                updatedAt = record.updatedAt,
+                documentDate = record.documentDate,
+                documentType = record.documentType,
+                isSmart = record.isSmart,
+                smartReport = record.smartReport,
+                status = record.status,
+                files = files.map { file ->
+                    RecordModel.RecordFile(
+                        id = file.id,
+                        filePath = file.filePath,
+                        fileType = file.fileType
+                    )
+                }
+            )
+        }
+
+        if (record.smartReport?.isNotEmpty() == true) {
+            Records.logEvent(
+                EventLog(
+                    params = JSONObject().also {
+                        it.put("recordId", id)
+                        it.put("time", System.currentTimeMillis())
+                        it.put("documentId", documentId)
+                    },
+                    message = "Found smart report for record: $id",
+                )
+            )
+            return RecordModel(
+                id = record.id,
+                thumbnail = record.thumbnail,
+                createdAt = record.createdAt,
+                updatedAt = record.updatedAt,
+                documentDate = record.documentDate,
+                documentType = record.documentType,
+                isSmart = record.isSmart,
+                smartReport = record.smartReport,
+                status = record.status,
+                files = files?.map { file ->
+                    RecordModel.RecordFile(
+                        id = file.id,
+                        filePath = file.filePath,
+                        fileType = file.fileType
+                    )
+                } ?: emptyList()
+            )
+        }
+
+        if (documentId == null) {
+            Records.logEvent(
+                EventLog(
+                    params = JSONObject().also {
+                        it.put("recordId", id)
+                        it.put("time", System.currentTimeMillis())
+                        it.put("documentId", documentId)
+                    },
+                    message = "Found smart report for record: $id",
+                )
+            )
+            return null
+        }
+
+        val response = myFileRepository.getDocument(
+            documentId = documentId,
+            filterId = record.filterId
+        )
+        if (response == null) {
+            Records.logEvent(
+                EventLog(
+                    params = JSONObject().also {
+                        it.put("recordId", id)
+                        it.put("time", System.currentTimeMillis())
+                        it.put("documentId", documentId)
+                    },
+                    message = "Error fetching document details for: $documentId",
+                )
+            )
+            return null
+        }
+
+        val smartReportField = response.smartReport?.let {
+            Gson().toJson(it)
+        }
+        val updatedRecord = record.copy(
+            smartReport = smartReportField
+        )
+        updateRecords(listOf(updatedRecord))
+        response.files.forEach { file ->
+            val fileType = response.files.firstOrNull()?.fileType ?: ""
+            val filePath = RecordsUtility.downloadFile(
+                file.assetUrl,
+                context = context.applicationContext,
+                type = file.fileType
+            )
+            Records.logEvent(
+                EventLog(
+                    params = JSONObject().also {
+                        it.put("recordId", id)
+                        it.put("time", System.currentTimeMillis())
+                        it.put("documentId", documentId)
+                    },
+                    message = "Downloaded file: $filePath for record: $documentId",
+                )
+            )
+            insertRecordFile(
+                RecordFile(
+                    localId = record.id,
+                    filePath = filePath,
+                    fileType = fileType
+                )
+            )
+            Records.logEvent(
+                EventLog(
+                    params = JSONObject().also {
+                        it.put("recordId", id)
+                        it.put("time", System.currentTimeMillis())
+                        it.put("documentId", documentId)
+                    },
+                    message = "Inserted file: $filePath for record: $documentId",
+                )
+            )
+        }
+        return RecordModel(
+            id = record.id,
+            thumbnail = record.thumbnail,
+            createdAt = record.createdAt,
+            updatedAt = record.updatedAt,
+            documentDate = record.documentDate,
+            documentType = record.documentType,
+            isSmart = record.isSmart,
+            smartReport = smartReportField,
+            files = getRecordFile(record.id)?.map { file ->
+                RecordModel.RecordFile(
+                    id = file.id,
+                    filePath = file.filePath,
+                    fileType = file.fileType
+                )
+            } ?: emptyList()
+        )
+    }
+
+    override fun getRecordTypeCounts(
+        ownerId: String,
+        filterIds: List<String>?
+    ): Flow<List<DocumentTypeCount>> = flow {
+        Records.logEvent(
+            EventLog(
+                params = JSONObject().also {
+                    it.put("ownerId", ownerId)
+                    it.put("filterIds", filterIds)
+                },
+                message = "GetRecordTypeCounts with ownerId: $ownerId, filterIds: $filterIds"
+            )
+        )
+        try {
+            val selection = StringBuilder()
+            val selectionArgs = mutableListOf<String>()
+
+            selection.append("IS_ARCHIVED = 0 AND ")
+            selection.append("OWNER_ID = ? ")
+            selectionArgs.add(ownerId)
+
+            if (!filterIds.isNullOrEmpty()) {
+                val placeholders = filterIds.joinToString(",") { "?" }
+                selection.append("AND (FILTER_ID IN ($placeholders) OR FILTER_ID IS NULL) ")
+                selectionArgs.addAll(filterIds)
+            } else {
+                selection.append("AND FILTER_ID IS NULL ")
+            }
+
+            val query = SupportSQLiteQueryBuilder
+                .builder("EKA_RECORDS_TABLE")
+                .columns(arrayOf("document_type as documentType", "COUNT(local_id) as count"))
+                .selection(selection.toString().trim(), selectionArgs.toTypedArray())
+                .groupBy("document_type")
+                .create()
+
+            Records.logEvent(
+                EventLog(
+                    params = JSONObject().also {
+                        it.put("ownerId", ownerId)
+                        it.put("filterIds", filterIds)
+                    },
+                    message = "Query: ${query.sql}"
+                )
+            )
+            Records.logEvent(
+                EventLog(
+                    params = JSONObject().also {
+                        it.put("ownerId", ownerId)
+                        it.put("filterIds", filterIds)
+                    },
+                    message = "Params: ${selectionArgs.joinToString(",")}"
+                )
+            )
+
+            emitAll(dao.getDocumentTypeCounts(query))
+        } catch (e: Exception) {
+            Records.logEvent(
+                EventLog(
+                    params = JSONObject().also {
+                        it.put("ownerId", ownerId)
+                        it.put("filterIds", filterIds)
+                    },
+                    message = "Error getting record type counts: ${e.localizedMessage}",
+                )
+            )
+            emit(emptyList())
+        }
+    }
+
+    override suspend fun updateRecords(records: List<RecordEntity>) {
+        dao.updateRecords(records)
+    }
+
+    override suspend fun updateRecord(id: String, documentDate: Long?, documentType: String?): String? {
+        Records.logEvent(
+            EventLog(
+                params = JSONObject().also {
+                    it.put("id", id)
+                    it.put("documentDate", documentDate)
+                    it.put("documentType", documentType)
+                },
+                message = "UpdateRecord with id: $id, documentDate: $documentDate, documentType: $documentType"
+            )
+        )
+        if (documentDate == null && documentType == null) {
+            return null
+        }
+
+        val record = getRecordById(id) ?: return null
+        val updatedRecord = record.copy(
+            documentDate = documentDate ?: record.documentDate,
+            documentType = documentType ?: record.documentType,
+            isDirty = true
+        )
+        dao.updateRecords(listOf(updatedRecord))
+        Records.logEvent(
+            EventLog(
+                params = JSONObject().also {
+                    it.put("id", id)
+                    it.put("documentDate", documentDate)
+                    it.put("documentType", documentType)
+                },
+                message = "Update record: $updatedRecord"
+            )
+        )
+        return record.id
+    }
+
+    override suspend fun deleteRecords(ids: List<String>) {
+        ids.forEach { id ->
+            val record = getRecordById(id)
+            Records.logEvent(
+                EventLog(
+                    params = JSONObject().also {
+                        it.put("id", id)
+                        it.put("time", System.currentTimeMillis())
+                    },
+                    message = "DeleteRecord with id: $id"
+                )
+            )
+            record?.let {
+                dao.updateRecords(
+                    listOf(it.copy(isDeleted = true))
+                )
+            }
+        }
+    }
+
+    override suspend fun getLatestRecordUpdatedAt(ownerId: String, filterId: String?): Long? {
+        return dao.getLatestRecordUpdatedAt(ownerId = ownerId, filterId = filterId)
+    }
+
+    override suspend fun insertRecordFile(file: RecordFile): Long {
+        return dao.insertRecordFile(recordFile = file)
+    }
+
+    override suspend fun getRecordFile(localId: String): List<RecordFile>? {
+        return dao.getRecordFile(localId = localId)
+    }
+
+    private suspend fun uploadRecord(id: String) = supervisorScope {
+        val record = getRecordById(id)
+
+        if (record == null) {
+            Records.logEvent(
+                EventLog(
+                    params = JSONObject().also {
+                        it.put("recordId", id)
+                        it.put("time", System.currentTimeMillis())
+                    },
+                    message = "Upload error: No document found for documentId: $id"
+                )
+            )
+            return@supervisorScope
+        }
+
+        if (isNetworkAvailable(context = context)) {
+            dao.updateRecords(listOf(record.copy(status = RecordStatus.SYNCING)))
+        } else {
+            dao.updateRecords(listOf(record.copy(status = RecordStatus.WAITING_FOR_NETWORK)))
+            return@supervisorScope
+        }
+
+        val files = dao.getRecordFile(id)?.map { File(it.filePath) }
+        if (files.isNullOrEmpty()) {
+            Records.logEvent(
+                EventLog(
+                    params = JSONObject().also {
+                        it.put("recordId", id)
+                        it.put("time", System.currentTimeMillis())
+                    },
+                    message = "Upload error: No file for the given documentId: $id"
+                )
+            )
+            return@supervisorScope
+        }
+
+        val fileContentList =
+            files.map { FileType(contentType = it.getMimeType() ?: "", fileSize = it.length()) }
+        val uploadInitResponse =
+            awsRepository.fileUploadInit(
+                files = fileContentList,
+                patientOid = record.filterId,
+                isMultiFile = files.size > 1,
+                tags = emptyList(), // TODO add tags from the user tags table
+                documentType = record.documentType,
+                documentDate = record.documentDate,
+            )
+        if (uploadInitResponse?.error == true) {
+            Records.logEvent(
+                EventLog(
+                    params = JSONObject().also {
+                        it.put("recordId", id)
+                        it.put("time", System.currentTimeMillis())
+                    },
+                    message = "Upload initialization error: ${uploadInitResponse.message}"
+                )
+            )
+            dao.updateRecords(listOf(record.copy(status = RecordStatus.SYNC_FAILED)))
+            return@supervisorScope
+        }
+        val batchResponse = uploadInitResponse?.batchResponse?.firstOrNull()
+        if (batchResponse == null) {
+            Records.logEvent(
+                EventLog(
+                    params = JSONObject().also {
+                        it.put("recordId", id)
+                        it.put("time", System.currentTimeMillis())
+                    },
+                    message = "Batch response is null"
+                )
+            )
+            dao.updateRecords(listOf(record.copy(status = RecordStatus.SYNC_FAILED)))
+            return@supervisorScope
+        }
+        val uploadResponse =
+            awsRepository.uploadFile(batch = batchResponse, fileList = files)
+        if (uploadResponse?.error == true) {
+            Records.logEvent(
+                EventLog(
+                    params = JSONObject().also {
+                        it.put("recordId", id)
+                        it.put("time", System.currentTimeMillis())
+                    },
+                    message = "Upload error: ${uploadResponse.message}"
+                )
+            )
+            dao.updateRecords(listOf(record.copy(status = RecordStatus.SYNC_FAILED)))
+            return@supervisorScope
+        }
+        if (uploadResponse == null) {
+            Records.logEvent(
+                EventLog(
+                    params = JSONObject().also {
+                        it.put("recordId", id)
+                        it.put("time", System.currentTimeMillis())
+                    },
+                    message = "Upload response is null"
+                )
+            )
+            dao.updateRecords(listOf(record.copy(status = RecordStatus.SYNC_FAILED)))
+            return@supervisorScope
+        }
+        dao.updateRecords(
+            listOf(
+                record.copy(
+                    status = RecordStatus.SYNC_SUCCESS,
+                    documentId = uploadResponse.documentId,
+                    isDirty = false
+                )
+            )
+        )
+    }
+}

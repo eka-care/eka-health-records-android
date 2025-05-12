@@ -10,7 +10,4 @@ buildscript {
             dirs("libs")
         }
     }
-    dependencies {
-        classpath("com.google.protobuf:protobuf-gradle-plugin:0.9.3")
-    }
 }

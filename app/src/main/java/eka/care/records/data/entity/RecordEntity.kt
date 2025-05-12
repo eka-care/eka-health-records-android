@@ -1,0 +1,35 @@
+package eka.care.records.data.entity
+
+import androidx.room.ColumnInfo
+import androidx.room.Entity
+import androidx.room.Index
+import androidx.room.PrimaryKey
+import eka.care.records.client.model.RecordStatus
+
+@Entity(
+    tableName = "eka_records_table",
+    indices = [
+        Index(value = ["owner_id"]),
+        Index(value = ["document_type"]),
+        Index(value = ["is_dirty"]),
+        Index(value = ["is_archived"])
+    ]
+)
+data class RecordEntity(
+    @ColumnInfo(name = "local_id") @PrimaryKey val id: String,
+    @ColumnInfo(name = "document_id") val documentId: String? = null,
+    @ColumnInfo(name = "status") val status: RecordStatus = RecordStatus.NONE,
+    @ColumnInfo(name = "owner_id") var ownerId: String,
+    @ColumnInfo(name = "filter_id") var filterId: String? = null,
+    @ColumnInfo(name = "thumbnail") var thumbnail: String? = null,
+    @ColumnInfo(name = "created_at") var createdAt: Long,
+    @ColumnInfo(name = "updated_at") var updatedAt: Long,
+    @ColumnInfo(name = "document_date") var documentDate: Long? = null,
+    @ColumnInfo(name = "document_type") var documentType: String = "ot",
+    @ColumnInfo(name = "document_hash") var documentHash: String? = null,
+    @ColumnInfo(name = "source") var source: String? = null,
+    @ColumnInfo(name = "is_dirty") var isDirty: Boolean = false,
+    @ColumnInfo(name = "is_archived") var isDeleted: Boolean = false,
+    @ColumnInfo(name = "is_smart") var isSmart: Boolean = false,
+    @ColumnInfo(name = "smart_report_field") var smartReport: String? = null,
+)
