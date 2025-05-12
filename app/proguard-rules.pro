@@ -20,3 +20,5 @@
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
 -keep class vault.records.** { *; }
+
+-dontwarn java.lang.invoke.StringConcatFactory
