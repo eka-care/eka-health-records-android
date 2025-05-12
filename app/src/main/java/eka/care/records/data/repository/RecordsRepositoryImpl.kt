@@ -4,16 +4,15 @@ import android.content.Context
 import androidx.sqlite.db.SupportSQLiteQueryBuilder
 import com.google.gson.Gson
 import eka.care.records.client.model.DocumentTypeCount
-import eka.care.records.client.model.EventCode
 import eka.care.records.client.model.EventLog
 import eka.care.records.client.model.RecordModel
 import eka.care.records.client.model.RecordStatus
 import eka.care.records.client.model.SortOrder
 import eka.care.records.client.repository.RecordsRepository
+import eka.care.records.client.utils.Records
 import eka.care.records.client.utils.RecordsUtility
 import eka.care.records.client.utils.RecordsUtility.Companion.getMimeType
 import eka.care.records.client.utils.RecordsUtility.Companion.md5
-import eka.care.records.data.contract.LogInterceptor
 import eka.care.records.data.core.FileStorageManagerImpl
 import eka.care.records.data.db.RecordsDatabase
 import eka.care.records.data.entity.RecordEntity
@@ -31,13 +30,11 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
+import org.json.JSONObject
 import java.io.File
 import java.util.UUID
 
-internal class RecordsRepositoryImpl(
-    private val context: Context,
-    private val logger: LogInterceptor? = null
-) : RecordsRepository {
+internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepository {
     private var dao = RecordsDatabase.getInstance(context).recordsDao()
     private val myFileRepository = MyFileRepository()
     private val fileStorageManager = FileStorageManagerImpl(context)
@@ -58,9 +55,12 @@ internal class RecordsRepositoryImpl(
 
     private suspend fun syncUpdatedRecordsToServer(dirtyRecords: List<RecordEntity>) =
         supervisorScope {
-            logger?.logEvent(
-                EventLog.Info(
-                    code = EventCode.Sync,
+            Records.logEvent(
+                EventLog(
+                    params = JSONObject().also {
+                        it.put("dirty_records_count", dirtyRecords.size)
+                        it.put("time", System.currentTimeMillis())
+                    },
                     message = "Syncing dirty records to server: $dirtyRecords",
                 )
             )
@@ -85,10 +85,13 @@ internal class RecordsRepositoryImpl(
                         )
                         result?.let {
                             if (it !in 200..299) {
-                                logger?.logEvent(
-                                    EventLog.Error(
-                                        code = EventCode.Error(it),
-                                        message = "Syncing dirty records to server: $dirtyRecords",
+                                Records.logEvent(
+                                    EventLog(
+                                        params = JSONObject().also {
+                                            it.put("documentId", documentId)
+                                            it.put("time", System.currentTimeMillis())
+                                        },
+                                        message = "Syncing failed code: $it",
                                     )
                                 )
                                 dao.updateRecords(listOf(record.copy(status = RecordStatus.SYNC_FAILED)))
@@ -112,9 +115,12 @@ internal class RecordsRepositoryImpl(
 
     private suspend fun syncDeletedRecordsToServer(deletedRecords: List<RecordEntity>) =
         supervisorScope {
-            logger?.logEvent(
-                EventLog.Info(
-                    code = EventCode.Sync,
+            Records.logEvent(
+                EventLog(
+                    params = JSONObject().also {
+                        it.put("deleted_records_count", deletedRecords.size)
+                        it.put("time", System.currentTimeMillis())
+                    },
                     message = "Syncing deleted records to server: $deletedRecords",
                 )
             )
@@ -124,6 +130,16 @@ internal class RecordsRepositoryImpl(
                         val result = myFileRepository.deleteDocument(it, record.filterId)
                         if (result in (200..299)) {
                             dao.deleteRecord(record)
+                        } else {
+                            Records.logEvent(
+                                EventLog(
+                                    params = JSONObject().also {
+                                        it.put("documentId", it)
+                                        it.put("time", System.currentTimeMillis())
+                                    },
+                                    message = "Syncing failed code: $result",
+                                )
+                            )
                         }
                     }
                 }
@@ -145,9 +161,8 @@ internal class RecordsRepositoryImpl(
         tags: List<String>
     ): String? = supervisorScope {
         if (files.isEmpty()) {
-            logger?.logEvent(
-                EventLog.Error(
-                    code = EventCode.Error(),
+            Records.logEvent(
+                EventLog(
                     message = "No files to create records",
                 )
             )
@@ -211,9 +226,15 @@ internal class RecordsRepositoryImpl(
         documentType: String?,
         sortOrder: SortOrder,
     ): Flow<List<RecordModel>> = flow {
-        logger?.logEvent(
-            EventLog.Info(
-                code = EventCode.Sync,
+        Records.logEvent(
+            EventLog(
+                params = JSONObject().also {
+                    it.put("ownerId", ownerId)
+                    it.put("filterIds", filterIds)
+                    it.put("includeDeleted", includeDeleted)
+                    it.put("documentType", documentType)
+                    it.put("sortOrder", sortOrder)
+                },
                 message = "ReadRecords with ownerId: $ownerId, filterIds: $filterIds, includeDeleted: $includeDeleted, documentType: $documentType, sortOrder: $sortOrder"
             )
         )
@@ -247,13 +268,13 @@ internal class RecordsRepositoryImpl(
                 .orderBy("${sortOrder.value} ${sortOrder.order}")
                 .create()
 
-            logger?.logEvent(
-                EventLog.Info(
+            Records.logEvent(
+                EventLog(
                     message = "Query: ${query.sql}",
                 )
             )
-            logger?.logEvent(
-                EventLog.Info(
+            Records.logEvent(
+                EventLog(
                     message = "Params: ${selectionArgs.joinToString(",")}"
                 )
             )
@@ -276,9 +297,15 @@ internal class RecordsRepositoryImpl(
             }
             emitAll(dataFlow)
         } catch (e: Exception) {
-            logger?.logEvent(
-                EventLog.Error(
-                    code = EventCode.Error(),
+            Records.logEvent(
+                EventLog(
+                    params = JSONObject().also {
+                        it.put("ownerId", ownerId)
+                        it.put("filterIds", filterIds)
+                        it.put("includeDeleted", includeDeleted)
+                        it.put("documentType", documentType)
+                        it.put("sortOrder", sortOrder)
+                    },
                     message = "Error reading records: ${e.localizedMessage}",
                 )
             )
@@ -293,9 +320,13 @@ internal class RecordsRepositoryImpl(
     override suspend fun getRecordDetails(id: String): RecordModel? {
         val record = getRecordById(id)
         if (record == null) {
-            logger?.logEvent(
-                EventLog.Error(
-                    code = EventCode.Error(),
+            Records.logEvent(
+                EventLog(
+                    params = JSONObject().also {
+                        it.put("recordId", id)
+                        it.put("time", System.currentTimeMillis())
+                        it.put("documentId", null)
+                    },
                     message = "Error fetching record details for: $id",
                 )
             )
@@ -305,8 +336,13 @@ internal class RecordsRepositoryImpl(
 
         val files = getRecordFile(record.id)
         if (files?.isNotEmpty() == true && !record.isSmart) {
-            logger?.logEvent(
-                EventLog.Info(
+            Records.logEvent(
+                EventLog(
+                    params = JSONObject().also {
+                        it.put("recordId", id)
+                        it.put("time", System.currentTimeMillis())
+                        it.put("documentId", documentId)
+                    },
                     message = "Found local files for record: $id",
                 )
             )
@@ -331,8 +367,13 @@ internal class RecordsRepositoryImpl(
         }
 
         if (record.smartReport?.isNotEmpty() == true) {
-            logger?.logEvent(
-                EventLog.Info(
+            Records.logEvent(
+                EventLog(
+                    params = JSONObject().also {
+                        it.put("recordId", id)
+                        it.put("time", System.currentTimeMillis())
+                        it.put("documentId", documentId)
+                    },
                     message = "Found smart report for record: $id",
                 )
             )
@@ -357,9 +398,13 @@ internal class RecordsRepositoryImpl(
         }
 
         if (documentId == null) {
-            logger?.logEvent(
-                EventLog.Error(
-                    code = EventCode.Error(),
+            Records.logEvent(
+                EventLog(
+                    params = JSONObject().also {
+                        it.put("recordId", id)
+                        it.put("time", System.currentTimeMillis())
+                        it.put("documentId", documentId)
+                    },
                     message = "Found smart report for record: $id",
                 )
             )
@@ -371,9 +416,13 @@ internal class RecordsRepositoryImpl(
             filterId = record.filterId
         )
         if (response == null) {
-            logger?.logEvent(
-                EventLog.Error(
-                    code = EventCode.Error(),
+            Records.logEvent(
+                EventLog(
+                    params = JSONObject().also {
+                        it.put("recordId", id)
+                        it.put("time", System.currentTimeMillis())
+                        it.put("documentId", documentId)
+                    },
                     message = "Error fetching document details for: $documentId",
                 )
             )
@@ -394,8 +443,13 @@ internal class RecordsRepositoryImpl(
                 context = context.applicationContext,
                 type = file.fileType
             )
-            logger?.logEvent(
-                EventLog.Info(
+            Records.logEvent(
+                EventLog(
+                    params = JSONObject().also {
+                        it.put("recordId", id)
+                        it.put("time", System.currentTimeMillis())
+                        it.put("documentId", documentId)
+                    },
                     message = "Downloaded file: $filePath for record: $documentId",
                 )
             )
@@ -406,8 +460,13 @@ internal class RecordsRepositoryImpl(
                     fileType = fileType
                 )
             )
-            logger?.logEvent(
-                EventLog.Info(
+            Records.logEvent(
+                EventLog(
+                    params = JSONObject().also {
+                        it.put("recordId", id)
+                        it.put("time", System.currentTimeMillis())
+                        it.put("documentId", documentId)
+                    },
                     message = "Inserted file: $filePath for record: $documentId",
                 )
             )
@@ -435,8 +494,12 @@ internal class RecordsRepositoryImpl(
         ownerId: String,
         filterIds: List<String>?
     ): Flow<List<DocumentTypeCount>> = flow {
-        logger?.logEvent(
-            EventLog.Info(
+        Records.logEvent(
+            EventLog(
+                params = JSONObject().also {
+                    it.put("ownerId", ownerId)
+                    it.put("filterIds", filterIds)
+                },
                 message = "GetRecordTypeCounts with ownerId: $ownerId, filterIds: $filterIds"
             )
         )
@@ -463,22 +526,33 @@ internal class RecordsRepositoryImpl(
                 .groupBy("document_type")
                 .create()
 
-            logger?.logEvent(
-                EventLog.Info(
+            Records.logEvent(
+                EventLog(
+                    params = JSONObject().also {
+                        it.put("ownerId", ownerId)
+                        it.put("filterIds", filterIds)
+                    },
                     message = "Query: ${query.sql}"
                 )
             )
-            logger?.logEvent(
-                EventLog.Info(
+            Records.logEvent(
+                EventLog(
+                    params = JSONObject().also {
+                        it.put("ownerId", ownerId)
+                        it.put("filterIds", filterIds)
+                    },
                     message = "Params: ${selectionArgs.joinToString(",")}"
                 )
             )
 
             emitAll(dao.getDocumentTypeCounts(query))
         } catch (e: Exception) {
-            logger?.logEvent(
-                EventLog.Error(
-                    code = EventCode.Error(),
+            Records.logEvent(
+                EventLog(
+                    params = JSONObject().also {
+                        it.put("ownerId", ownerId)
+                        it.put("filterIds", filterIds)
+                    },
                     message = "Error getting record type counts: ${e.localizedMessage}",
                 )
             )
@@ -491,8 +565,13 @@ internal class RecordsRepositoryImpl(
     }
 
     override suspend fun updateRecord(id: String, documentDate: Long?, documentType: String?): String? {
-        logger?.logEvent(
-            EventLog.Info(
+        Records.logEvent(
+            EventLog(
+                params = JSONObject().also {
+                    it.put("id", id)
+                    it.put("documentDate", documentDate)
+                    it.put("documentType", documentType)
+                },
                 message = "UpdateRecord with id: $id, documentDate: $documentDate, documentType: $documentType"
             )
         )
@@ -507,8 +586,13 @@ internal class RecordsRepositoryImpl(
             isDirty = true
         )
         dao.updateRecords(listOf(updatedRecord))
-        logger?.logEvent(
-            EventLog.Info(
+        Records.logEvent(
+            EventLog(
+                params = JSONObject().also {
+                    it.put("id", id)
+                    it.put("documentDate", documentDate)
+                    it.put("documentType", documentType)
+                },
                 message = "Update record: $updatedRecord"
             )
         )
@@ -518,8 +602,12 @@ internal class RecordsRepositoryImpl(
     override suspend fun deleteRecords(ids: List<String>) {
         ids.forEach { id ->
             val record = getRecordById(id)
-            logger?.logEvent(
-                EventLog.Info(
+            Records.logEvent(
+                EventLog(
+                    params = JSONObject().also {
+                        it.put("id", id)
+                        it.put("time", System.currentTimeMillis())
+                    },
                     message = "DeleteRecord with id: $id"
                 )
             )
@@ -547,9 +635,12 @@ internal class RecordsRepositoryImpl(
         val record = getRecordById(id)
 
         if (record == null) {
-            logger?.logEvent(
-                EventLog.Error(
-                    code = EventCode.Error(),
+            Records.logEvent(
+                EventLog(
+                    params = JSONObject().also {
+                        it.put("recordId", id)
+                        it.put("time", System.currentTimeMillis())
+                    },
                     message = "Upload error: No document found for documentId: $id"
                 )
             )
@@ -565,8 +656,12 @@ internal class RecordsRepositoryImpl(
 
         val files = dao.getRecordFile(id)?.map { File(it.filePath) }
         if (files.isNullOrEmpty()) {
-            logger?.logEvent(
-                EventLog.Info(
+            Records.logEvent(
+                EventLog(
+                    params = JSONObject().also {
+                        it.put("recordId", id)
+                        it.put("time", System.currentTimeMillis())
+                    },
                     message = "Upload error: No file for the given documentId: $id"
                 )
             )
@@ -585,9 +680,12 @@ internal class RecordsRepositoryImpl(
                 documentDate = record.documentDate,
             )
         if (uploadInitResponse?.error == true) {
-            logger?.logEvent(
-                EventLog.Error(
-                    code = EventCode.Error(),
+            Records.logEvent(
+                EventLog(
+                    params = JSONObject().also {
+                        it.put("recordId", id)
+                        it.put("time", System.currentTimeMillis())
+                    },
                     message = "Upload initialization error: ${uploadInitResponse.message}"
                 )
             )
@@ -596,9 +694,12 @@ internal class RecordsRepositoryImpl(
         }
         val batchResponse = uploadInitResponse?.batchResponse?.firstOrNull()
         if (batchResponse == null) {
-            logger?.logEvent(
-                EventLog.Error(
-                    code = EventCode.Error(),
+            Records.logEvent(
+                EventLog(
+                    params = JSONObject().also {
+                        it.put("recordId", id)
+                        it.put("time", System.currentTimeMillis())
+                    },
                     message = "Batch response is null"
                 )
             )
@@ -608,9 +709,12 @@ internal class RecordsRepositoryImpl(
         val uploadResponse =
             awsRepository.uploadFile(batch = batchResponse, fileList = files)
         if (uploadResponse?.error == true) {
-            logger?.logEvent(
-                EventLog.Error(
-                    code = EventCode.Error(),
+            Records.logEvent(
+                EventLog(
+                    params = JSONObject().also {
+                        it.put("recordId", id)
+                        it.put("time", System.currentTimeMillis())
+                    },
                     message = "Upload error: ${uploadResponse.message}"
                 )
             )
@@ -618,9 +722,12 @@ internal class RecordsRepositoryImpl(
             return@supervisorScope
         }
         if (uploadResponse == null) {
-            logger?.logEvent(
-                EventLog.Error(
-                    code = EventCode.Error(),
+            Records.logEvent(
+                EventLog(
+                    params = JSONObject().also {
+                        it.put("recordId", id)
+                        it.put("time", System.currentTimeMillis())
+                    },
                     message = "Upload response is null"
                 )
             )

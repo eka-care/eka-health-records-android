@@ -7,20 +7,19 @@ import android.graphics.Color
 import android.graphics.pdf.PdfRenderer
 import android.os.ParcelFileDescriptor
 import androidx.core.graphics.createBitmap
-import eka.care.records.client.model.EventCode
 import eka.care.records.client.model.EventLog
 import eka.care.records.client.model.MedicalRecordException
+import eka.care.records.client.utils.Records
 import eka.care.records.data.contract.FileStorageManager
-import eka.care.records.data.contract.LogInterceptor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
 import java.util.UUID
 
 class FileStorageManagerImpl(
-    private val context: Context,
-    private val logInterceptor: LogInterceptor? = null
+    private val context: Context
 ) : FileStorageManager {
 
     private val fileDir by lazy {
@@ -42,9 +41,12 @@ class FileStorageManagerImpl(
 
             destination.absolutePath
         } catch (e: Exception) {
-            logInterceptor?.logEvent(
-                EventLog.Error(
-                    code = EventCode.Error(),
+            Records.logEvent(
+                EventLog(
+                    params = JSONObject().also {
+                        it.put("fileName", file.name)
+                        it.put("time", System.currentTimeMillis())
+                    },
                     message = "Error saving file: ${e.message}"
                 )
             )
@@ -61,9 +63,12 @@ class FileStorageManagerImpl(
                 false
             }
         } catch (e: Exception) {
-            logInterceptor?.logEvent(
-                EventLog.Error(
-                    code = EventCode.Error(),
+            Records.logEvent(
+                EventLog(
+                    params = JSONObject().also {
+                        it.put("fileName", path)
+                        it.put("time", System.currentTimeMillis())
+                    },
                     message = "Error deleting file: ${e.message}"
                 )
             )
@@ -102,9 +107,12 @@ class FileStorageManagerImpl(
                         out.flush()
                         out.close()
                     } catch (e: Exception) {
-                        logInterceptor?.logEvent(
-                            EventLog.Error(
-                                code = EventCode.Error(),
+                        Records.logEvent(
+                            EventLog(
+                                params = JSONObject().also {
+                                    it.put("fileName", filePath)
+                                    it.put("time", System.currentTimeMillis())
+                                },
                                 message = "Error saving thumbnail: ${e.message}"
                             )
                         )
@@ -116,9 +124,12 @@ class FileStorageManagerImpl(
                     return@withContext thumbnailPath
                 }
             } catch (e: Exception) {
-                logInterceptor?.logEvent(
-                    EventLog.Error(
-                        code = EventCode.Error(),
+                Records.logEvent(
+                    EventLog(
+                        params = JSONObject().also {
+                            it.put("fileName", filePath)
+                            it.put("time", System.currentTimeMillis())
+                        },
                         message = "Error generating thumbnail: ${e.message}"
                     )
                 )
@@ -130,9 +141,11 @@ class FileStorageManagerImpl(
         try {
             Result.success(0)
         } catch (e: Exception) {
-            logInterceptor?.logEvent(
-                EventLog.Error(
-                    code = EventCode.Error(),
+            Records.logEvent(
+                EventLog(
+                    params = JSONObject().also {
+                        it.put("time", System.currentTimeMillis())
+                    },
                     message = "Error cleaning up files: ${e.message}"
                 )
             )

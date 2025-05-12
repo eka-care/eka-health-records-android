@@ -17,6 +17,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withContext
+import org.json.JSONObject
 import java.util.UUID
 
 class RecordsSync(
@@ -34,8 +35,13 @@ class RecordsSync(
         return withContext(Dispatchers.IO) {
             val ownerId = inputData.getString("ownerId") ?: return@withContext Result.failure()
             val filterIds = inputData.getStringArray("filterIds")?.toList() ?: emptyList()
-            logger?.logEvent(
-                EventLog.Info(
+            Records.logEvent(
+                EventLog(
+                    params = JSONObject().also {
+                        it.put("ownerId", ownerId)
+                        it.put("filterIds", filterIds)
+                        it.put("time", System.currentTimeMillis())
+                    },
                     "Starting sync for ownerId: $ownerId, filterIds: $filterIds"
                 )
             )
@@ -52,8 +58,14 @@ class RecordsSync(
     private suspend fun fetchRecords(ownerId: String, filterIds: List<String>) {
         (filterIds.ifEmpty { listOf(null) }).forEach { filterId ->
             val updatedAt = recordsRepository.getLatestRecordUpdatedAt(ownerId, filterId)
-            logger?.logEvent(
-                EventLog.Info(
+            Records.logEvent(
+                EventLog(
+                    params = JSONObject().also {
+                        it.put("ownerId", ownerId)
+                        it.put("filterId", filterId)
+                        it.put("updatedAt", updatedAt)
+                        it.put("time", System.currentTimeMillis())
+                    },
                     "Records updated till: $updatedAt"
                 )
             )
@@ -79,8 +91,14 @@ class RecordsSync(
                 oid = filterId
             )
             response?.body()?.let<GetFilesResponse, Unit> {
-                logger?.logEvent(
-                    EventLog.Info(
+                Records.logEvent(
+                    EventLog(
+                        params = JSONObject().also {
+                            it.put("ownerId", ownerId)
+                            it.put("filterId", filterId)
+                            it.put("updatedAt", updatedAt)
+                            it.put("time", System.currentTimeMillis())
+                        },
                         "Got records for: owner: $ownerId, filterIds: $filterId, data: $it"
                     )
                 )
@@ -119,8 +137,13 @@ class RecordsSync(
             recordsRepository.updateRecords(
                 listOf(getRecordEntity(record.id))
             )
-            logger?.logEvent(
-                EventLog.Info(
+            Records.logEvent(
+                EventLog(
+                    params = JSONObject().also {
+                        it.put("ownerId", ownerId)
+                        it.put("recordId", record.id)
+                        it.put("time", System.currentTimeMillis())
+                    },
                     message = "Updated record for ownerId: $ownerId"
                 )
             )
@@ -128,8 +151,13 @@ class RecordsSync(
             recordsRepository.createRecords(
                 listOf(getRecordEntity(id = UUID.randomUUID().toString()))
             )
-            logger?.logEvent(
-                EventLog.Info(
+            Records.logEvent(
+                EventLog(
+                    params = JSONObject().also {
+                        it.put("ownerId", ownerId)
+                        it.put("recordId", recordItem.documentId)
+                        it.put("time", System.currentTimeMillis())
+                    },
                     message = "Stored record for ownerId: $ownerId"
                 )
             )
@@ -148,8 +176,13 @@ class RecordsSync(
         val localRecord = recordsRepository.getRecordByDocumentId(recordId) ?: return
         val path = downloadThumbnail(thumbnail, context = context)
         recordsRepository.updateRecords(listOf(localRecord.copy(thumbnail = path)))
-        logger?.logEvent(
-            EventLog.Info(
+        Records.logEvent(
+            EventLog(
+                params = JSONObject().also {
+                    it.put("recordId", recordId)
+                    it.put("thumbnail", thumbnail)
+                    it.put("time", System.currentTimeMillis())
+                },
                 message = "Stored thumbnail for: $recordId, thumbnail: $thumbnail"
             )
         )

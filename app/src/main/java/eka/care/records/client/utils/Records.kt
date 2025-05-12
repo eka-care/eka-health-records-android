@@ -8,6 +8,7 @@ import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import eka.care.records.client.model.DocumentTypeCount
+import eka.care.records.client.model.EventLog
 import eka.care.records.client.model.RecordModel
 import eka.care.records.client.model.SortOrder
 import eka.care.records.data.contract.LogInterceptor
@@ -35,6 +36,10 @@ class Records private constructor() {
                     INSTANCE = it
                 }
             }
+        }
+        
+        fun logEvent(eventLog: EventLog) {
+            INSTANCE?.logger?.logEvent(eventLog)
         }
 
         private fun buildClient(): Records {
