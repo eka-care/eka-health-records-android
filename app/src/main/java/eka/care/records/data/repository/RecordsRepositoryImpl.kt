@@ -135,24 +135,24 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
             )
             deletedRecords.forEach { record ->
                 launch {
-                    record.documentId?.let {
-                        val result = myFileRepository.deleteDocument(it, record.filterId)
+                    record.documentId?.let { documentId ->
+                        val result = myFileRepository.deleteDocument(documentId, record.filterId)
                         if (result in (200..299)) {
                             dao.deleteRecord(record)
                             Records.logEvent(
                                 EventLog(
                                     params = JSONObject().also {
-                                        it.put("documentId", it)
+                                        it.put("documentId", documentId)
                                         it.put("time", System.currentTimeMillis())
                                     },
-                                    message = "Syncing deleted record success: $it",
+                                    message = "Syncing deleted record success: $documentId",
                                 )
                             )
                         } else {
                             Records.logEvent(
                                 EventLog(
                                     params = JSONObject().also {
-                                        it.put("documentId", it)
+                                        it.put("documentId", documentId)
                                         it.put("time", System.currentTimeMillis())
                                     },
                                     message = "Syncing failed code: $result",
