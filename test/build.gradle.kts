@@ -56,5 +56,4 @@ dependencies {
     implementation(libs.google.gson)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
-    implementation("com.github.eka-care:eka-network-android:1.0.3")
 }
