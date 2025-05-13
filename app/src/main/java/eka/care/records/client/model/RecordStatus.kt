@@ -1,5 +1,8 @@
 package eka.care.records.client.model
 
+import androidx.annotation.Keep
+
+@Keep
 enum class RecordStatus(val status: Int) {
     NONE(0),
     WAITING_TO_UPLOAD(1),

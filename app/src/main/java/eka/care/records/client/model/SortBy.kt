@@ -1,5 +1,8 @@
 package eka.care.records.client.model
 
+import androidx.annotation.Keep
+
+@Keep
 enum class SortOrder(val value: String, val order: String) {
     CREATED_AT_ASC("created_at", "ASC"),
     CREATED_AT_DSC("created_at", "DESC"),
