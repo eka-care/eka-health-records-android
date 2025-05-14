@@ -1,8 +1,8 @@
 package eka.care.records.data.repository
 
-import com.eka.network.Networking
 import eka.care.records.data.remote.api.MyFileService
 import eka.care.records.data.remote.dto.response.GetFilesResponse
+import eka.care.records.data.remote.network.Networking
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import retrofit2.Response

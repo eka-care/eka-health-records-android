@@ -708,6 +708,15 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                 )
             )
             dao.updateRecords(listOf(record.copy(status = RecordStatus.SYNC_FAILED)))
+            Records.logEvent(
+                EventLog(
+                    params = JSONObject().also {
+                        it.put("recordId", id)
+                        it.put("time", System.currentTimeMillis())
+                    },
+                    message = "Record deleted: ${record.documentId}"
+                )
+            )
             return@supervisorScope
         }
         val batchResponse = uploadInitResponse?.batchResponse?.firstOrNull()
@@ -736,6 +745,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                     message = "Upload error: ${uploadResponse.message}"
                 )
             )
+            myFileRepository.deleteDocument(uploadResponse.documentId, record.filterId)
             dao.updateRecords(listOf(record.copy(status = RecordStatus.SYNC_FAILED)))
             return@supervisorScope
         }
