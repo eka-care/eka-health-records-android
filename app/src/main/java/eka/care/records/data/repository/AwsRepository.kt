@@ -1,7 +1,6 @@
 package eka.care.records.data.repository
 
 import android.webkit.MimeTypeMap
-import com.eka.network.Networking
 import com.haroldadmin.cnradapter.NetworkResponse
 import eka.care.records.data.remote.api.AwsService
 import eka.care.records.data.remote.dto.request.Batch
@@ -10,11 +9,14 @@ import eka.care.records.data.remote.dto.request.FilesUploadInitRequest
 import eka.care.records.data.remote.dto.response.AwsUploadResponse
 import eka.care.records.data.remote.dto.response.BatchResponse
 import eka.care.records.data.remote.dto.response.FilesUploadInitResponse
+import eka.care.records.data.remote.network.Networking
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.File
 import java.util.Locale
 
@@ -86,9 +88,13 @@ class AwsRepository {
                     val requestFile = fileEntry.asRequestBody(fileEntry.getMimeType().toMediaType())
                     val fileMultipartBody: MultipartBody.Part =
                         MultipartBody.Part.createFormData("file", fileEntry.name, requestFile)
+                    val params = batch.forms[index].fields.mapValues { (_, value) ->
+                        value.toRequestBody("text/plain".toMediaTypeOrNull())
+                    }
+
                     val response = service.uploadFile(
                         url = batch.forms[index].url,
-                        params = batch.forms[index].fields,
+                        params = params,
                         file = fileMultipartBody
                     )
                     if (response.isSuccessful) {

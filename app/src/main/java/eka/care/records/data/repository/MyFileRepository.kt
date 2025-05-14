@@ -1,10 +1,10 @@
 package eka.care.records.data.repository
 
-import com.eka.network.Networking
 import com.haroldadmin.cnradapter.NetworkResponse
 import eka.care.records.data.remote.api.MyFileService
 import eka.care.records.data.remote.dto.request.UpdateFileDetailsRequest
 import eka.care.records.data.remote.dto.response.Document
+import eka.care.records.data.remote.network.Networking
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.ResponseBody

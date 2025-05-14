@@ -1,11 +1,10 @@
 package eka.care.records.client.utils
 
 import androidx.annotation.Keep
-import com.eka.network.IOkHttpSetup
+import eka.care.records.data.remote.network.EkaAuthConfig
 
 @Keep
 data class DocumentConfiguration(
-    val okHttpSetup: IOkHttpSetup,
-    val host: String,
-    val vitalsEnabled : Boolean
+    val authorizationToken: String,
+    val ekaAuthConfig: EkaAuthConfig? = null,
 )

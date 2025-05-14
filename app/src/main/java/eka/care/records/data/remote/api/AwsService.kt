@@ -4,6 +4,7 @@ import com.haroldadmin.cnradapter.NetworkResponse
 import eka.care.records.data.remote.dto.request.FilesUploadInitRequest
 import eka.care.records.data.remote.dto.response.FilesUploadInitResponse
 import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.Multipart
@@ -25,7 +26,7 @@ interface AwsService {
     @Multipart
     suspend fun uploadFile(
         @Url url: String,
-        @PartMap params: Map<String, String>,
+        @PartMap params: Map<String, @JvmSuppressWildcards RequestBody>,
         @Part file: MultipartBody.Part
     ): Response<Void>
 
