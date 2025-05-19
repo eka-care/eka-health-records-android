@@ -127,7 +127,7 @@ class RecordsSync(
                 documentId = recordItem.documentId,
                 filterId = recordItem.patientId,
                 createdAt = recordItem.uploadDate ?: 0L,
-                updatedAt = System.currentTimeMillis() / 1000,
+                updatedAt = recordItem.updatedAt ?: recordItem.uploadDate ?: 0L,
                 documentDate = recordItem.metadata?.documentDate,
                 documentType = recordItem.documentType ?: "ot",
                 isSmart = recordItem.metadata?.autoTags?.contains("1") == true,

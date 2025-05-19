@@ -27,11 +27,14 @@ data class ItemData(
     val documentId: String,
     @SerializedName("document_type")
     val documentType: String? = null,
+    @SerializedName("metadata")
     val metadata: Metadata? = null,
     @SerializedName("patient_id")
     val patientId: String? = null,
     @SerializedName("upload_date")
-    val uploadDate: Long? = null
+    val uploadDate: Long? = null,
+    @SerializedName("u_at")
+    val updatedAt: Long? = null,
 )
 
 @Keep
