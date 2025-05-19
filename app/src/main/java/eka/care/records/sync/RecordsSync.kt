@@ -70,7 +70,11 @@ class RecordsSync(
                 )
             )
             fetchRecordsFromServer(
-                updatedAt = updatedAt,
+                updatedAt = if(updatedAt != null) {
+                    updatedAt - 100
+                } else {
+                    null
+                },
                 filterId = filterId,
                 ownerId = ownerId
             )
