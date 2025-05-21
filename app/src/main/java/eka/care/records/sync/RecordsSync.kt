@@ -72,7 +72,7 @@ class RecordsSync(
             )
             fetchRecordsFromServer(
                 updatedAt = if (updatedAt != null) {
-                    updatedAt - 100
+                    updatedAt - 1 // To get records updated after the latest
                 } else {
                     null
                 },
