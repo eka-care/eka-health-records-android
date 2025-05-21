@@ -6,7 +6,6 @@ import androidx.work.WorkerParameters
 import eka.care.records.client.model.EventLog
 import eka.care.records.client.utils.Records
 import eka.care.records.client.utils.RecordsUtility.Companion.downloadThumbnail
-import eka.care.records.data.contract.LogInterceptor
 import eka.care.records.data.entity.RecordEntity
 import eka.care.records.data.remote.dto.response.GetFilesResponse
 import eka.care.records.data.remote.dto.response.Item
@@ -27,9 +26,11 @@ class RecordsSync(
 
     private val syncRepository = SyncRecordsRepository()
     private val recordsRepository = RecordsRepositoryImpl(appContext.applicationContext)
+
     @OptIn(ExperimentalCoroutinesApi::class)
-    private val limitedDispatcher = Dispatchers.IO.limitedParallelism(5)
-    private val logger: LogInterceptor? = Records.getInstance(appContext, "").logger
+    val dbDispatcher = Dispatchers.IO.limitedParallelism(8)
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val thumbnailDispatcher = Dispatchers.IO.limitedParallelism(5)
 
     override suspend fun doWork(): Result {
         return withContext(Dispatchers.IO) {
@@ -70,8 +71,8 @@ class RecordsSync(
                 )
             )
             fetchRecordsFromServer(
-                updatedAt = if(updatedAt != null) {
-                    updatedAt - 100
+                updatedAt = if (updatedAt != null) {
+                    updatedAt - 1 // To get records updated after the latest
                 } else {
                     null
                 },
@@ -87,6 +88,7 @@ class RecordsSync(
         filterId: String?,
         ownerId: String
     ) {
+        val records = mutableListOf<Item>()
         var currentOffset = offset
         do {
             val response = syncRepository.getRecords(
@@ -94,38 +96,43 @@ class RecordsSync(
                 offset = currentOffset,
                 oid = filterId
             )
-            response?.body()?.let<GetFilesResponse, Unit> {
-                Records.logEvent(
-                    EventLog(
-                        params = JSONObject().also {
-                            it.put("ownerId", ownerId)
-                            it.put("filterId", filterId)
-                            it.put("updatedAt", updatedAt)
-                            it.put("time", System.currentTimeMillis())
-                        },
-                        "Got records for: owner: $ownerId, filterIds: $filterId, data: $it"
-                    )
-                )
-                storeRecords(recordsResponse = it, ownerId = ownerId)
+            if(response?.body() == null) {
+                break
+            }
+            response.body()?.let<GetFilesResponse, Unit> {
+                records.addAll(it.items)
                 currentOffset = it.nextToken
             }
         } while (!currentOffset.isNullOrEmpty())
+        Records.logEvent(
+            EventLog(
+                params = JSONObject().also {
+                    it.put("ownerId", ownerId)
+                    it.put("filterId", filterId)
+                    it.put("updatedAt", updatedAt)
+                    it.put("time", System.currentTimeMillis())
+                },
+                "Got records for: owner: $ownerId, filterIds: $filterId, data size: ${records.size}"
+            )
+        )
+        storeRecords(records = records, ownerId = ownerId)
     }
 
     private suspend fun storeRecords(
-        recordsResponse: GetFilesResponse,
-        ownerId: String,
+        records: List<Item>,
+        ownerId: String
     ) = supervisorScope {
-        recordsResponse.items.forEach {
-            launch(limitedDispatcher) { storeRecord(record = it, ownerId = ownerId) }
+        records.forEach {
+            launch(dbDispatcher) { storeRecord(record = it, ownerId = ownerId) }
         }
     }
 
     private suspend fun storeRecord(record: Item, ownerId: String) {
         val recordItem = record.record.item
         val record = recordsRepository.getRecordByDocumentId(recordItem.documentId)
+        var recordToStore = record
         fun getRecordEntity(id: String): RecordEntity {
-            return RecordEntity(
+            recordToStore = RecordEntity(
                 id = id,
                 ownerId = ownerId,
                 documentId = recordItem.documentId,
@@ -136,6 +143,7 @@ class RecordsSync(
                 documentType = recordItem.documentType ?: "ot",
                 isSmart = recordItem.metadata?.autoTags?.contains("1") == true,
             )
+            return recordToStore
         }
         if (record != null) {
             recordsRepository.updateRecords(
@@ -167,28 +175,26 @@ class RecordsSync(
             )
         }
         storeThumbnail(
-            recordId = recordItem.documentId,
+            record = recordToStore,
             thumbnail = recordItem.metadata?.thumbnail,
             context = applicationContext
         )
     }
 
-    private suspend fun storeThumbnail(recordId: String, thumbnail: String?, context: Context) {
+    private suspend fun storeThumbnail(
+        record: RecordEntity?,
+        thumbnail: String?,
+        context: Context
+    ) {
         if (thumbnail.isNullOrEmpty()) {
             return
         }
-        val localRecord = recordsRepository.getRecordByDocumentId(recordId) ?: return
-        val path = downloadThumbnail(thumbnail, context = context)
-        recordsRepository.updateRecords(listOf(localRecord.copy(thumbnail = path)))
-        Records.logEvent(
-            EventLog(
-                params = JSONObject().also {
-                    it.put("recordId", recordId)
-                    it.put("thumbnail", thumbnail)
-                    it.put("time", System.currentTimeMillis())
-                },
-                message = "Stored thumbnail for: $recordId, thumbnail: $thumbnail"
-            )
-        )
+        if(record == null) {
+            return
+        }
+        withContext(thumbnailDispatcher) {
+            val path = downloadThumbnail(thumbnail, context = context)
+            recordsRepository.updateRecords(listOf(record.copy(thumbnail = path)))
+        }
     }
 }
