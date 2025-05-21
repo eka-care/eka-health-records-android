@@ -29,8 +29,6 @@ class RecordsSync(
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val dbDispatcher = Dispatchers.IO.limitedParallelism(8)
-    @OptIn(ExperimentalCoroutinesApi::class)
-    val thumbnailDispatcher = Dispatchers.IO.limitedParallelism(5)
 
     override suspend fun doWork(): Result {
         return withContext(Dispatchers.IO) {
@@ -96,7 +94,7 @@ class RecordsSync(
                 offset = currentOffset,
                 oid = filterId
             )
-            if(response?.body() == null) {
+            if (response?.body() == null) {
                 break
             }
             response.body()?.let<GetFilesResponse, Unit> {
@@ -189,12 +187,10 @@ class RecordsSync(
         if (thumbnail.isNullOrEmpty()) {
             return
         }
-        if(record == null) {
+        if (record == null) {
             return
         }
-        withContext(thumbnailDispatcher) {
-            val path = downloadThumbnail(thumbnail, context = context)
-            recordsRepository.updateRecords(listOf(record.copy(thumbnail = path)))
-        }
+        val path = downloadThumbnail(thumbnail, context = context)
+        recordsRepository.updateRecords(listOf(record.copy(thumbnail = path)))
     }
 }
