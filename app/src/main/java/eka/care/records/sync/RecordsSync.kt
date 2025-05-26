@@ -69,11 +69,7 @@ class RecordsSync(
                 )
             )
             fetchRecordsFromServer(
-                updatedAt = if (updatedAt != null) {
-                    updatedAt - 1 // To get records updated after the latest
-                } else {
-                    null
-                },
+                updatedAt = updatedAt,
                 filterId = filterId,
                 ownerId = ownerId
             )
@@ -130,17 +126,21 @@ class RecordsSync(
         val record = recordsRepository.getRecordByDocumentId(recordItem.documentId)
         var recordToStore = record
         fun getRecordEntity(id: String): RecordEntity {
-            recordToStore = RecordEntity(
-                id = id,
-                ownerId = ownerId,
-                documentId = recordItem.documentId,
-                filterId = recordItem.patientId,
-                createdAt = recordItem.uploadDate ?: 0L,
-                updatedAt = recordItem.updatedAt ?: recordItem.uploadDate ?: 0L,
-                documentDate = recordItem.metadata?.documentDate,
-                documentType = recordItem.documentType ?: "ot",
-                isSmart = recordItem.metadata?.autoTags?.contains("1") == true,
-            )
+            recordToStore = if (record?.isDirty == true || record?.isDeleted == true) {
+                record
+            } else {
+                RecordEntity(
+                    id = id,
+                    ownerId = ownerId,
+                    documentId = recordItem.documentId,
+                    filterId = recordItem.patientId,
+                    createdAt = recordItem.uploadDate ?: 0L,
+                    updatedAt = recordItem.updatedAt ?: recordItem.uploadDate ?: 0L,
+                    documentDate = recordItem.metadata?.documentDate,
+                    documentType = recordItem.documentType ?: "ot",
+                    isSmart = recordItem.metadata?.autoTags?.contains("1") == true,
+                )
+            }
             return recordToStore
         }
         if (record != null) {
