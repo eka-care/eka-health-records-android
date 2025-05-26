@@ -650,6 +650,16 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
     }
 
     private suspend fun uploadRecord(id: String) = supervisorScope {
+        Records.logEvent(
+            EventLog(
+                params = JSONObject().also {
+                    it.put("recordId", id)
+                    it.put("type", "upload_start")
+                    it.put("time", System.currentTimeMillis())
+                },
+                message = "Upload started"
+            )
+        )
         val record = getRecordById(id)
 
         if (record == null) {
@@ -708,15 +718,6 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                 )
             )
             dao.updateRecords(listOf(record.copy(status = RecordStatus.SYNC_FAILED)))
-            Records.logEvent(
-                EventLog(
-                    params = JSONObject().also {
-                        it.put("recordId", id)
-                        it.put("time", System.currentTimeMillis())
-                    },
-                    message = "Record deleted: ${record.documentId}"
-                )
-            )
             return@supervisorScope
         }
         val batchResponse = uploadInitResponse?.batchResponse?.firstOrNull()
@@ -769,6 +770,16 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                     documentId = uploadResponse.documentId,
                     isDirty = false
                 )
+            )
+        )
+        Records.logEvent(
+            EventLog(
+                params = JSONObject().also {
+                    it.put("recordId", id)
+                    it.put("type", "upload_finished")
+                    it.put("time", System.currentTimeMillis())
+                },
+                message = "Upload finished"
             )
         )
     }
