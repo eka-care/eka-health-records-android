@@ -36,7 +36,7 @@ object MediaPickerManager {
         host?.pickPdf()
     }
 
-    fun takePhoto(context: Context) {
+    fun takePhoto(context: Context, provider: String, onPermissionDenied: () -> Unit) {
         val isCameraGranted = ContextCompat.checkSelfPermission(
             context,
             Manifest.permission.CAMERA
@@ -46,7 +46,7 @@ object MediaPickerManager {
                 File(context.cacheDir, "photo_${System.currentTimeMillis()}.jpg")
             val photoUri = FileProvider.getUriForFile(
                 context,
-                "eka.care.doctor.fileprovider",
+                provider,
                 imageFile
             )
             val cameraIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
@@ -56,19 +56,7 @@ object MediaPickerManager {
 
             host?.takePhoto(cameraIntent = cameraIntent, uri = photoUri)
         } else {
-//            if (cameraPermissionState.status.shouldShowRationale) {
-//                // Show rationale and call `cameraPermissionState.launchPermissionRequest()`
-//                cameraPermissionState.launchPermissionRequest()
-//            } else {
-//                // Permission permanently denied. Guide user to app settings.
-//                Toast.makeText(
-//                    context,
-//                    "Permission Permanently Denied!",
-//                    Toast.LENGTH_SHORT
-//                ).show()
-//                navigateToAppSettings(context = context)
-//                // Show a dialog or toast guiding the user to enable the permission from settings.
-//            }
+            onPermissionDenied()
         }
     }
 
