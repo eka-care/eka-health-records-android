@@ -40,9 +40,6 @@ internal class Networking private constructor() {
         baseUrl: String,
         okHttpSetup: IOkHttpSetup
     ) {
-        if (this::baseUrl.isInitialized) {
-            throw Exception("Networking is already initialised. Check if you are calling from multiple places")
-        }
         this.baseUrl = baseUrl
         this.okHttpSetup = okHttpSetup
         retrofit = createClient(this.baseUrl)

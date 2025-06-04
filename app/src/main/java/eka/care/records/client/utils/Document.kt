@@ -37,6 +37,11 @@ object Document {
                 okHttpSetup = okHttp
             )
         } catch (_: Exception) {
+            logger?.logEvent(
+                EventLog(
+                    message = "Failed to initialize Networking with provided configuration."
+                )
+            )
         }
     }
 }
