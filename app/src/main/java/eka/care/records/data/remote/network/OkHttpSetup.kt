@@ -1,5 +1,6 @@
 package eka.care.records.data.remote.network
 
+import eka.care.records.client.utils.Document
 import kotlinx.coroutines.runBlocking
 
 class OkHttpSetup(
@@ -10,7 +11,7 @@ class OkHttpSetup(
     override fun getDefaultHeaders(url: String): Map<String, String> {
         val headers = HashMap<String, String>()
         headers.putAll(defaultHeaders)
-        headers["auth"] = authorizationToken
+        headers["auth"] = Document.getConfiguration().authorizationToken
         return headers
     }
 

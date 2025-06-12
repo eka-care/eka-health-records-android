@@ -44,4 +44,11 @@ object Document {
             )
         }
     }
+
+    fun getConfiguration(): DocumentConfiguration {
+        if (configuration == null) {
+            throw IllegalStateException("Configuration not initialized. Please call Document.init() first.")
+        }
+        return configuration!!
+    }
 }
