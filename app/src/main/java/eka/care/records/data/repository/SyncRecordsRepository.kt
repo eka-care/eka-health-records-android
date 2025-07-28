@@ -1,18 +1,23 @@
 package eka.care.records.data.repository
 
+import com.eka.networking.client.EkaNetwork
+import eka.care.records.client.utils.Document
 import eka.care.records.data.remote.api.MyFileService
 import eka.care.records.data.remote.dto.response.GetFilesResponse
-import eka.care.records.data.remote.network.Networking
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import retrofit2.Response
 
 class SyncRecordsRepository() {
 
-    private val recordsService: MyFileService = Networking.create(
-        MyFileService::class.java,
-        "https://api.eka.care/mr/"
-    )
+    private val recordsService: MyFileService = EkaNetwork
+        .creatorFor(
+            appId = Document.getConfiguration().appId,
+            service = "sync_service"
+        ).create(
+            serviceUrl = "https://api.eka.care/mr/",
+            serviceClass = MyFileService::class.java
+        )
 
     suspend fun getRecords(
         updatedAt: Long?,
