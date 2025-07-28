@@ -1,7 +1,9 @@
 package eka.care.records.data.repository
 
 import android.webkit.MimeTypeMap
+import com.eka.networking.client.EkaNetwork
 import com.haroldadmin.cnradapter.NetworkResponse
+import eka.care.records.client.utils.Document
 import eka.care.records.data.remote.api.AwsService
 import eka.care.records.data.remote.dto.request.Batch
 import eka.care.records.data.remote.dto.request.FileType
@@ -9,7 +11,6 @@ import eka.care.records.data.remote.dto.request.FilesUploadInitRequest
 import eka.care.records.data.remote.dto.response.AwsUploadResponse
 import eka.care.records.data.remote.dto.response.BatchResponse
 import eka.care.records.data.remote.dto.response.FilesUploadInitResponse
-import eka.care.records.data.remote.network.Networking
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
@@ -22,8 +23,14 @@ import java.util.Locale
 
 class AwsRepository {
 
-    private val service: AwsService =
-        Networking.create(AwsService::class.java, "https://api.eka.care/mr/")
+    private val service: AwsService = EkaNetwork
+        .creatorFor(
+            appId = Document.getConfiguration().appId,
+            service = "aws_service"
+        ).create(
+            serviceUrl = "https://api.eka.care/mr/",
+            serviceClass = AwsService::class.java
+        )
 
     suspend fun fileUploadInit(
         files: List<FileType>,

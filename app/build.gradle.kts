@@ -61,7 +61,7 @@ afterEvaluate {
                 from(components["release"])
                 groupId = "com.eka.records"
                 artifactId = "eka-records"
-                version = "3.2.2"
+                version = "3.2.3"
             }
         }
     }
@@ -85,6 +85,7 @@ dependencies {
     implementation(libs.google.gson)
     implementation(libs.okhttp)
     implementation(libs.okhttp.urlconnection)
+    implementation(libs.eka.network)
     implementation(libs.retrofit) {
         exclude(group = "com.google.protobuf", module = "protobuf-java")
     }

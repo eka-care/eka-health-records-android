@@ -1,10 +1,10 @@
 package eka.care.records.data.repository
 
+import com.eka.networking.client.EkaNetwork
 import com.haroldadmin.cnradapter.NetworkResponse
 import eka.care.records.data.remote.api.MyFileService
 import eka.care.records.data.remote.dto.request.UpdateFileDetailsRequest
 import eka.care.records.data.remote.dto.response.Document
-import eka.care.records.data.remote.network.Networking
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.ResponseBody
@@ -12,7 +12,14 @@ import okhttp3.ResponseBody
 class MyFileRepository {
 
     private val myFileService: MyFileService by lazy {
-        Networking.create(MyFileService::class.java, "https://api.eka.care/mr/")
+        EkaNetwork
+            .creatorFor(
+                appId = eka.care.records.client.utils.Document.getConfiguration().appId,
+                service = "files_service"
+            ).create(
+                serviceUrl = "https://api.eka.care/mr/",
+                serviceClass = MyFileService::class.java
+            )
     }
 
     suspend fun updateFileDetails(

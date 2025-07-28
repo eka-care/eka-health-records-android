@@ -1,10 +1,16 @@
 package eka.care.records.client.utils
 
 import androidx.annotation.Keep
-import eka.care.records.data.remote.network.EkaAuthConfig
+import com.eka.networking.token.TokenStorage
 
 @Keep
 data class DocumentConfiguration(
-    val authorizationToken: String,
-    val ekaAuthConfig: EkaAuthConfig? = null,
+    val appId: String,
+    val baseUrl: String,
+    val appVersionName: String,
+    val appVersionCode: Int,
+    val isDebugApp: Boolean = false,
+    val apiCallTimeOutInSec: Long = 30L,
+    val headers: Map<String, String>,
+    val tokenStorage: TokenStorage
 )
