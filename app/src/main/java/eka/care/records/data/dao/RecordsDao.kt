@@ -10,6 +10,8 @@ import androidx.room.Transaction
 import androidx.room.Update
 import androidx.sqlite.db.SupportSQLiteQuery
 import eka.care.records.client.model.DocumentTypeCount
+import eka.care.records.data.entity.CaseEntity
+import eka.care.records.data.entity.CaseRecordRelationEntity
 import eka.care.records.data.entity.RecordEntity
 import eka.care.records.data.entity.RecordFile
 import kotlinx.coroutines.flow.Flow
@@ -57,4 +59,37 @@ interface RecordsDao {
 
     @Query("SELECT * FROM EKA_RECORD_FILE WHERE LOCAL_ID = :localId")
     suspend fun getRecordFile(localId: String): List<RecordFile>?
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun createCase(case: CaseEntity)
+
+    @Transaction
+    suspend fun createCaseRecordRelation(case: CaseEntity, recordEntity: RecordEntity) {
+        createCase(case)
+        val relation = CaseRecordRelationEntity(
+            caseId = case.caseId,
+            recordId = recordEntity.id
+        )
+        insertCaseRecordRelation(relation)
+    }
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertCaseRecordRelation(relation: CaseRecordRelationEntity)
+
+    @Transaction
+    suspend fun insertRecordWithFilesIntoCase(
+        case: CaseEntity,
+        record: RecordEntity,
+        files: List<RecordFile>
+    ) {
+        createCase(case)
+        insertRecordWithFiles(
+            record = record,
+            files = files
+        )
+        createCaseRecordRelation(
+            case = case,
+            recordEntity = record
+        )
+    }
 }
