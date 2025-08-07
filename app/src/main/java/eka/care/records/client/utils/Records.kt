@@ -7,6 +7,7 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
+import eka.care.records.client.model.CaseModel
 import eka.care.records.client.model.DocumentTypeCount
 import eka.care.records.client.model.EventLog
 import eka.care.records.client.model.RecordModel
@@ -37,7 +38,7 @@ class Records private constructor() {
                 }
             }
         }
-        
+
         fun logEvent(eventLog: EventLog) {
             INSTANCE?.logger?.logEvent(eventLog)
         }
@@ -82,6 +83,7 @@ class Records private constructor() {
         files: List<File>,
         ownerId: String,
         filterId: String? = null,
+        caseId: String? = null,
         documentType: String = "ot",
         documentDate: Long? = null,
         tags: List<String> = emptyList()
@@ -90,6 +92,7 @@ class Records private constructor() {
             files = files,
             ownerId = ownerId,
             filterId = filterId,
+            caseId = caseId,
             documentDate = documentDate,
             documentType = documentType,
             tags = tags
@@ -99,6 +102,7 @@ class Records private constructor() {
     fun getRecords(
         ownerId: String,
         filterIds: List<String>? = null,
+        caseId: String? = null,
         includeDeleted: Boolean = false,
         documentType: String? = null,
         sortOrder: SortOrder,
@@ -106,6 +110,7 @@ class Records private constructor() {
         return recordsRepository.readRecords(
             ownerId = ownerId,
             filterIds = filterIds,
+            caseId = caseId,
             includeDeleted = includeDeleted,
             documentType = documentType,
             sortOrder = sortOrder
@@ -124,11 +129,13 @@ class Records private constructor() {
 
     suspend fun updateRecord(
         id: String,
+        caseId: String? = null,
         documentDate: Long? = null,
         documentType: String? = null,
     ): String? {
         return recordsRepository.updateRecord(
             id = id,
+            caseId = caseId,
             documentDate = documentDate,
             documentType = documentType
         )
@@ -140,6 +147,31 @@ class Records private constructor() {
 
     suspend fun deleteRecords(ids: List<String>) {
         recordsRepository.deleteRecords(ids = ids)
+    }
+
+    suspend fun createCase(
+        name: String,
+        type: String,
+        ownerId: String,
+        filterId: String? = null
+    ): String {
+        return recordsRepository.createCase(
+            ownerId = ownerId,
+            filterId = filterId,
+            name = name,
+            type = type
+        )
+    }
+
+    fun readCases(ownerId: String, filterId: String?): Flow<List<CaseModel>> {
+        return recordsRepository.readCases(
+            ownerId = ownerId,
+            filterId = filterId
+        )
+    }
+
+    fun getCaseWithRecords(caseId: String): Flow<CaseModel?> {
+        return recordsRepository.getCaseWithRecords(caseId = caseId)
     }
 
     fun clearAllData() {

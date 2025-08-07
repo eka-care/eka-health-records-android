@@ -4,6 +4,7 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import eka.care.records.client.model.RecordModel
 import eka.care.records.client.model.RecordStatus
 
 @Entity(
@@ -33,3 +34,17 @@ data class RecordEntity(
     @ColumnInfo(name = "is_smart") var isSmart: Boolean = false,
     @ColumnInfo(name = "smart_report_field") var smartReport: String? = null,
 )
+
+fun RecordEntity.toRecordModel(): RecordModel {
+    return RecordModel(
+        id = id,
+        thumbnail = thumbnail,
+        status = status,
+        createdAt = createdAt,
+        updatedAt = updatedAt,
+        documentDate = documentDate,
+        documentType = documentType,
+        isSmart = isSmart,
+        smartReport = smartReport,
+    )
+}

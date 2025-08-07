@@ -3,6 +3,7 @@ package eka.care.records.data.repository
 import android.content.Context
 import androidx.sqlite.db.SupportSQLiteQueryBuilder
 import com.google.gson.Gson
+import eka.care.records.client.model.CaseModel
 import eka.care.records.client.model.DocumentTypeCount
 import eka.care.records.client.model.EventLog
 import eka.care.records.client.model.RecordModel
@@ -15,8 +16,11 @@ import eka.care.records.client.utils.RecordsUtility.Companion.getMimeType
 import eka.care.records.client.utils.RecordsUtility.Companion.md5
 import eka.care.records.data.core.FileStorageManagerImpl
 import eka.care.records.data.db.RecordsDatabase
+import eka.care.records.data.entity.CaseEntity
+import eka.care.records.data.entity.CaseRecordRelationEntity
 import eka.care.records.data.entity.RecordEntity
 import eka.care.records.data.entity.RecordFile
+import eka.care.records.data.entity.toCaseModel
 import eka.care.records.data.remote.dto.request.FileType
 import eka.care.records.data.remote.dto.request.UpdateFileDetailsRequest
 import eka.care.records.data.utility.isNetworkAvailable
@@ -174,6 +178,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
         files: List<File>,
         ownerId: String,
         filterId: String?,
+        caseId: String?,
         documentType: String,
         documentDate: Long?,
         tags: List<String>
@@ -233,6 +238,12 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
             record = record,
             files = files
         )
+        caseId?.let {
+            insertRecordIntoCase(
+                caseId = caseId,
+                documentId = id,
+            )
+        }
 
         return@supervisorScope id
     }
@@ -240,6 +251,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
     override fun readRecords(
         ownerId: String,
         filterIds: List<String>?,
+        caseId: String?,
         includeDeleted: Boolean,
         documentType: String?,
         sortOrder: SortOrder,
@@ -297,23 +309,43 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                 )
             )
 
-            val dataFlow = dao.readRecords(query).map { records ->
-                records.map {
-                    RecordModel(
-                        id = it.id,
-                        thumbnail = it.thumbnail ?: dao.getRecordFile(it.id)
-                            ?.firstOrNull()?.filePath,
-                        status = it.status,
-                        createdAt = it.createdAt,
-                        updatedAt = it.updatedAt,
-                        documentType = it.documentType,
-                        documentDate = it.documentDate,
-                        isSmart = it.isSmart,
-                        smartReport = it.smartReport
-                    )
+            if (caseId != null) {
+                val dataFlow = getCaseWithRecords(caseId).map {
+                    it?.records?.map { record ->
+                        RecordModel(
+                            id = record.id,
+                            thumbnail = record.thumbnail ?: dao.getRecordFile(record.id)
+                                ?.firstOrNull()?.filePath,
+                            status = record.status,
+                            createdAt = record.createdAt,
+                            updatedAt = record.updatedAt,
+                            documentType = record.documentType,
+                            documentDate = record.documentDate,
+                            isSmart = record.isSmart,
+                            smartReport = record.smartReport
+                        )
+                    } ?: emptyList()
                 }
+                emitAll(dataFlow)
+            } else {
+                val dataFlow = dao.readRecords(query).map { records ->
+                    records.map {
+                        RecordModel(
+                            id = it.id,
+                            thumbnail = it.thumbnail ?: dao.getRecordFile(it.id)
+                                ?.firstOrNull()?.filePath,
+                            status = it.status,
+                            createdAt = it.createdAt,
+                            updatedAt = it.updatedAt,
+                            documentType = it.documentType,
+                            documentDate = it.documentDate,
+                            isSmart = it.isSmart,
+                            smartReport = it.smartReport
+                        )
+                    }
+                }
+                emitAll(dataFlow)
             }
-            emitAll(dataFlow)
         } catch (e: Exception) {
             Records.logEvent(
                 EventLog(
@@ -582,7 +614,12 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
         dao.updateRecords(records)
     }
 
-    override suspend fun updateRecord(id: String, documentDate: Long?, documentType: String?): String? {
+    override suspend fun updateRecord(
+        id: String,
+        caseId: String?,
+        documentDate: Long?,
+        documentType: String?
+    ): String? {
         Records.logEvent(
             EventLog(
                 params = JSONObject().also {
@@ -604,6 +641,14 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
             isDirty = true
         )
         dao.updateRecords(listOf(updatedRecord))
+        caseId?.let {
+            dao.updateCaseRecordRelation(
+                CaseRecordRelationEntity(
+                    caseId = it,
+                    recordId = id,
+                )
+            )
+        }
         Records.logEvent(
             EventLog(
                 params = JSONObject().also {
@@ -780,6 +825,65 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                     it.put("time", System.currentTimeMillis())
                 },
                 message = "Upload finished"
+            )
+        )
+    }
+
+    override suspend fun createCase(
+        name: String,
+        type: String,
+        ownerId: String,
+        filterId: String?
+    ): String = supervisorScope {
+        val id = UUID.randomUUID().toString()
+        dao.createCase(
+            CaseEntity(
+                caseId = id,
+                name = name,
+                caseType = type,
+                ownerId = ownerId,
+                filterId = filterId,
+                createdAt = System.currentTimeMillis() / 1000,
+                updatedAt = System.currentTimeMillis() / 1000,
+            )
+        )
+        return@supervisorScope id
+    }
+
+    override fun readCases(ownerId: String, filterId: String?): Flow<List<CaseModel>> {
+        return dao.getCasesWithRecords(ownerId, filterId)
+            .map { list -> list.map { it.toCaseModel() } }
+    }
+
+    override fun getCaseWithRecords(caseId: String): Flow<CaseModel?> {
+        return dao.getCaseWithRecords(caseId).map { caseWithRecords ->
+            caseWithRecords?.let {
+                CaseModel(
+                    id = it.caseEntity.caseId,
+                    name = it.caseEntity.name,
+                    type = it.caseEntity.caseType ?: "unknown",
+                    createdAt = it.caseEntity.createdAt,
+                    updatedAt = it.caseEntity.updatedAt,
+                    records = it.records.map { record ->
+                        RecordModel(
+                            id = record.id,
+                            documentType = record.documentType,
+                            documentDate = record.documentDate,
+                            createdAt = record.createdAt,
+                            updatedAt = record.updatedAt,
+                            thumbnail = record.thumbnail
+                        )
+                    }
+                )
+            }
+        }
+    }
+
+    private suspend fun insertRecordIntoCase(caseId: String, documentId: String) {
+        dao.insertCaseRecordRelation(
+            CaseRecordRelationEntity(
+                caseId = caseId,
+                recordId = documentId
             )
         )
     }
