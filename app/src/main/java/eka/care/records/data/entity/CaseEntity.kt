@@ -5,19 +5,21 @@ import androidx.room.Entity
 import androidx.room.Index
 
 @Entity(
-    tableName = "cases",
+    tableName = "cases_table",
     primaryKeys = ["case_id"],
     indices = [
-        Index(value = ["caseId"]),
+        Index(value = ["case_id"]),
         Index(value = ["name"]),
-        Index(value = ["caseType"])
+        Index(value = ["case_type"])
     ]
 )
 data class CaseEntity(
     @ColumnInfo(name = "case_id")
     val caseId: String,
+    @ColumnInfo(name = "owner_id")
+    val ownerId: String,
     @ColumnInfo(name = "filter_id")
-    val filterId: String,
+    val filterId: String?,
     @ColumnInfo(name = "name")
     val name: String,
     @ColumnInfo(name = "case_type")

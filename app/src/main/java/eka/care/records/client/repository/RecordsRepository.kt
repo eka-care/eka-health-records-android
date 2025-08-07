@@ -1,5 +1,6 @@
 package eka.care.records.client.repository
 
+import eka.care.records.client.model.CaseModel
 import eka.care.records.client.model.DocumentTypeCount
 import eka.care.records.client.model.RecordModel
 import eka.care.records.client.model.SortOrder
@@ -13,6 +14,7 @@ interface RecordsRepository {
         files: List<File>,
         ownerId: String,
         filterId: String? = null,
+        caseId: String?,
         documentType: String = "ot",
         documentDate: Long? = null,
         tags: List<String>
@@ -22,6 +24,7 @@ interface RecordsRepository {
     fun readRecords(
         ownerId: String,
         filterIds: List<String>?,
+        caseId: String?,
         includeDeleted: Boolean,
         documentType: String?,
         sortOrder: SortOrder
@@ -38,6 +41,7 @@ interface RecordsRepository {
     suspend fun updateRecords(records: List<RecordEntity>)
     suspend fun updateRecord(
         id: String,
+        caseId: String?,
         documentDate: Long? = null,
         documentType: String? = null
     ): String?
@@ -46,4 +50,10 @@ interface RecordsRepository {
     suspend fun getLatestRecordUpdatedAt(ownerId: String, filterId: String?): Long?
     suspend fun insertRecordFile(file: RecordFile): Long
     suspend fun getRecordFile(localId: String): List<RecordFile>?
+
+    suspend fun createCase(name: String, type: String, ownerId: String, filterId: String?): String
+
+    fun readCases(ownerId: String, filterId: String?): Flow<List<CaseModel>>
+
+    fun getCaseWithRecords(caseId: String): Flow<CaseModel?>
 }

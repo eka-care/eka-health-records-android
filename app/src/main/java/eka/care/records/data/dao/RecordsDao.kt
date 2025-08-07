@@ -12,6 +12,7 @@ import androidx.sqlite.db.SupportSQLiteQuery
 import eka.care.records.client.model.DocumentTypeCount
 import eka.care.records.data.entity.CaseEntity
 import eka.care.records.data.entity.CaseRecordRelationEntity
+import eka.care.records.data.entity.CaseWithRecords
 import eka.care.records.data.entity.RecordEntity
 import eka.care.records.data.entity.RecordFile
 import kotlinx.coroutines.flow.Flow
@@ -61,35 +62,22 @@ interface RecordsDao {
     suspend fun getRecordFile(localId: String): List<RecordFile>?
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun createCase(case: CaseEntity)
+    suspend fun createCase(caseEntity: CaseEntity)
+
+    @Update(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun updateCase(caseEntity: CaseEntity)
 
     @Transaction
-    suspend fun createCaseRecordRelation(case: CaseEntity, recordEntity: RecordEntity) {
-        createCase(case)
-        val relation = CaseRecordRelationEntity(
-            caseId = case.caseId,
-            recordId = recordEntity.id
-        )
-        insertCaseRecordRelation(relation)
-    }
+    @Query("SELECT * FROM cases_table WHERE owner_id = :ownerId AND (FILTER_ID = :filterId OR FILTER_ID IS NULL)")
+    fun getCasesWithRecords(ownerId: String, filterId: String?): Flow<List<CaseWithRecords>>
+
+    @Transaction
+    @Query("SELECT * FROM cases_table WHERE case_id = :caseId")
+    fun getCaseWithRecords(caseId: String): Flow<CaseWithRecords?>
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertCaseRecordRelation(relation: CaseRecordRelationEntity)
 
-    @Transaction
-    suspend fun insertRecordWithFilesIntoCase(
-        case: CaseEntity,
-        record: RecordEntity,
-        files: List<RecordFile>
-    ) {
-        createCase(case)
-        insertRecordWithFiles(
-            record = record,
-            files = files
-        )
-        createCaseRecordRelation(
-            case = case,
-            recordEntity = record
-        )
-    }
+    @Update(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun updateCaseRecordRelation(relation: CaseRecordRelationEntity)
 }
