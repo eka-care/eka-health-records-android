@@ -153,13 +153,15 @@ class Records private constructor() {
         name: String,
         type: String,
         ownerId: String,
-        filterId: String? = null
+        filterId: String
     ): String {
         return recordsRepository.createCase(
+            caseId = null,
             ownerId = ownerId,
             filterId = filterId,
             name = name,
-            type = type
+            type = type,
+            isSynced = false
         )
     }
 
@@ -172,6 +174,10 @@ class Records private constructor() {
 
     fun getCaseWithRecords(caseId: String): Flow<CaseModel?> {
         return recordsRepository.getCaseWithRecords(caseId = caseId)
+    }
+
+    suspend fun assignRecordToCase(caseId: String, recordId: String) {
+        recordsRepository.assignRecordToCase(caseId = caseId, recordId = recordId)
     }
 
     fun clearAllData() {

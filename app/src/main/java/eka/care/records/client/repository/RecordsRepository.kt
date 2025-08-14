@@ -4,6 +4,7 @@ import eka.care.records.client.model.CaseModel
 import eka.care.records.client.model.DocumentTypeCount
 import eka.care.records.client.model.RecordModel
 import eka.care.records.client.model.SortOrder
+import eka.care.records.data.entity.CaseEntity
 import eka.care.records.data.entity.RecordEntity
 import eka.care.records.data.entity.RecordFile
 import kotlinx.coroutines.flow.Flow
@@ -48,12 +49,30 @@ interface RecordsRepository {
 
     suspend fun deleteRecords(ids: List<String>)
     suspend fun getLatestRecordUpdatedAt(ownerId: String, filterId: String?): Long?
+    suspend fun getLatestCaseUpdatedAt(ownerId: String, filterId: String?): Long?
     suspend fun insertRecordFile(file: RecordFile): Long
     suspend fun getRecordFile(localId: String): List<RecordFile>?
 
-    suspend fun createCase(name: String, type: String, ownerId: String, filterId: String?): String
+    suspend fun getCaseByCaseId(id: String): CaseEntity?
+
+    suspend fun createCase(
+        caseId: String?,
+        name: String,
+        type: String,
+        ownerId: String,
+        filterId: String,
+        isSynced: Boolean
+    ): String
+
+    suspend fun updateCase(
+        caseId: String,
+        name: String,
+        type: String,
+    ): String?
 
     fun readCases(ownerId: String, filterId: String?): Flow<List<CaseModel>>
 
     fun getCaseWithRecords(caseId: String): Flow<CaseModel?>
+
+    suspend fun assignRecordToCase(caseId: String, recordId: String): Unit
 }

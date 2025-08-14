@@ -37,8 +37,14 @@ interface RecordsDao {
     @Query("SELECT * FROM EKA_RECORDS_TABLE WHERE DOCUMENT_ID = :id")
     suspend fun getRecordByDocumentId(id: String): RecordEntity?
 
+    @Query("SELECT * FROM CASES_TABLE WHERE CASE_ID = :id")
+    suspend fun getCaseByCaseId(id: String): CaseEntity?
+
     @Query("SELECT MAX(UPDATED_AT) FROM EKA_RECORDS_TABLE WHERE OWNER_ID = :ownerId AND (FILTER_ID = :filterId OR FILTER_ID IS NULL)")
     fun getLatestRecordUpdatedAt(ownerId: String, filterId: String?): Long?
+
+    @Query("SELECT MAX(UPDATED_AT) FROM CASES_TABLE WHERE OWNER_ID = :ownerId AND (FILTER_ID = :filterId OR FILTER_ID IS NULL)")
+    fun getLatestCaseUpdatedAt(ownerId: String, filterId: String?): Long?
 
     @RawQuery(observedEntities = [RecordEntity::class])
     fun getDocumentTypeCounts(query: SupportSQLiteQuery): Flow<List<DocumentTypeCount>>
@@ -61,6 +67,12 @@ interface RecordsDao {
     @Query("SELECT * FROM EKA_RECORD_FILE WHERE LOCAL_ID = :localId")
     suspend fun getRecordFile(localId: String): List<RecordFile>?
 
+    @Query("SELECT * FROM CASES_TABLE WHERE OWNER_ID = :ownerId AND IS_SYNCED = 0")
+    suspend fun getUnsyncedCases(ownerId: String): List<CaseEntity>?
+
+    @Query("SELECT * FROM CASES_TABLE WHERE OWNER_ID = :ownerId AND IS_DIRTY = 1")
+    suspend fun getDirtyCases(ownerId: String): List<CaseEntity>?
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun createCase(caseEntity: CaseEntity)
 
@@ -68,7 +80,7 @@ interface RecordsDao {
     suspend fun updateCase(caseEntity: CaseEntity)
 
     @Transaction
-    @Query("SELECT * FROM cases_table WHERE owner_id = :ownerId AND (FILTER_ID = :filterId OR FILTER_ID IS NULL)")
+    @Query("SELECT * FROM cases_table WHERE owner_id = :ownerId AND (FILTER_ID = :filterId OR FILTER_ID IS NULL) AND IS_ARCHIVED = 0")
     fun getCasesWithRecords(ownerId: String, filterId: String?): Flow<List<CaseWithRecords>>
 
     @Transaction
