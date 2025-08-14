@@ -14,18 +14,14 @@ import androidx.room.Index
     ]
 )
 data class CaseEntity(
-    @ColumnInfo(name = "case_id")
-    val caseId: String,
-    @ColumnInfo(name = "owner_id")
-    val ownerId: String,
-    @ColumnInfo(name = "filter_id")
-    val filterId: String?,
-    @ColumnInfo(name = "name")
-    val name: String,
-    @ColumnInfo(name = "case_type")
-    val caseType: String? = null,
-    @ColumnInfo(name = "created_at")
-    val createdAt: Long,
-    @ColumnInfo(name = "updated_at")
-    val updatedAt: Long
+    @ColumnInfo(name = "case_id") val caseId: String,
+    @ColumnInfo(name = "owner_id") val ownerId: String,
+    @ColumnInfo(name = "filter_id") val filterId: String,
+    @ColumnInfo(name = "name") val name: String,
+    @ColumnInfo(name = "case_type") val caseType: String? = null,
+    @ColumnInfo(name = "created_at") val createdAt: Long,
+    @ColumnInfo(name = "updated_at") val updatedAt: Long,
+    @ColumnInfo(name = "is_synced") var isSynced: Boolean = false,
+    @ColumnInfo(name = "is_dirty") var isDirty: Boolean = false,
+    @ColumnInfo(name = "is_archived") var isArchived: Boolean = false
 )
