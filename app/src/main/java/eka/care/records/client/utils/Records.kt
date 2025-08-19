@@ -23,7 +23,7 @@ class Records private constructor() {
     private lateinit var recordsRepository: RecordsRepositoryImpl
     private lateinit var db: RecordsDatabase
 
-    var logger: LogInterceptor? = null
+    private var logger: LogInterceptor? = null
 
     companion object {
         @Volatile
@@ -52,10 +52,10 @@ class Records private constructor() {
         logger = listener
     }
 
-    fun refreshRecords(context: Context, ownerId: String?, filterIds: List<String>? = null) {
+    fun refreshRecords(context: Context, businessId: String?, ownerIds: List<String>? = null) {
         val inputData = Data.Builder()
-            .putString("ownerId", ownerId)
-            .putStringArray("filterIds", filterIds?.toTypedArray() ?: emptyArray())
+            .putString("businessId", businessId)
+            .putStringArray("ownerIds", ownerIds?.toTypedArray() ?: emptyArray())
             .build()
         val constraints = Constraints.Builder()
             .setRequiredNetworkType(NetworkType.CONNECTED)
@@ -75,14 +75,14 @@ class Records private constructor() {
             )
     }
 
-    fun syncRecords(ownerId: String) {
-        recordsRepository.startAutoSync(ownerId = ownerId)
+    fun syncRecords(businessId: String) {
+        recordsRepository.startAutoSync(businessId = businessId)
     }
 
     suspend fun addNewRecord(
         files: List<File>,
+        businessId: String,
         ownerId: String,
-        filterId: String? = null,
         caseId: String? = null,
         documentType: String = "ot",
         documentDate: Long? = null,
@@ -90,8 +90,8 @@ class Records private constructor() {
     ): String? {
         return recordsRepository.createRecord(
             files = files,
+            businessId = businessId,
             ownerId = ownerId,
-            filterId = filterId,
             caseId = caseId,
             documentDate = documentDate,
             documentType = documentType,
@@ -100,16 +100,16 @@ class Records private constructor() {
     }
 
     fun getRecords(
-        ownerId: String,
-        filterIds: List<String>? = null,
+        businessId: String,
+        ownerIds: List<String>,
         caseId: String? = null,
         includeDeleted: Boolean = false,
         documentType: String? = null,
         sortOrder: SortOrder,
     ): Flow<List<RecordModel>> {
         return recordsRepository.readRecords(
-            ownerId = ownerId,
-            filterIds = filterIds,
+            businessId = businessId,
+            ownerIds = ownerIds,
             caseId = caseId,
             includeDeleted = includeDeleted,
             documentType = documentType,
@@ -118,12 +118,12 @@ class Records private constructor() {
     }
 
     fun getRecordsCountGroupByType(
-        ownerId: String,
-        filterIds: List<String>? = null
+        businessId: String,
+        ownerIds: List<String>,
     ): Flow<List<DocumentTypeCount>> {
         return recordsRepository.getRecordTypeCounts(
-            ownerId = ownerId,
-            filterIds = filterIds
+            businessId = businessId,
+            ownerIds = ownerIds
         )
     }
 
@@ -150,29 +150,29 @@ class Records private constructor() {
     }
 
     suspend fun createCase(
+        businessId: String,
+        ownerId: String,
         name: String,
         type: String,
-        ownerId: String,
-        filterId: String
     ): String {
         return recordsRepository.createCase(
             caseId = null,
+            businessId = businessId,
             ownerId = ownerId,
-            filterId = filterId,
             name = name,
             type = type,
             isSynced = false
         )
     }
 
-    fun readCases(ownerId: String, filterId: String?): Flow<List<CaseModel>> {
+    fun readCases(businessId: String, ownerId: String): Flow<List<CaseModel>> {
         return recordsRepository.readCases(
-            ownerId = ownerId,
-            filterId = filterId
+            businessId = businessId,
+            ownerId = ownerId
         )
     }
 
-    fun getCaseWithRecords(caseId: String): Flow<CaseModel?> {
+    suspend fun getCaseWithRecords(caseId: String): CaseModel? {
         return recordsRepository.getCaseWithRecords(caseId = caseId)
     }
 

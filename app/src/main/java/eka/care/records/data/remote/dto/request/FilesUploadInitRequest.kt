@@ -11,6 +11,8 @@ data class FilesUploadInitRequest(
 
 @Keep
 data class Batch(
+    @SerializedName("document_id")
+    val documentId: String,
     @SerializedName("files")
     val files: List<FileType>,
     @SerializedName("dt")

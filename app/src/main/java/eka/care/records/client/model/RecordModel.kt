@@ -2,6 +2,7 @@ package eka.care.records.client.model
 
 import androidx.annotation.Keep
 import com.google.gson.annotations.SerializedName
+import eka.care.records.data.entity.RecordStatus
 
 @Keep
 data class RecordModel(
@@ -9,6 +10,8 @@ data class RecordModel(
     val id: String,
     @SerializedName("thumbnail")
     val thumbnail: String? = null,
+    @SerializedName("status")
+    val state: RecordState = RecordState.NONE,
     @SerializedName("status")
     val status: RecordStatus = RecordStatus.NONE,
     @SerializedName("createdAt")
