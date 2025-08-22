@@ -7,7 +7,7 @@ import eka.care.records.client.model.CaseModel
 import eka.care.records.client.model.DocumentTypeCount
 import eka.care.records.client.model.EventLog
 import eka.care.records.client.model.RecordModel
-import eka.care.records.client.model.RecordState
+import eka.care.records.client.model.RecordUiState
 import eka.care.records.client.model.SortOrder
 import eka.care.records.client.repository.RecordsRepository
 import eka.care.records.client.utils.Records
@@ -98,9 +98,9 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
 
     private suspend fun updateDocument(record: RecordEntity) {
         if (isNetworkAvailable(context = context)) {
-            dao.updateRecord(record.copy(state = RecordState.SYNCING))
+            dao.updateRecord(record.copy(uiState = RecordUiState.SYNCING))
         } else {
-            dao.updateRecord(record.copy(state = RecordState.WAITING_FOR_NETWORK))
+            dao.updateRecord(record.copy(uiState = RecordUiState.WAITING_FOR_NETWORK))
             return
         }
         val result = myFileRepository.updateFileDetails(
@@ -123,11 +123,11 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                 oId = record.ownerId,
                 msg = "Update failed for document $record.documentId code: $result"
             )
-            dao.updateRecord(record.copy(state = RecordState.SYNC_FAILED))
+            dao.updateRecord(record.copy(uiState = RecordUiState.SYNC_FAILED))
         } else {
             dao.updateRecord(
                 record.copy(
-                    state = RecordState.SYNC_SUCCESS,
+                    uiState = RecordUiState.SYNC_SUCCESS,
                     status = RecordStatus.SYNC_COMPLETED
                 )
             )
@@ -163,9 +163,9 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
 
     private suspend fun uploadRecords(record: RecordEntity) {
         if (isNetworkAvailable(context = context)) {
-            dao.updateRecord(record.copy(state = RecordState.SYNCING))
+            dao.updateRecord(record.copy(uiState = RecordUiState.SYNCING))
         } else {
-            dao.updateRecord(record.copy(state = RecordState.WAITING_FOR_NETWORK))
+            dao.updateRecord(record.copy(uiState = RecordUiState.WAITING_FOR_NETWORK))
             return
         }
 
@@ -204,7 +204,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                 oId = record.ownerId,
                 msg = "Upload initialization error: ${uploadInitResponse.message}"
             )
-            dao.updateRecord(record.copy(state = RecordState.SYNC_FAILED))
+            dao.updateRecord(record.copy(uiState = RecordUiState.SYNC_FAILED))
             return
         }
         val batchResponse = uploadInitResponse?.batchResponse?.firstOrNull()
@@ -215,7 +215,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                 oId = record.ownerId,
                 msg = "Batch response is null"
             )
-            dao.updateRecord(record.copy(state = RecordState.SYNC_FAILED))
+            dao.updateRecord(record.copy(uiState = RecordUiState.SYNC_FAILED))
             return
         }
         val uploadResponse =
@@ -228,12 +228,12 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                 msg = "Upload error: ${uploadResponse.message}"
             )
             myFileRepository.deleteDocument(uploadResponse.documentId, record.ownerId)
-            dao.updateRecord(record.copy(state = RecordState.SYNC_FAILED))
+            dao.updateRecord(record.copy(uiState = RecordUiState.SYNC_FAILED))
             return
         }
         dao.updateRecord(
             record.copy(
-                state = RecordState.SYNC_SUCCESS,
+                uiState = RecordUiState.SYNC_SUCCESS,
                 documentId = uploadResponse.documentId,
                 status = RecordStatus.SYNC_COMPLETED
             )
@@ -334,7 +334,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
             documentDate = documentDate ?: time,
             documentHash = files.first().md5(),
             status = RecordStatus.CREATED_LOCALLY,
-            state = RecordState.WAITING_TO_UPLOAD
+            uiState = RecordUiState.WAITING_TO_UPLOAD
         )
         val files = files.map { file ->
             val compressedFile =
@@ -403,6 +403,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                             thumbnail = it.thumbnail ?: dao.getRecordFile(it.documentId)
                                 ?.firstOrNull()?.filePath,
                             status = it.status,
+                            uiState = it.uiState,
                             createdAt = it.createdAt,
                             updatedAt = it.updatedAt,
                             documentType = it.documentType,

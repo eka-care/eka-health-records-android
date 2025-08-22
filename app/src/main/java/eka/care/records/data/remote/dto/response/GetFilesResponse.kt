@@ -35,6 +35,8 @@ data class ItemData(
     val uploadDate: Long? = null,
     @SerializedName("u_at")
     val updatedAt: Long? = null,
+    @SerializedName("cases")
+    val cases: List<String>?,
 )
 
 @Keep

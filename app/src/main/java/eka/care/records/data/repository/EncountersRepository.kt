@@ -39,7 +39,7 @@ class EncountersRepository {
     }
 
     suspend fun getCases(
-        updatedAt: Long?,
+        updatedAt: Long,
         offset: String? = null,
         oid: String?
     ): ListEncounterResponse? {
@@ -47,8 +47,8 @@ class EncountersRepository {
             val response =
                 when (val response = encounterService.listEncounters(
                     patientId = oid,
-                    updatedAt = 0L,
-                    offset = null,
+                    updatedAt = if (offset.isNullOrEmpty()) updatedAt else null,
+                    offset = offset,
                 )) {
                     is NetworkResponse.Success -> response.body
                     is NetworkResponse.ServerError -> response.body

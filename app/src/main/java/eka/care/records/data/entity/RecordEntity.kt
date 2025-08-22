@@ -4,7 +4,7 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import eka.care.records.client.model.RecordModel
-import eka.care.records.client.model.RecordState
+import eka.care.records.client.model.RecordUiState
 
 @Entity(
     tableName = "eka_records_table",
@@ -15,7 +15,7 @@ import eka.care.records.client.model.RecordState
 )
 data class RecordEntity(
     @ColumnInfo(name = "document_id") val documentId: String,
-    @ColumnInfo(name = "state") val state: RecordState = RecordState.NONE,
+    @ColumnInfo(name = "ui_state") val uiState: RecordUiState = RecordUiState.NONE,
     @ColumnInfo(name = "status") val status: RecordStatus = RecordStatus.NONE,
     @ColumnInfo(name = "business_id") val businessId: String,
     @ColumnInfo(name = "owner_id") val ownerId: String,
@@ -43,7 +43,7 @@ fun RecordEntity.toRecordModel(): RecordModel {
         id = documentId,
         thumbnail = thumbnail,
         status = status,
-        state = state,
+        uiState = uiState,
         createdAt = createdAt,
         updatedAt = updatedAt,
         documentDate = documentDate,

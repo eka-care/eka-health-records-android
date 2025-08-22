@@ -1,11 +1,16 @@
 package eka.care.records.sync
 
 import android.content.Context
+import androidx.lifecycle.Observer
 import androidx.work.CoroutineWorker
+import androidx.work.WorkInfo
+import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import androidx.work.workDataOf
 import eka.care.records.client.model.EventLog
 import eka.care.records.client.utils.Records
 import eka.care.records.client.utils.RecordsUtility.Companion.downloadThumbnail
+import eka.care.records.client.utils.RecordsUtility.Companion.getWorkerTag
 import eka.care.records.data.entity.RecordEntity
 import eka.care.records.data.remote.dto.response.CaseItem
 import eka.care.records.data.remote.dto.response.Item
@@ -18,6 +23,9 @@ import eka.care.records.data.utility.LoggerConstant.Companion.OWNER_ID
 import eka.care.records.data.utility.LoggerConstant.Companion.UPDATED_AT
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withContext
@@ -37,6 +45,7 @@ class RecordsSync(
 
     override suspend fun doWork(): Result {
         return withContext(Dispatchers.IO) {
+            setProgress(workDataOf("syncing" to true))
             val businessId =
                 inputData.getString("businessId") ?: return@withContext Result.failure()
             val ownerIds = inputData.getStringArray("ownerIds")?.toList() ?: emptyList()
@@ -49,16 +58,16 @@ class RecordsSync(
                     "Starting sync for businessId: $businessId, ownerIds: $ownerIds"
                 )
             )
-
-            fetchRecords(
-                businessId = businessId,
-                ownerIds = ownerIds
-            )
             fetchCases(
                 businessId = businessId,
                 ownerIds = ownerIds
             )
+            fetchRecords(
+                businessId = businessId,
+                ownerIds = ownerIds
+            )
             recordsRepository.startAutoSync(businessId = businessId)
+            setProgress(workDataOf("syncing" to false))
             Result.success()
         }
     }
@@ -112,12 +121,12 @@ class RecordsSync(
         businessId: String
     ) = supervisorScope {
         records.forEach {
-            launch(dbDispatcher) { storeRecord(record = it, businessId = businessId) }
+            launch(dbDispatcher) { storeRecord(item = it, businessId = businessId) }
         }
     }
 
-    private suspend fun storeRecord(record: Item, businessId: String) {
-        val recordItem = record.record.item
+    private suspend fun storeRecord(item: Item, businessId: String) {
+        val recordItem = item.record.item
         val record = recordsRepository.getRecordByDocumentId(recordItem.documentId)
         val recordToStore = RecordEntity(
             documentId = record?.documentId ?: recordItem.documentId,
@@ -152,6 +161,12 @@ class RecordsSync(
                     },
                     message = "Stored record for businessId: $businessId"
                 )
+            )
+        }
+        item.record.item.cases?.forEach { caseId ->
+            recordsRepository.assignRecordToCase(
+                caseId = caseId,
+                recordId = recordToStore.documentId
             )
         }
         storeThumbnail(
@@ -203,7 +218,6 @@ class RecordsSync(
         businessId: String,
         ownerId: String
     ) {
-        val cases = mutableListOf<CaseItem>()
         var currentOffset = offset
         do {
             val response = encountersRepository.getCases(
@@ -214,20 +228,11 @@ class RecordsSync(
             if (response == null) {
                 return
             }
-            response.cases?.let { cases.addAll(it) }
+            response.cases?.let {
+                storeCases(cases = it, ownerId = ownerId, businessId = businessId)
+            }
             currentOffset = response.nextToken
         } while (!currentOffset.isNullOrEmpty())
-        Records.logEvent(
-            EventLog(
-                params = JSONObject().also { param ->
-                    param.put(OWNER_ID, ownerId)
-                    param.put(BUSINESS_ID, businessId)
-                    param.put(UPDATED_AT, updatedAt)
-                },
-                "Got cases for: owner: $ownerId, businessId: $businessId, data size: ${cases.size}"
-            )
-        )
-        storeCases(cases = cases, ownerId = ownerId, businessId = businessId)
     }
 
     private suspend fun storeCases(
@@ -264,5 +269,20 @@ class RecordsSync(
                 isSynced = true
             )
         }
+    }
+}
+
+fun WorkManager.recordSyncFlow(businessId: String): Flow<WorkInfo?> = callbackFlow {
+    val liveData = getWorkInfosByTagLiveData(getWorkerTag(businessId))
+
+    val observer = Observer<List<WorkInfo>> { workInfos ->
+        val activeWork = workInfos.firstOrNull()
+        trySend(activeWork)
+    }
+
+    liveData.observeForever(observer)
+
+    awaitClose {
+        liveData.removeObserver(observer)
     }
 }

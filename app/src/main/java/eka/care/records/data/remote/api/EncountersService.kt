@@ -33,7 +33,7 @@ interface EncountersService {
     @GET("api/v1/cases")
     suspend fun listEncounters(
         @Header("X-Pt-Id") patientId: String?,
-        @Query("u_at__gt") updatedAt: Long,
+        @Query("u_at__gt") updatedAt: Long?,
         @Query("offset") offset: String?
     ): NetworkResponse<ListEncounterResponse, ListEncounterResponse>
 

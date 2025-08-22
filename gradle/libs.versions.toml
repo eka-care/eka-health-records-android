@@ -15,7 +15,6 @@ workRuntimeKtx = "2.8.1"
 playServicesMlkitDocumentScanner = "16.0.0-beta1"
 network = "2.0.1"
 coreKtxVersion = "1.7.0"
-pagingCommon = "3.3.6"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -35,7 +34,6 @@ haroldadmin-networkresponseadapter = { module = "com.github.haroldadmin:NetworkR
 play-services-mlkit-document-scanner = { group = "com.google.android.gms", name = "play-services-mlkit-document-scanner", version.ref = "playServicesMlkitDocumentScanner" }
 eka-network = { group = "com.github.eka-care", name = "eka-network-android", version.ref = "network" }
 core-ktx = { group = "androidx.test", name = "core-ktx", version.ref = "coreKtxVersion" }
-androidx-paging-common = { group = "androidx.paging", name = "paging-common", version.ref = "pagingCommon" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
