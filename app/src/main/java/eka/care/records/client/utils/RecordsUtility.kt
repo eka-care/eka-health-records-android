@@ -68,5 +68,9 @@ class RecordsUtility {
 
         fun File.getMimeType(): String? =
             MimeTypeMap.getSingleton().getMimeTypeFromExtension(this.extension)
+
+        fun getWorkerTag(businessId: String): String {
+            return "sync_records_${businessId}"
+        }
     }
 }

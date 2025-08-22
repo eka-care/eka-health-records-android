@@ -12,6 +12,7 @@ import eka.care.records.client.model.DocumentTypeCount
 import eka.care.records.client.model.EventLog
 import eka.care.records.client.model.RecordModel
 import eka.care.records.client.model.SortOrder
+import eka.care.records.client.utils.RecordsUtility.Companion.getWorkerTag
 import eka.care.records.data.contract.LogInterceptor
 import eka.care.records.data.db.RecordsDatabase
 import eka.care.records.data.repository.RecordsRepositoryImpl
@@ -52,7 +53,7 @@ class Records private constructor() {
         logger = listener
     }
 
-    fun refreshRecords(context: Context, businessId: String?, ownerIds: List<String>? = null) {
+    fun refreshRecords(context: Context, businessId: String, ownerIds: List<String>? = null) {
         val inputData = Data.Builder()
             .putString("businessId", businessId)
             .putStringArray("ownerIds", ownerIds?.toTypedArray() ?: emptyArray())
@@ -65,12 +66,13 @@ class Records private constructor() {
             OneTimeWorkRequestBuilder<RecordsSync>()
                 .setInputData(inputData)
                 .setConstraints(constraints)
+                .addTag(getWorkerTag(businessId))
                 .build()
 
         WorkManager.getInstance(context)
             .enqueueUniqueWork(
-                "sync_records",
-                ExistingWorkPolicy.KEEP,
+                getWorkerTag(businessId),
+                ExistingWorkPolicy.REPLACE,
                 syncRequest
             )
     }

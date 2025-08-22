@@ -3,7 +3,7 @@ package eka.care.records.data.db
 import androidx.room.TypeConverter
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import eka.care.records.client.model.RecordState
+import eka.care.records.client.model.RecordUiState
 import eka.care.records.data.entity.RecordStatus
 import eka.care.records.data.remote.dto.response.SmartReport
 
@@ -40,9 +40,9 @@ class Converters {
         RecordStatus.entries.find { it.value == value } ?: RecordStatus.NONE
 
     @TypeConverter
-    fun fromRecordState(state: RecordState): Int = state.status
+    fun fromRecordState(state: RecordUiState): Int = state.status
 
     @TypeConverter
-    fun toRecordState(value: Int): RecordState =
-        RecordState.entries.find { it.status == value } ?: RecordState.NONE
+    fun toRecordState(value: Int): RecordUiState =
+        RecordUiState.entries.find { it.status == value } ?: RecordUiState.NONE
 }
