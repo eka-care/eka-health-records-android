@@ -8,13 +8,12 @@ import eka.care.records.client.utils.Records
 import eka.care.records.client.utils.RecordsUtility.Companion.downloadThumbnail
 import eka.care.records.data.entity.RecordEntity
 import eka.care.records.data.remote.dto.response.CaseItem
-import eka.care.records.data.remote.dto.response.GetFilesResponse
 import eka.care.records.data.remote.dto.response.Item
 import eka.care.records.data.repository.EncountersRepository
 import eka.care.records.data.repository.RecordsRepositoryImpl
 import eka.care.records.data.repository.SyncRecordsRepository
+import eka.care.records.data.utility.LoggerConstant.Companion.BUSINESS_ID
 import eka.care.records.data.utility.LoggerConstant.Companion.DOCUMENT_ID
-import eka.care.records.data.utility.LoggerConstant.Companion.FILTER_ID
 import eka.care.records.data.utility.LoggerConstant.Companion.OWNER_ID
 import eka.care.records.data.utility.LoggerConstant.Companion.UPDATED_AT
 import kotlinx.coroutines.Dispatchers
@@ -23,7 +22,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
-import java.util.UUID
 
 class RecordsSync(
     appContext: Context,
@@ -39,39 +37,40 @@ class RecordsSync(
 
     override suspend fun doWork(): Result {
         return withContext(Dispatchers.IO) {
-            val ownerId = inputData.getString("ownerId") ?: return@withContext Result.failure()
-            val filterIds = inputData.getStringArray("filterIds")?.toList() ?: emptyList()
+            val businessId =
+                inputData.getString("businessId") ?: return@withContext Result.failure()
+            val ownerIds = inputData.getStringArray("ownerIds")?.toList() ?: emptyList()
             Records.logEvent(
                 EventLog(
                     params = JSONObject().also { param ->
-                        param.put(OWNER_ID, ownerId)
-                        param.put(FILTER_ID, filterIds.joinToString(","))
+                        param.put(BUSINESS_ID, businessId)
+                        param.put(OWNER_ID, ownerIds.joinToString(","))
                     },
-                    "Starting sync for ownerId: $ownerId, filterIds: $filterIds"
+                    "Starting sync for businessId: $businessId, ownerIds: $ownerIds"
                 )
             )
 
             fetchRecords(
-                ownerId = ownerId,
-                filterIds = filterIds
+                businessId = businessId,
+                ownerIds = ownerIds
             )
             fetchCases(
-                ownerId = ownerId,
-                filterIds = filterIds
+                businessId = businessId,
+                ownerIds = ownerIds
             )
-            recordsRepository.startAutoSync(ownerId = ownerId)
+            recordsRepository.startAutoSync(businessId = businessId)
             Result.success()
         }
     }
 
-    private suspend fun fetchRecords(ownerId: String, filterIds: List<String>) {
-        (filterIds.ifEmpty { listOf(null) }).forEach { filterId ->
-            val updatedAt = recordsRepository.getLatestRecordUpdatedAt(ownerId, filterId)
+    private suspend fun fetchRecords(businessId: String, ownerIds: List<String>) {
+        ownerIds.forEach { ownerId ->
+            val updatedAt = recordsRepository.getLatestRecordUpdatedAt(businessId, ownerId)
             Records.logEvent(
                 EventLog(
                     params = JSONObject().also { param ->
+                        param.put(BUSINESS_ID, businessId)
                         param.put(OWNER_ID, ownerId)
-                        param.put(FILTER_ID, filterId)
                         param.put(UPDATED_AT, updatedAt)
                     },
                     "Records updated till: $updatedAt"
@@ -79,7 +78,7 @@ class RecordsSync(
             )
             fetchRecordsFromServer(
                 updatedAt = updatedAt,
-                filterId = filterId,
+                businessId = businessId,
                 ownerId = ownerId
             )
         }
@@ -88,94 +87,70 @@ class RecordsSync(
     private suspend fun fetchRecordsFromServer(
         offset: String? = null,
         updatedAt: Long? = null,
-        filterId: String?,
+        businessId: String,
         ownerId: String
     ) {
-        val records = mutableListOf<Item>()
         var currentOffset = offset
         do {
             val response = syncRepository.getRecords(
                 updatedAt = updatedAt ?: 0L,
                 offset = currentOffset,
-                oid = filterId
+                oid = ownerId
             )
             if (response?.body() == null) {
                 break
             }
-            response.body()?.let<GetFilesResponse, Unit> {
-                records.addAll(it.items)
+            response.body()?.let {
+                storeRecords(records = it.items, businessId = businessId)
                 currentOffset = it.nextToken
             }
         } while (!currentOffset.isNullOrEmpty())
-        Records.logEvent(
-            EventLog(
-                params = JSONObject().also { param ->
-                    param.put(OWNER_ID, ownerId)
-                    param.put(FILTER_ID, filterId)
-                    param.put(UPDATED_AT, updatedAt)
-                },
-                "Got records for: owner: $ownerId, filterIds: $filterId, data size: ${records.size}"
-            )
-        )
-        storeRecords(records = records, ownerId = ownerId)
     }
 
     private suspend fun storeRecords(
         records: List<Item>,
-        ownerId: String
+        businessId: String
     ) = supervisorScope {
         records.forEach {
-            launch(dbDispatcher) { storeRecord(record = it, ownerId = ownerId) }
+            launch(dbDispatcher) { storeRecord(record = it, businessId = businessId) }
         }
     }
 
-    private suspend fun storeRecord(record: Item, ownerId: String) {
+    private suspend fun storeRecord(record: Item, businessId: String) {
         val recordItem = record.record.item
         val record = recordsRepository.getRecordByDocumentId(recordItem.documentId)
-        var recordToStore = record
-        fun getRecordEntity(id: String): RecordEntity {
-            recordToStore = if (record?.isDirty == true || record?.isDeleted == true) {
-                record
-            } else {
-                RecordEntity(
-                    id = id,
-                    ownerId = ownerId,
-                    documentId = recordItem.documentId,
-                    filterId = recordItem.patientId,
-                    createdAt = recordItem.uploadDate ?: 0L,
-                    updatedAt = recordItem.updatedAt ?: recordItem.uploadDate ?: 0L,
-                    documentDate = recordItem.metadata?.documentDate,
-                    documentType = recordItem.documentType ?: "ot",
-                    isSmart = recordItem.metadata?.autoTags?.contains("1") == true,
-                )
-            }
-            return recordToStore
-        }
+        val recordToStore = RecordEntity(
+            documentId = record?.documentId ?: recordItem.documentId,
+            ownerId = recordItem.patientId ?: "",
+            businessId = businessId,
+            createdAt = recordItem.uploadDate ?: 0L,
+            updatedAt = recordItem.updatedAt ?: recordItem.uploadDate ?: 0L,
+            documentDate = recordItem.metadata?.documentDate,
+            documentType = recordItem.documentType ?: "ot",
+            isSmart = recordItem.metadata?.autoTags?.contains("1") == true,
+        )
         if (record != null) {
-            recordsRepository.updateRecords(
-                listOf(getRecordEntity(record.id))
-            )
+            recordsRepository.updateRecord(recordToStore)
             Records.logEvent(
                 EventLog(
                     params = JSONObject().also { param ->
-                        param.put(OWNER_ID, ownerId)
-                        param.put(FILTER_ID, recordItem.patientId)
-                        param.put(DOCUMENT_ID, record.id)
+                        param.put(BUSINESS_ID, businessId)
+                        param.put(OWNER_ID, recordItem.patientId)
+                        param.put(DOCUMENT_ID, record.documentId)
                     },
-                    message = "Updated record for ownerId: $ownerId"
+                    message = "Updated record for businessId: $businessId"
                 )
             )
         } else {
-            recordsRepository.createRecords(
-                listOf(getRecordEntity(id = UUID.randomUUID().toString()))
-            )
+            recordsRepository.createRecords(listOf(recordToStore))
             Records.logEvent(
                 EventLog(
                     params = JSONObject().also { param ->
-                        param.put(OWNER_ID, ownerId)
-                        param.put(FILTER_ID, recordItem.patientId)
+                        param.put(DOCUMENT_ID, id)
+                        param.put(BUSINESS_ID, businessId)
+                        param.put(OWNER_ID, recordItem.patientId)
                     },
-                    message = "Stored record for ownerId: $ownerId"
+                    message = "Stored record for businessId: $businessId"
                 )
             )
         }
@@ -198,36 +173,34 @@ class RecordsSync(
             return
         }
         val path = downloadThumbnail(thumbnail, context = context)
-        recordsRepository.updateRecords(listOf(record.copy(thumbnail = path)))
+        recordsRepository.updateRecord(record.copy(thumbnail = path))
     }
 
-    private suspend fun fetchCases(ownerId: String, filterIds: List<String>) {
-        (filterIds.ifEmpty { listOf(null) }).forEach { filterId ->
-            val updatedAt = recordsRepository.getLatestCaseUpdatedAt(ownerId, filterId)
+    private suspend fun fetchCases(businessId: String, ownerIds: List<String>) {
+        ownerIds.forEach { ownerId ->
+            val updatedAt = recordsRepository.getLatestCaseUpdatedAt(businessId, ownerId)
             Records.logEvent(
                 EventLog(
                     params = JSONObject().also { param ->
                         param.put(OWNER_ID, ownerId)
-                        param.put(FILTER_ID, filterId)
+                        param.put(BUSINESS_ID, businessId)
                         param.put(UPDATED_AT, updatedAt)
                     },
                     "Cases updated till: $updatedAt"
                 )
             )
-            filterId?.let {
-                fetchCasesFromServer(
-                    updatedAt = updatedAt,
-                    filterId = it,
-                    ownerId = ownerId
-                )
-            }
+            fetchCasesFromServer(
+                updatedAt = updatedAt,
+                businessId = businessId,
+                ownerId = ownerId
+            )
         }
     }
 
     private suspend fun fetchCasesFromServer(
         offset: String? = null,
         updatedAt: Long? = null,
-        filterId: String,
+        businessId: String,
         ownerId: String
     ) {
         val cases = mutableListOf<CaseItem>()
@@ -236,7 +209,7 @@ class RecordsSync(
             val response = encountersRepository.getCases(
                 updatedAt = updatedAt ?: 0L,
                 offset = currentOffset,
-                oid = filterId
+                oid = ownerId
             )
             if (response == null) {
                 return
@@ -248,30 +221,36 @@ class RecordsSync(
             EventLog(
                 params = JSONObject().also { param ->
                     param.put(OWNER_ID, ownerId)
-                    param.put(FILTER_ID, filterId)
+                    param.put(BUSINESS_ID, businessId)
                     param.put(UPDATED_AT, updatedAt)
                 },
-                "Got cases for: owner: $ownerId, filterIds: $filterId, data size: ${cases.size}"
+                "Got cases for: owner: $ownerId, businessId: $businessId, data size: ${cases.size}"
             )
         )
-        storeCases(cases = cases, ownerId = ownerId, filterId = filterId)
+        storeCases(cases = cases, ownerId = ownerId, businessId = businessId)
     }
 
     private suspend fun storeCases(
-        cases: List<CaseItem>,
+        businessId: String,
         ownerId: String,
-        filterId: String
+        cases: List<CaseItem>
     ) = supervisorScope {
         cases.forEach {
-            launch(dbDispatcher) { storeCase(case = it, ownerId = ownerId, filterId = filterId) }
+            launch(dbDispatcher) {
+                storeCase(
+                    case = it,
+                    ownerId = ownerId,
+                    businessId = businessId
+                )
+            }
         }
     }
 
-    private suspend fun storeCase(case: CaseItem, ownerId: String, filterId: String) {
+    private suspend fun storeCase(case: CaseItem, ownerId: String, businessId: String) {
         val caseRecord = recordsRepository.getCaseByCaseId(case.id)
         if (caseRecord != null) {
             recordsRepository.updateCase(
-                caseId = caseRecord.caseId,
+                caseId = caseRecord.encounter.encounterId,
                 name = case.itemDetails?.displayName ?: "Unknown Case",
                 type = case.itemDetails?.type ?: "unknown",
             )
@@ -279,7 +258,7 @@ class RecordsSync(
             recordsRepository.createCase(
                 caseId = case.id,
                 ownerId = ownerId,
-                filterId = filterId,
+                businessId = businessId,
                 name = case.itemDetails?.displayName ?: "Unknown Case",
                 type = case.itemDetails?.type ?: "unknown",
                 isSynced = true

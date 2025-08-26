@@ -4,8 +4,8 @@ class LoggerConstant {
     companion object {
         const val TAG = "EKA_RECORDS_LOG"
         const val EVENT = "log_event"
+        const val BUSINESS_ID = "business_id"
         const val OWNER_ID = "owner_id"
-        const val FILTER_ID = "filter_id"
         const val DOCUMENT_ID = "document_id"
         const val DOCUMENT_DATE = "document_date"
         const val DOCUMENT_TYPE = "document_type"

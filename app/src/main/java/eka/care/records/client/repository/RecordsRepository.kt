@@ -4,17 +4,17 @@ import eka.care.records.client.model.CaseModel
 import eka.care.records.client.model.DocumentTypeCount
 import eka.care.records.client.model.RecordModel
 import eka.care.records.client.model.SortOrder
-import eka.care.records.data.entity.CaseEntity
+import eka.care.records.data.entity.EncounterWithRecords
+import eka.care.records.data.entity.FileEntity
 import eka.care.records.data.entity.RecordEntity
-import eka.care.records.data.entity.RecordFile
 import kotlinx.coroutines.flow.Flow
 import java.io.File
 
 interface RecordsRepository {
     suspend fun createRecord(
         files: List<File>,
+        businessId: String,
         ownerId: String,
-        filterId: String? = null,
         caseId: String?,
         documentType: String = "ot",
         documentDate: Long? = null,
@@ -23,8 +23,8 @@ interface RecordsRepository {
 
     suspend fun createRecords(records: List<RecordEntity>)
     fun readRecords(
-        ownerId: String,
-        filterIds: List<String>?,
+        businessId: String,
+        ownerIds: List<String>,
         caseId: String?,
         includeDeleted: Boolean,
         documentType: String?,
@@ -32,14 +32,14 @@ interface RecordsRepository {
     ): Flow<List<RecordModel>>
 
     fun getRecordTypeCounts(
-        ownerId: String,
-        filterIds: List<String>?,
+        businessId: String,
+        ownerIds: List<String>,
     ): Flow<List<DocumentTypeCount>>
 
     suspend fun getRecordById(id: String): RecordEntity?
     suspend fun getRecordByDocumentId(id: String): RecordEntity?
     suspend fun getRecordDetails(id: String): RecordModel?
-    suspend fun updateRecords(records: List<RecordEntity>)
+    suspend fun updateRecord(record: RecordEntity)
     suspend fun updateRecord(
         id: String,
         caseId: String?,
@@ -48,19 +48,19 @@ interface RecordsRepository {
     ): String?
 
     suspend fun deleteRecords(ids: List<String>)
-    suspend fun getLatestRecordUpdatedAt(ownerId: String, filterId: String?): Long?
-    suspend fun getLatestCaseUpdatedAt(ownerId: String, filterId: String?): Long?
-    suspend fun insertRecordFile(file: RecordFile): Long
-    suspend fun getRecordFile(localId: String): List<RecordFile>?
+    suspend fun getLatestRecordUpdatedAt(businessId: String, ownerId: String): Long?
+    suspend fun getLatestCaseUpdatedAt(businessId: String, ownerId: String): Long?
+    suspend fun insertRecordFile(file: FileEntity): Long
+    suspend fun getRecordFile(localId: String): List<FileEntity>?
 
-    suspend fun getCaseByCaseId(id: String): CaseEntity?
+    suspend fun getCaseByCaseId(id: String): EncounterWithRecords?
 
     suspend fun createCase(
         caseId: String?,
+        businessId: String,
+        ownerId: String,
         name: String,
         type: String,
-        ownerId: String,
-        filterId: String,
         isSynced: Boolean
     ): String
 
@@ -70,9 +70,9 @@ interface RecordsRepository {
         type: String,
     ): String?
 
-    fun readCases(ownerId: String, filterId: String?): Flow<List<CaseModel>>
+    fun readCases(businessId: String, ownerId: String): Flow<List<CaseModel>>
 
-    fun getCaseWithRecords(caseId: String): Flow<CaseModel?>
+    suspend fun getCaseWithRecords(caseId: String): CaseModel?
 
     suspend fun assignRecordToCase(caseId: String, recordId: String): Unit
 }
