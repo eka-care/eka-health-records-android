@@ -40,6 +40,11 @@ interface EncountersService {
     @DELETE("api/v1/cases/{id}")
     suspend fun deleteEncounter(
         @Header("X-Pt-Id") patientId: String,
-        @Path("id") caseId: String
-    ): NetworkResponse<DeleteCaseResponse?, DeleteCaseResponse>
+        @Path("id") encounterId: String
+    ): NetworkResponse<DeleteCaseResponse?, DeleteCaseResponse?>
+
+    @GET("api/v1/docs/refresh")
+    suspend fun syncOrigin(
+        @Header("X-Pt-Id") patientId: String?
+    ): NetworkResponse<Any, Any>
 }

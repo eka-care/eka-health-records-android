@@ -7,6 +7,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
+import eka.care.records.data.entity.CaseStatus
 import eka.care.records.data.entity.EncounterEntity
 import eka.care.records.data.entity.EncounterRecordCrossRef
 import eka.care.records.data.entity.EncounterWithRecords
@@ -22,17 +23,21 @@ interface EncounterRecordDao {
     @Update(onConflict = OnConflictStrategy.REPLACE)
     suspend fun updateEncounter(encounter: EncounterEntity)
 
+    @Query("SELECT * FROM ENCOUNTERS_TABLE WHERE BUSINESS_ID = :businessId AND OWNER_ID = :ownerId AND status != :archivedStatus")
+    fun getAllEncounters(
+        businessId: String,
+        ownerId: String,
+        archivedStatus: CaseStatus = CaseStatus.ARCHIVED
+    ): Flow<List<EncounterWithRecords>>
+
+    @Query("SELECT * FROM ENCOUNTERS_TABLE WHERE BUSINESS_ID = :businessId AND status in (:list)")
+    suspend fun getEncountersByStatus(
+        businessId: String,
+        list: List<CaseStatus>
+    ): List<EncounterEntity>?
+
     @Delete
     suspend fun deleteEncounter(encounter: EncounterEntity)
-
-    @Query("SELECT * FROM ENCOUNTERS_TABLE WHERE BUSINESS_ID = :businessId AND OWNER_ID = :ownerId")
-    fun getAllEncounters(businessId: String, ownerId: String): Flow<List<EncounterWithRecords>>
-
-    @Query("SELECT * FROM ENCOUNTERS_TABLE WHERE OWNER_ID = :ownerId AND IS_SYNCED = 0")
-    suspend fun getUnsyncedEncounters(ownerId: String): List<EncounterEntity>?
-
-    @Query("SELECT * FROM ENCOUNTERS_TABLE WHERE OWNER_ID = :ownerId AND IS_DIRTY = 1")
-    suspend fun getDirtyEncounter(ownerId: String): List<EncounterEntity>?
 
     @Query("SELECT MAX(UPDATED_AT) FROM ENCOUNTERS_TABLE WHERE BUSINESS_ID = :businessId AND OWNER_ID = :ownerId")
     fun getLatestEncounterUpdatedAt(businessId: String, ownerId: String): Long?

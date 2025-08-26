@@ -3,6 +3,7 @@ package eka.care.records.data.repository
 import android.content.Context
 import androidx.sqlite.db.SupportSQLiteQueryBuilder
 import com.google.gson.Gson
+import com.haroldadmin.cnradapter.NetworkResponse
 import eka.care.records.client.model.CaseModel
 import eka.care.records.client.model.DocumentTypeCount
 import eka.care.records.client.model.EventLog
@@ -16,6 +17,8 @@ import eka.care.records.client.utils.RecordsUtility.Companion.getMimeType
 import eka.care.records.client.utils.RecordsUtility.Companion.md5
 import eka.care.records.data.core.FileStorageManagerImpl
 import eka.care.records.data.db.RecordsDatabase
+import eka.care.records.data.entity.CaseStatus
+import eka.care.records.data.entity.CaseUiState
 import eka.care.records.data.entity.EncounterEntity
 import eka.care.records.data.entity.EncounterRecordCrossRef
 import eka.care.records.data.entity.FileEntity
@@ -65,11 +68,14 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
             )?.also {
                 syncRecords(it)
             }
-            encountersDao.getUnsyncedEncounters(businessId)?.also {
-                syncCasesToServer(it)
-            }
-            encountersDao.getDirtyEncounter(businessId)?.also {
-                syncCasesToServer(it)
+            encountersDao.getEncountersByStatus(
+                businessId, listOf(
+                    CaseStatus.CREATED_LOCALLY,
+                    CaseStatus.UPDATED_LOCALLY,
+                    CaseStatus.ARCHIVED,
+                )
+            )?.also {
+                syncEncounters(it)
             }
         }
     }
@@ -87,6 +93,28 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
 
                 RecordStatus.ARCHIVED -> {
                     syncDeletedRecordsToServer(it)
+                }
+
+                else -> {
+                    //NO-OP
+                }
+            }
+        }
+    }
+
+    private suspend fun syncEncounters(encounters: List<EncounterEntity>) = supervisorScope {
+        encounters.forEach {
+            when (it.status) {
+                CaseStatus.CREATED_LOCALLY -> {
+                    uploadEncounter(it)
+                }
+
+                CaseStatus.UPDATED_LOCALLY -> {
+                    updateEncounter(it)
+                }
+
+                CaseStatus.ARCHIVED -> {
+                    syncDeletedEncounterToServer(it)
                 }
 
                 else -> {
@@ -246,51 +274,93 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
         )
     }
 
-    private suspend fun syncCasesToServer(cases: List<EncounterEntity>) = supervisorScope {
-        cases.forEach { case ->
-            launch {
-                if (!isNetworkAvailable(context = context)) {
-                    logRecordSyncEvent(
-                        bId = case.businessId,
-                        oId = case.ownerId,
-                        caseId = case.encounterId,
-                        msg = "Syncing case failed due to no network: ${case.encounterId}",
-                    )
-                    return@launch
-                }
-                val response = encountersRepository.createCase(
-                    patientId = case.ownerId,
-                    caseRequest = CaseRequest(
-                        caseId = case.encounterId,
-                        name = case.name,
-                        caseType = case.encounterType,
-                        occurredAt = case.createdAt
-                    )
-                )
-                if (response == null) {
-                    logRecordSyncEvent(
-                        bId = case.businessId,
-                        oId = case.ownerId,
-                        caseId = case.encounterId,
-                        msg = "Syncing case failed: ${case.encounterId}",
-                    )
-                    return@launch
-                }
-                encountersDao.updateEncounter(
-                    case.copy(
-                        isSynced = true,
-                        isDirty = false,
-                        isArchived = false,
-                        encounterId = response.caseId
-                    )
-                )
-                logRecordSyncEvent(
-                    bId = case.businessId,
-                    oId = case.ownerId,
-                    caseId = case.encounterId,
-                    msg = "Syncing case success: ${response.caseId}",
-                )
-            }
+    private suspend fun uploadEncounter(encounter: EncounterEntity) {
+        if (isNetworkAvailable(context = context)) {
+            encountersDao.updateEncounter(encounter.copy(uiState = CaseUiState.SYNCING))
+        } else {
+            encountersDao.updateEncounter(encounter.copy(uiState = CaseUiState.WAITING_FOR_NETWORK))
+            return
+        }
+
+        val response = encountersRepository.createCase(
+            patientId = encounter.ownerId,
+            caseRequest = CaseRequest(
+                caseId = encounter.encounterId,
+                name = encounter.name,
+                caseType = encounter.encounterType,
+                occurredAt = encounter.createdAt
+            )
+        )
+        if (response == null) {
+            logRecordSyncEvent(
+                bId = encounter.businessId,
+                oId = encounter.ownerId,
+                caseId = encounter.encounterId,
+                msg = "Syncing case failed: ${encounter.encounterId}",
+            )
+            return
+        }
+        encountersDao.updateEncounter(
+            encounter.copy(
+                uiState = CaseUiState.SYNC_SUCCESS,
+                status = CaseStatus.SYNC_COMPLETED,
+                encounterId = response.caseId
+            )
+        )
+        logRecordSyncEvent(
+            bId = encounter.businessId,
+            oId = encounter.ownerId,
+            caseId = encounter.encounterId,
+            msg = "Syncing case success: ${response.caseId}",
+        )
+    }
+
+    private suspend fun updateEncounter(encounter: EncounterEntity) {
+        if (isNetworkAvailable(context = context)) {
+            encountersDao.updateEncounter(encounter.copy(uiState = CaseUiState.SYNCING))
+        } else {
+            encountersDao.updateEncounter(encounter.copy(uiState = CaseUiState.WAITING_FOR_NETWORK))
+            return
+        }
+        val result = encountersRepository.updateEncounterDetails(
+            patientId = encounter.ownerId,
+            caseId = encounter.encounterId,
+            caseRequest = CaseRequest(
+                caseId = encounter.encounterId,
+                name = encounter.name,
+                caseType = encounter.encounterType,
+                occurredAt = encounter.createdAt
+            )
+        )
+        if (result == null) {
+            return
+        }
+
+        if (result.error != null) {
+            encountersDao.updateEncounter(encounter.copy(uiState = CaseUiState.SYNC_FAILED))
+        } else {
+            encountersDao.updateEncounter(encounter.copy(uiState = CaseUiState.SYNC_SUCCESS))
+        }
+    }
+
+    private suspend fun syncDeletedEncounterToServer(encounter: EncounterEntity) {
+        val result =
+            encountersRepository.deleteEncounter(encounter.ownerId, encounter.encounterId)
+        if (result is NetworkResponse.Success) {
+            encountersDao.deleteEncounter(encounter)
+            logRecordSyncEvent(
+                caseId = encounter.encounterId,
+                bId = encounter.businessId,
+                oId = encounter.ownerId,
+                msg = "Syncing case success: ${encounter.encounterId}"
+            )
+        } else if (result is NetworkResponse.Error) {
+            logRecordSyncEvent(
+                caseId = encounter.encounterId,
+                bId = encounter.businessId,
+                oId = encounter.ownerId,
+                msg = "Syncing case failed: ${encounter.encounterId}, code: ${result.error?.message.toString()}"
+            )
         }
     }
 
@@ -664,7 +734,10 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
         ownerId: String,
         name: String,
         type: String,
-        isSynced: Boolean
+        createdAt: Long?,
+        updatedAt: Long?,
+        status: CaseStatus,
+        uiStatus: CaseUiState
     ): String = supervisorScope {
         val id = caseId ?: UUID.randomUUID().toString()
         logRecordSyncEvent(
@@ -680,21 +753,29 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                 encounterType = type,
                 businessId = businessId,
                 ownerId = ownerId,
-                isSynced = isSynced,
-                createdAt = System.currentTimeMillis() / 1000,
-                updatedAt = System.currentTimeMillis() / 1000,
+                status = status,
+                uiState = uiStatus,
+                createdAt = createdAt ?: (System.currentTimeMillis() / 1000),
+                updatedAt = updatedAt ?: (System.currentTimeMillis() / 1000),
             )
         )
         return@supervisorScope id
     }
 
-    override suspend fun updateCase(caseId: String, name: String, type: String): String? {
+    override suspend fun updateCase(
+        caseId: String,
+        name: String,
+        type: String,
+        status: CaseStatus,
+        uiStatus: CaseUiState
+    ): String? {
         val encounter = getCaseByCaseId(caseId) ?: return null
         val updatedEncounter = encounter.copy(
             encounter = encounter.encounter.copy(
                 name = name,
                 encounterType = type,
-                isDirty = true
+                status = status,
+                uiState = uiStatus,
             )
         )
         encountersDao.updateEncounter(updatedEncounter.encounter)
@@ -717,6 +798,25 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
             caseId = caseId,
             documentId = recordId
         )
+    }
+
+    override suspend fun deleteCases(caseId: String) {
+        val case = getCaseByCaseId(caseId)
+        if (case != null) {
+            encountersDao.updateEncounter(
+                case.encounter.copy(status = CaseStatus.ARCHIVED)
+            )
+            logRecordSyncEvent(
+                bId = case.encounter.businessId,
+                oId = case.encounter.ownerId,
+                caseId = case.encounter.encounterId,
+                msg = "Deleted case with id: $caseId"
+            )
+        }
+    }
+
+    override suspend fun deleteCase(encounter: EncounterEntity) {
+        encountersDao.deleteEncounter(encounter)
     }
 
     private suspend fun insertRecordIntoCase(caseId: String, documentId: String) {

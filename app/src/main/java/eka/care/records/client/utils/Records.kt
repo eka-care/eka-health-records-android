@@ -15,6 +15,9 @@ import eka.care.records.client.model.SortOrder
 import eka.care.records.client.utils.RecordsUtility.Companion.getWorkerTag
 import eka.care.records.data.contract.LogInterceptor
 import eka.care.records.data.db.RecordsDatabase
+import eka.care.records.data.entity.CaseStatus
+import eka.care.records.data.entity.CaseUiState
+import eka.care.records.data.repository.EncountersRepository
 import eka.care.records.data.repository.RecordsRepositoryImpl
 import eka.care.records.sync.RecordsSync
 import kotlinx.coroutines.flow.Flow
@@ -22,6 +25,7 @@ import java.io.File
 
 class Records private constructor() {
     private lateinit var recordsRepository: RecordsRepositoryImpl
+    private lateinit var encounterRepository: EncountersRepository
     private lateinit var db: RecordsDatabase
 
     private var logger: LogInterceptor? = null
@@ -35,6 +39,7 @@ class Records private constructor() {
                 INSTANCE ?: buildClient().also {
                     it.db = RecordsDatabase.getInstance(context)
                     it.recordsRepository = RecordsRepositoryImpl(context)
+                    it.encounterRepository = EncountersRepository()
                     INSTANCE = it
                 }
             }
@@ -156,6 +161,8 @@ class Records private constructor() {
         ownerId: String,
         name: String,
         type: String,
+        createdAt: Long? = null,
+        updatedAt: Long? = null
     ): String {
         return recordsRepository.createCase(
             caseId = null,
@@ -163,7 +170,10 @@ class Records private constructor() {
             ownerId = ownerId,
             name = name,
             type = type,
-            isSynced = false
+            createdAt = createdAt,
+            updatedAt = updatedAt,
+            status = CaseStatus.CREATED_LOCALLY,
+            uiStatus = CaseUiState.WAITING_TO_UPLOAD
         )
     }
 
@@ -174,12 +184,32 @@ class Records private constructor() {
         )
     }
 
+    suspend fun updateEncounter(caseId: String, name: String, type: String): String? {
+        return recordsRepository.updateCase(
+            caseId = caseId,
+            name = name,
+            type = type,
+            status = CaseStatus.UPDATED_LOCALLY,
+            uiStatus = CaseUiState.WAITING_TO_UPLOAD
+        )
+    }
+
     suspend fun getCaseWithRecords(caseId: String): CaseModel? {
         return recordsRepository.getCaseWithRecords(caseId = caseId)
     }
 
     suspend fun assignRecordToCase(caseId: String, recordId: String) {
         recordsRepository.assignRecordToCase(caseId = caseId, recordId = recordId)
+    }
+
+    suspend fun deleteEncounter(encounterId: String) {
+        recordsRepository.deleteCases(
+            caseId = encounterId
+        )
+    }
+
+    suspend fun syncOrigin(ownerId: String) {
+        encounterRepository.syncOrigin(ownerId)
     }
 
     fun clearAllData() {

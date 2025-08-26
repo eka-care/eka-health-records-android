@@ -59,7 +59,7 @@ class EncountersRepository {
         }
     }
 
-    suspend fun updateCaseDetails(
+    suspend fun updateEncounterDetails(
         patientId: String,
         caseId: String,
         caseRequest: CaseRequest
@@ -82,13 +82,21 @@ class EncountersRepository {
 
     suspend fun deleteEncounter(
         patientId: String,
-        caseId: String
-    ): DeleteCaseResponse? {
+        encounterId: String
+    ): NetworkResponse<DeleteCaseResponse?, DeleteCaseResponse?> {
+        return withContext(Dispatchers.IO) {
+            encounterService.deleteEncounter(
+                patientId = patientId,
+                encounterId = encounterId
+            )
+        }
+    }
+
+    suspend fun syncOrigin(patientId: String): Any? {
         return withContext(Dispatchers.IO) {
             val response =
-                when (val response = encounterService.deleteEncounter(
-                    patientId = patientId,
-                    caseId = caseId
+                when (val response = encounterService.syncOrigin(
+                    patientId = patientId
                 )) {
                     is NetworkResponse.Success -> response.body
                     is NetworkResponse.ServerError -> response.body
