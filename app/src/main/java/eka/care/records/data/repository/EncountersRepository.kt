@@ -6,9 +6,7 @@ import eka.care.records.client.utils.Document
 import eka.care.records.data.remote.api.EncountersService
 import eka.care.records.data.remote.dto.request.CaseRequest
 import eka.care.records.data.remote.dto.response.CreateCaseResponse
-import eka.care.records.data.remote.dto.response.DeleteCaseResponse
 import eka.care.records.data.remote.dto.response.ListEncounterResponse
-import eka.care.records.data.remote.dto.response.UpdateCaseResponse
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -63,27 +61,20 @@ class EncountersRepository {
         patientId: String,
         caseId: String,
         caseRequest: CaseRequest
-    ): UpdateCaseResponse? {
+    ): NetworkResponse<Unit, Unit> {
         return withContext(Dispatchers.IO) {
-            val response =
-                when (val response = encounterService.updateCaseDetails(
-                    patientId = patientId,
-                    caseId = caseId,
-                    caseRequest = caseRequest
-                )) {
-                    is NetworkResponse.Success -> response.body
-                    is NetworkResponse.ServerError -> response.body
-                    is NetworkResponse.NetworkError -> null
-                    is NetworkResponse.UnknownError -> null
-                }
-            response
+            encounterService.updateCaseDetails(
+                patientId = patientId,
+                caseId = caseId,
+                caseRequest = caseRequest
+            )
         }
     }
 
     suspend fun deleteEncounter(
         patientId: String,
         encounterId: String
-    ): NetworkResponse<DeleteCaseResponse?, DeleteCaseResponse?> {
+    ): NetworkResponse<Unit, Unit> {
         return withContext(Dispatchers.IO) {
             encounterService.deleteEncounter(
                 patientId = patientId,
