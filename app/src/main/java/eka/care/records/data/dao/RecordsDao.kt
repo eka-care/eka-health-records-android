@@ -53,9 +53,6 @@ interface RecordsDao {
         list: List<RecordStatus>
     ): List<RecordEntity>?
 
-//    @Query("SELECT * FROM EKA_RECORDS_TABLE WHERE BUSINESS_ID = :businessId AND IS_ARCHIVED = 1")
-//    suspend fun getDeletedRecords(businessId: String): List<RecordEntity>?
-
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertRecordFile(recordFile: FileEntity): Long
 

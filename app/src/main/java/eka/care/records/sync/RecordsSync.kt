@@ -11,6 +11,8 @@ import eka.care.records.client.model.EventLog
 import eka.care.records.client.utils.Records
 import eka.care.records.client.utils.RecordsUtility.Companion.downloadThumbnail
 import eka.care.records.client.utils.RecordsUtility.Companion.getWorkerTag
+import eka.care.records.data.entity.CaseStatus
+import eka.care.records.data.entity.CaseUiState
 import eka.care.records.data.entity.RecordEntity
 import eka.care.records.data.remote.dto.response.CaseItem
 import eka.care.records.data.remote.dto.response.Item
@@ -253,11 +255,19 @@ class RecordsSync(
 
     private suspend fun storeCase(case: CaseItem, ownerId: String, businessId: String) {
         val caseRecord = recordsRepository.getCaseByCaseId(case.id)
+        if (case.status == "D") {
+            caseRecord?.encounter?.let {
+                recordsRepository.deleteCase(it)
+            }
+            return
+        }
         if (caseRecord != null) {
             recordsRepository.updateCase(
                 caseId = caseRecord.encounter.encounterId,
                 name = case.itemDetails?.displayName ?: "Unknown Case",
                 type = case.itemDetails?.type ?: "unknown",
+                status = CaseStatus.NONE,
+                uiStatus = CaseUiState.NONE
             )
         } else {
             recordsRepository.createCase(
@@ -266,7 +276,10 @@ class RecordsSync(
                 businessId = businessId,
                 name = case.itemDetails?.displayName ?: "Unknown Case",
                 type = case.itemDetails?.type ?: "unknown",
-                isSynced = true
+                createdAt = case.itemDetails?.createdAt,
+                updatedAt = case.updatedAt,
+                status = CaseStatus.NONE,
+                uiStatus = CaseUiState.NONE
             )
         }
     }

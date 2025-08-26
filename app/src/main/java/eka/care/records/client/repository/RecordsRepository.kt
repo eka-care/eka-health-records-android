@@ -4,6 +4,9 @@ import eka.care.records.client.model.CaseModel
 import eka.care.records.client.model.DocumentTypeCount
 import eka.care.records.client.model.RecordModel
 import eka.care.records.client.model.SortOrder
+import eka.care.records.data.entity.CaseStatus
+import eka.care.records.data.entity.CaseUiState
+import eka.care.records.data.entity.EncounterEntity
 import eka.care.records.data.entity.EncounterWithRecords
 import eka.care.records.data.entity.FileEntity
 import eka.care.records.data.entity.RecordEntity
@@ -61,16 +64,25 @@ interface RecordsRepository {
         ownerId: String,
         name: String,
         type: String,
-        isSynced: Boolean
+        createdAt: Long?,
+        updatedAt: Long?,
+        status: CaseStatus,
+        uiStatus: CaseUiState
     ): String
 
     suspend fun updateCase(
         caseId: String,
         name: String,
         type: String,
+        status: CaseStatus,
+        uiStatus: CaseUiState
     ): String?
 
     fun readCases(businessId: String, ownerId: String): Flow<List<CaseModel>>
+
+    suspend fun deleteCases(caseId: String)
+
+    suspend fun deleteCase(encounter: EncounterEntity)
 
     suspend fun getCaseWithRecords(caseId: String): CaseModel?
 
