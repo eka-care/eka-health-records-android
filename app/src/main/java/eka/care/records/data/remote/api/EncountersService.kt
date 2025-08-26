@@ -3,9 +3,7 @@ package eka.care.records.data.remote.api
 import com.haroldadmin.cnradapter.NetworkResponse
 import eka.care.records.data.remote.dto.request.CaseRequest
 import eka.care.records.data.remote.dto.response.CreateCaseResponse
-import eka.care.records.data.remote.dto.response.DeleteCaseResponse
 import eka.care.records.data.remote.dto.response.ListEncounterResponse
-import eka.care.records.data.remote.dto.response.UpdateCaseResponse
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -28,7 +26,7 @@ interface EncountersService {
         @Header("X-Pt-Id") patientId: String,
         @Path("id") caseId: String,
         @Body caseRequest: CaseRequest
-    ): NetworkResponse<UpdateCaseResponse?, UpdateCaseResponse>
+    ): NetworkResponse<Unit, Unit>
 
     @GET("api/v1/cases")
     suspend fun listEncounters(
@@ -41,7 +39,7 @@ interface EncountersService {
     suspend fun deleteEncounter(
         @Header("X-Pt-Id") patientId: String,
         @Path("id") encounterId: String
-    ): NetworkResponse<DeleteCaseResponse?, DeleteCaseResponse?>
+    ): NetworkResponse<Unit, Unit>
 
     @GET("api/v1/docs/refresh")
     suspend fun syncOrigin(

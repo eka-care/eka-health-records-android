@@ -332,14 +332,27 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                 occurredAt = encounter.createdAt
             )
         )
-        if (result == null) {
-            return
-        }
-
-        if (result.error != null) {
+        if (result is NetworkResponse.Success) {
+            encountersDao.updateEncounter(
+                encounter.copy(
+                    uiState = CaseUiState.SYNC_SUCCESS,
+                    status = CaseStatus.SYNC_COMPLETED
+                )
+            )
+            logRecordSyncEvent(
+                caseId = encounter.encounterId,
+                bId = encounter.businessId,
+                oId = encounter.ownerId,
+                msg = "Update case success: ${encounter.encounterId}"
+            )
+        } else if (result is NetworkResponse.Error) {
             encountersDao.updateEncounter(encounter.copy(uiState = CaseUiState.SYNC_FAILED))
-        } else {
-            encountersDao.updateEncounter(encounter.copy(uiState = CaseUiState.SYNC_SUCCESS))
+            logRecordSyncEvent(
+                caseId = encounter.encounterId,
+                bId = encounter.businessId,
+                oId = encounter.ownerId,
+                msg = "Update case failed: ${encounter.encounterId}"
+            )
         }
     }
 
