@@ -10,7 +10,7 @@ data class RecordModel(
     val id: String,
     @SerializedName("thumbnail")
     val thumbnail: String? = null,
-    @SerializedName("status")
+    @SerializedName("state")
     val uiState: RecordUiState = RecordUiState.NONE,
     @SerializedName("status")
     val status: RecordStatus = RecordStatus.NONE,
