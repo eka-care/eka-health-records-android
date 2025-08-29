@@ -33,6 +33,7 @@ class AwsRepository {
         )
 
     suspend fun fileUploadInit(
+        documentId: String,
         files: List<FileType>,
         isMultiFile: Boolean = false,
         isEncrypted: Boolean = false,
@@ -46,6 +47,7 @@ class AwsRepository {
         if (isMultiFile) {
             batch.add(
                 Batch(
+                    documentId = documentId,
                     files = files,
                     isEncrypted = isEncrypted,
                     sharable = false,
@@ -58,6 +60,7 @@ class AwsRepository {
             files.forEach {
                 batch.add(
                     Batch(
+                        documentId = documentId,
                         files = listOf(it),
                         isEncrypted = isEncrypted,
                         sharable = false,
@@ -85,9 +88,10 @@ class AwsRepository {
         file: File? = null,
         batch: BatchResponse,
         fileList: List<File>? = null
-    ): AwsUploadResponse? {
+    ): AwsUploadResponse {
         val files = fileList ?: mutableListOf(file)
         var isResponseSuccess = false
+        var message = "Unknown Error"
         return withContext(Dispatchers.IO) {
             run loop@{
                 files.forEachIndexed { index, fileEntry ->
@@ -108,6 +112,7 @@ class AwsRepository {
                         isResponseSuccess = true
                     } else {
                         isResponseSuccess = false
+                        message = response.message() ?: "Failed to upload file"
                         return@loop
                     }
                 }
@@ -115,7 +120,7 @@ class AwsRepository {
             if (isResponseSuccess) {
                 AwsUploadResponse(error = false, documentId = batch.documentId, message = null)
             } else {
-                null
+                AwsUploadResponse(error = true, documentId = batch.documentId, message = message)
             }
         }
     }

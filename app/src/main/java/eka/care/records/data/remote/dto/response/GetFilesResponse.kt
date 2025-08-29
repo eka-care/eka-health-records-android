@@ -8,7 +8,7 @@ data class GetFilesResponse(
     @SerializedName("items")
     val items: List<Item>,
     @SerializedName("next_token")
-    val nextToken: String
+    val nextToken: String?
 )
 
 @Keep
@@ -35,6 +35,8 @@ data class ItemData(
     val uploadDate: Long? = null,
     @SerializedName("u_at")
     val updatedAt: Long? = null,
+    @SerializedName("cases")
+    val cases: List<String>?,
 )
 
 @Keep

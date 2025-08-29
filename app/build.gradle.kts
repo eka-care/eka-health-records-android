@@ -8,7 +8,7 @@ plugins {
 
 android {
     namespace = "eka.care.documents"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         minSdk = 23
@@ -73,24 +73,25 @@ afterEvaluate {
 dependencies {
     implementation("androidx.activity:activity:1.6.0-alpha05")
     implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.core.ktx)
     kapt(libs.room.compiler)
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     implementation(libs.zelory.compressor)
     implementation(libs.google.gson)
     implementation(libs.play.services.mlkit.document.scanner)
-    implementation(libs.okhttp.logging.interceptor)
-    implementation(libs.ok2curl)
     implementation(libs.androidx.core.ktx)
-    implementation(libs.google.gson)
-    implementation(libs.okhttp)
-    implementation(libs.okhttp.urlconnection)
     implementation(libs.eka.network)
     implementation(libs.retrofit) {
         exclude(group = "com.google.protobuf", module = "protobuf-java")
     }
     implementation(libs.retrofit.gson)
     implementation(libs.haroldadmin.networkresponseadapter)
+
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(libs.androidx.room.testing)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
+    testImplementation(kotlin("test"))
 }

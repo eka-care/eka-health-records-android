@@ -5,37 +5,42 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import eka.care.records.data.dao.EncounterRecordDao
 import eka.care.records.data.dao.RecordsDao
+import eka.care.records.data.entity.EncounterEntity
+import eka.care.records.data.entity.EncounterRecordCrossRef
+import eka.care.records.data.entity.FileEntity
 import eka.care.records.data.entity.RecordEntity
-import eka.care.records.data.entity.RecordFile
 
 @Database(
     entities = [
         RecordEntity::class,
-        RecordFile::class
+        FileEntity::class,
+        EncounterEntity::class,
+        EncounterRecordCrossRef::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
 abstract class RecordsDatabase : RoomDatabase() {
     abstract fun recordsDao(): RecordsDao
+    abstract fun encounterDao(): EncounterRecordDao
 
     companion object {
+        @Volatile
         private var mInstance: RecordsDatabase? = null
 
-
-        @Synchronized
         fun getInstance(context: Context): RecordsDatabase {
-            if (mInstance == null)
-                mInstance = Room.databaseBuilder(
-                    context, RecordsDatabase::class.java,
+            return mInstance ?: synchronized(this) {
+                mInstance ?: Room.databaseBuilder(
+                    context.applicationContext,
+                    RecordsDatabase::class.java,
                     "document_database"
                 )
-                    .fallbackToDestructiveMigration()
-                    .build()
-
-            return mInstance!!
+                    .fallbackToDestructiveMigration(dropAllTables = true)
+                    .build().also { mInstance = it }
+            }
         }
     }
 }

@@ -36,7 +36,7 @@ object MediaPickerManager {
         host?.pickPdf()
     }
 
-    fun takePhoto(context: Context, provider: String, onPermissionDenied: () -> Unit) {
+    fun takePhoto(context: Context, onPermissionDenied: () -> Unit) {
         val isCameraGranted = ContextCompat.checkSelfPermission(
             context,
             Manifest.permission.CAMERA
@@ -46,7 +46,7 @@ object MediaPickerManager {
                 File(context.cacheDir, "photo_${System.currentTimeMillis()}.jpg")
             val photoUri = FileProvider.getUriForFile(
                 context,
-                provider,
+                Document.getConfiguration().provider,
                 imageFile
             )
             val cameraIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {

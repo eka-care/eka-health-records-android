@@ -9,6 +9,7 @@ data class DocumentConfiguration(
     val baseUrl: String,
     val appVersionName: String,
     val appVersionCode: Int,
+    val provider: String,
     val isDebugApp: Boolean = false,
     val apiCallTimeOutInSec: Long = 30L,
     val headers: Map<String, String>,
