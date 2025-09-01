@@ -59,15 +59,6 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
     fun startAutoSync(businessId: String) {
         syncJob?.cancel()
         syncJob = CoroutineScope(Dispatchers.IO).launch {
-            dao.getRecordsByStatus(
-                businessId, listOf(
-                    RecordStatus.CREATED_LOCALLY,
-                    RecordStatus.UPDATED_LOCALLY,
-                    RecordStatus.ARCHIVED,
-                )
-            )?.also {
-                syncRecords(it)
-            }
             encountersDao.getEncountersByStatus(
                 businessId, listOf(
                     CaseStatus.CREATED_LOCALLY,
@@ -76,6 +67,15 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                 )
             )?.also {
                 syncEncounters(it)
+            }
+            dao.getRecordsByStatus(
+                businessId, listOf(
+                    RecordStatus.CREATED_LOCALLY,
+                    RecordStatus.UPDATED_LOCALLY,
+                    RecordStatus.ARCHIVED,
+                )
+            )?.also {
+                syncRecords(it)
             }
         }
     }
@@ -131,6 +131,29 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
             dao.updateRecord(record.copy(uiState = RecordUiState.WAITING_FOR_NETWORK))
             return
         }
+        val recordWithCases = encountersDao.getRecordWithEncounters(record.documentId)
+        recordWithCases.encounters.forEach { case ->
+            if(case.status == CaseStatus.CREATED_LOCALLY) {
+                logRecordSyncEvent(
+                    caseId = case.encounterId,
+                    bId = case.businessId,
+                    oId = case.ownerId,
+                    msg = "Uploading linked case for record: ${record.documentId}",
+                )
+                uploadEncounter(case)
+            }
+        }
+        val linkedCases = recordWithCases.encounters.filter {
+            it.status != CaseStatus.CREATED_LOCALLY
+        }.map {
+            it.encounterId
+        }
+        logRecordSyncEvent(
+            dId = record.documentId,
+            bId = record.businessId,
+            oId = record.ownerId,
+            msg = "Updating document: ${record.documentId} with cases: $linkedCases"
+        )
         val result = myFileRepository.updateFileDetails(
             documentId = record.documentId,
             oid = record.ownerId,
@@ -138,6 +161,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                 filterId = record.ownerId,
                 documentType = record.documentType,
                 documentDate = record.documentDate,
+                cases = linkedCases
             )
         )
         if (result == null) {
@@ -215,6 +239,29 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                     fileSize = it.length()
                 )
             }
+        val recordWithCases = encountersDao.getRecordWithEncounters(record.documentId)
+        recordWithCases.encounters.forEach { case ->
+            if(case.status == CaseStatus.CREATED_LOCALLY) {
+                logRecordSyncEvent(
+                    caseId = case.encounterId,
+                    bId = case.businessId,
+                    oId = case.ownerId,
+                    msg = "Uploading linked case for record: ${record.documentId}",
+                )
+                uploadEncounter(case)
+            }
+        }
+        val linkedCases = recordWithCases.encounters.filter {
+            it.status != CaseStatus.CREATED_LOCALLY
+        }.map {
+            it.encounterId
+        }
+        logRecordSyncEvent(
+            dId = record.documentId,
+            bId = record.businessId,
+            oId = record.ownerId,
+            msg = "Created document: ${record.documentId} with cases: $linkedCases"
+        )
         val uploadInitResponse =
             awsRepository.fileUploadInit(
                 documentId = record.documentId,
@@ -224,6 +271,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                 tags = emptyList(), // TODO add tags from the user tags table
                 documentType = record.documentType,
                 documentDate = record.documentDate,
+                cases = linkedCases
             )
         if (uploadInitResponse?.error == true) {
             logRecordSyncEvent(
@@ -680,10 +728,6 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
         documentDate: Long?,
         documentType: String?
     ): String? {
-        if (documentDate == null && documentType == null) {
-            return null
-        }
-
         val record = getRecordById(id) ?: return null
         val updatedRecord = record.copy(
             documentDate = documentDate ?: record.documentDate,
@@ -703,7 +747,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
             dId = record.documentId,
             bId = record.businessId,
             oId = record.ownerId,
-            msg = "Update record: $documentDate, $documentType"
+            msg = "Update record: $documentDate, $documentType case : $caseId"
         )
         return record.documentId
     }
@@ -807,10 +851,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
     }
 
     override suspend fun assignRecordToCase(caseId: String, recordId: String) {
-        insertRecordIntoCase(
-            caseId = caseId,
-            documentId = recordId
-        )
+        updateRecord(id = recordId, caseId = caseId, documentDate = null, documentType = null)
     }
 
     override suspend fun deleteCases(caseId: String) {

@@ -15,4 +15,6 @@ data class UpdateFileDetailsRequest(
     val userTags: List<String>? = null,
     @SerializedName("dtg_del")
     val derivedTagsDeleted: List<String>? = null,
+    @SerializedName("cases")
+    val cases: List<String>? = null,
 )
