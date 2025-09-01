@@ -88,4 +88,6 @@ interface RecordsRepository {
     suspend fun getCaseWithRecords(caseId: String): CaseModel?
 
     suspend fun assignRecordToCase(caseId: String, recordId: String): Unit
+
+    suspend fun assignRecordLocally(caseId : String, recordId : String)
 }

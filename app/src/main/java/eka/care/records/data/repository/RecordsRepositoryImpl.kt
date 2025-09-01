@@ -859,6 +859,13 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
     }
 
     override suspend fun assignRecordToCase(caseId: String, recordId: String) {
+        insertRecordIntoCase(
+            caseId = caseId,
+            documentId = recordId
+        )
+    }
+
+    override suspend fun assignRecordLocally(caseId: String, recordId: String) {
         updateRecord(id = recordId, caseId = caseId, documentDate = null, documentType = null)
     }
 

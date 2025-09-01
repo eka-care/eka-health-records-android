@@ -199,7 +199,7 @@ class Records private constructor() {
     }
 
     suspend fun assignRecordToCase(caseId: String, recordId: String) {
-        recordsRepository.assignRecordToCase(caseId = caseId, recordId = recordId)
+        recordsRepository.assignRecordLocally(caseId = caseId, recordId = recordId)
     }
 
     suspend fun deleteEncounter(encounterId: String) {

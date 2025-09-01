@@ -57,5 +57,5 @@ interface EncounterRecordDao {
     suspend fun getRecordWithEncounters(documentId: String): RecordWithEncounters
 
     @Query("SELECT DISTINCT(encounter_type) FROM ENCOUNTERS_TABLE WHERE BUSINESS_ID = :businessId")
-    suspend fun getUniqueEncounterType(businessId: String): Flow<List<String>>
+    fun getUniqueEncounterType(businessId: String): Flow<List<String>>
 }
