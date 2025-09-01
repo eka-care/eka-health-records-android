@@ -881,6 +881,10 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
         encountersDao.deleteEncounter(encounter)
     }
 
+    override suspend fun getUniqueEncounterTypes(businessId: String): Flow<List<String>> {
+        return encountersDao.getUniqueEncounterType(businessId)
+    }
+
     private suspend fun insertRecordIntoCase(caseId: String, documentId: String) {
         encountersDao.insertEncounterRecordCrossRef(
             EncounterRecordCrossRef(

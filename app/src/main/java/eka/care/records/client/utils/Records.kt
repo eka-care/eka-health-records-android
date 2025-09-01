@@ -208,6 +208,10 @@ class Records private constructor() {
         )
     }
 
+    suspend fun getUniqueEncounters(businessId: String) = recordsRepository.getUniqueEncounterTypes(
+        businessId = businessId
+    )
+
     suspend fun syncOrigin(ownerId: String) {
         encounterRepository.syncOrigin(ownerId)
     }

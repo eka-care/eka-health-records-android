@@ -53,6 +53,7 @@ interface RecordsRepository {
     suspend fun deleteRecords(ids: List<String>)
     suspend fun getLatestRecordUpdatedAt(businessId: String, ownerId: String): Long?
     suspend fun getLatestCaseUpdatedAt(businessId: String, ownerId: String): Long?
+    suspend fun getUniqueEncounterTypes(businessId: String): Flow<List<String>>
     suspend fun insertRecordFile(file: FileEntity): Long
     suspend fun getRecordFile(localId: String): List<FileEntity>?
 
