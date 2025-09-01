@@ -26,7 +26,9 @@ data class Batch(
     @SerializedName("is_encrypted")
     val isEncrypted: Boolean = false,
     @SerializedName("p_poid")
-    val captainOid : String? = null
+    val captainOid : String? = null,
+    @SerializedName("cases")
+    val cases: List<String>? = null,
 )
 
 @Keep

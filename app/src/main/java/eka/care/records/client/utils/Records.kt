@@ -199,7 +199,7 @@ class Records private constructor() {
     }
 
     suspend fun assignRecordToCase(caseId: String, recordId: String) {
-        recordsRepository.assignRecordToCase(caseId = caseId, recordId = recordId)
+        recordsRepository.assignRecordLocally(caseId = caseId, recordId = recordId)
     }
 
     suspend fun deleteEncounter(encounterId: String) {
@@ -207,6 +207,10 @@ class Records private constructor() {
             caseId = encounterId
         )
     }
+
+    suspend fun getUniqueEncounters(businessId: String) = recordsRepository.getUniqueEncounterTypes(
+        businessId = businessId
+    )
 
     suspend fun syncOrigin(ownerId: String) {
         encounterRepository.syncOrigin(ownerId)

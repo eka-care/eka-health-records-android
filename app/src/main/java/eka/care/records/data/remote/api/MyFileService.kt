@@ -9,6 +9,7 @@ import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.Header
 import retrofit2.http.PATCH
 import retrofit2.http.Path
 import retrofit2.http.Query
@@ -21,13 +22,13 @@ interface MyFileService {
     suspend fun getFiles(
         @Query("u_at__gt") updatedAt: Long,
         @Query("offset") offset: String?,
-        @Query("patient_oid") filterId : String?
+        @Header("X-Pt-Id") filterId: String?
     ): Response<GetFilesResponse>
 
     @PATCH("api/v1/docs/{document_id}")
     suspend fun updateFileDetails(
         @Path("document_id") documentId: String,
-        @Query("p_oid") filterId: String?,
+        @Header("X-Pt-Id") filterId: String?,
         @Body updateFileDetailsRequest: UpdateFileDetailsRequest,
     ): NetworkResponse<Unit, Unit>
 
@@ -38,12 +39,12 @@ interface MyFileService {
     @GET("api/v1/docs/{document_id}")
     suspend fun getDocument(
         @Path("document_id") documentId: String,
-        @Query("p_oid") filterId: String?,
+        @Header("X-Pt-Id") filterId: String?,
     ): NetworkResponse<Document, Document>
 
     @DELETE("api/v1/docs/{document_id}")
     suspend fun deleteDocument(
         @Path("document_id") documentId: String,
-        @Query("p_oid") filterId: String?,
+        @Header("X-Pt-Id") filterId: String?,
     ): NetworkResponse<Unit, Document>
 }

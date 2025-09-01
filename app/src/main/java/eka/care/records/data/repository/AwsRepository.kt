@@ -40,7 +40,8 @@ class AwsRepository {
         patientOid: String?,
         documentType: String,
         documentDate: Long? = null,
-        tags: List<String>
+        tags: List<String>,
+        cases : List<String>? = null,
     ): FilesUploadInitResponse? {
         val batch = mutableListOf<Batch>()
 
@@ -53,7 +54,8 @@ class AwsRepository {
                     sharable = false,
                     tags = tags,
                     documentType = documentType,
-                    documentDate = documentDate
+                    documentDate = documentDate,
+                    cases = cases
                 )
             )
         } else {
@@ -66,7 +68,8 @@ class AwsRepository {
                         sharable = false,
                         tags = tags,
                         documentType = documentType,
-                        documentDate = documentDate
+                        documentDate = documentDate,
+                        cases = cases
                     )
                 )
             }

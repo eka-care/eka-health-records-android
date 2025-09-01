@@ -60,6 +60,9 @@ class RecordsSync(
                     "Starting sync for businessId: $businessId, ownerIds: $ownerIds"
                 )
             )
+            recordsRepository.syncLocal(
+                businessId = businessId
+            )
             fetchCases(
                 businessId = businessId,
                 ownerIds = ownerIds
