@@ -59,6 +59,12 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
     fun startAutoSync(businessId: String) {
         syncJob?.cancel()
         syncJob = CoroutineScope(Dispatchers.IO).launch {
+            syncLocal(businessId)
+        }
+    }
+
+    suspend fun syncLocal(businessId: String) {
+        try {
             encountersDao.getEncountersByStatus(
                 businessId, listOf(
                     CaseStatus.CREATED_LOCALLY,
@@ -77,6 +83,8 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
             )?.also {
                 syncRecords(it)
             }
+        } catch (ex: Exception) {
+
         }
     }
 
