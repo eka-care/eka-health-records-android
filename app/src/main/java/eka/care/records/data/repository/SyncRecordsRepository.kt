@@ -2,6 +2,7 @@ package eka.care.records.data.repository
 
 import com.eka.networking.client.EkaNetwork
 import eka.care.records.client.utils.Document
+import eka.care.records.data.remote.EnvironmentManager
 import eka.care.records.data.remote.api.MyFileService
 import eka.care.records.data.remote.dto.response.GetFilesResponse
 import kotlinx.coroutines.Dispatchers
@@ -15,7 +16,7 @@ class SyncRecordsRepository() {
             appId = Document.getConfiguration().appId,
             service = "sync_service"
         ).create(
-            serviceUrl = "https://api.eka.care/mr/",
+            serviceUrl = "${EnvironmentManager.getBaseUrl()}/mr/",
             serviceClass = MyFileService::class.java
         )
 

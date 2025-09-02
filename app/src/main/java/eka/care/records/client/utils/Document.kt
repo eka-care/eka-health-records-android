@@ -4,6 +4,7 @@ import com.eka.networking.client.EkaNetwork
 import com.eka.networking.client.NetworkConfig
 import eka.care.records.client.model.EventLog
 import eka.care.records.data.contract.LogInterceptor
+import eka.care.records.data.remote.EnvironmentManager
 
 object Document {
     private var configuration: DocumentConfiguration? = null
@@ -11,6 +12,7 @@ object Document {
 
     fun init(config: DocumentConfiguration) {
         configuration = config
+        EnvironmentManager.setEnvironment(config.environment)
         try {
             EkaNetwork.init(
                 networkConfig = NetworkConfig(
