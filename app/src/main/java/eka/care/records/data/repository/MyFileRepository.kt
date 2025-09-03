@@ -2,6 +2,7 @@ package eka.care.records.data.repository
 
 import com.eka.networking.client.EkaNetwork
 import com.haroldadmin.cnradapter.NetworkResponse
+import eka.care.records.data.remote.EnvironmentManager
 import eka.care.records.data.remote.api.MyFileService
 import eka.care.records.data.remote.dto.request.UpdateFileDetailsRequest
 import eka.care.records.data.remote.dto.response.Document
@@ -17,7 +18,7 @@ class MyFileRepository {
                 appId = eka.care.records.client.utils.Document.getConfiguration().appId,
                 service = "files_service"
             ).create(
-                serviceUrl = "https://api.eka.care/mr/",
+                serviceUrl = "${EnvironmentManager.getBaseUrl()}/mr/",
                 serviceClass = MyFileService::class.java
             )
     }

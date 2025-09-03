@@ -3,6 +3,7 @@ package eka.care.records.data.repository
 import com.eka.networking.client.EkaNetwork
 import com.haroldadmin.cnradapter.NetworkResponse
 import eka.care.records.client.utils.Document
+import eka.care.records.data.remote.EnvironmentManager
 import eka.care.records.data.remote.api.EncountersService
 import eka.care.records.data.remote.dto.request.CaseRequest
 import eka.care.records.data.remote.dto.response.CreateCaseResponse
@@ -16,7 +17,7 @@ class EncountersRepository {
             appId = Document.getConfiguration().appId,
             service = "encounter_service"
         ).create(
-            serviceUrl = "https://api.eka.care/mr/",
+            serviceUrl = "${EnvironmentManager.getBaseUrl()}/mr/",
             serviceClass = EncountersService::class.java
         )
 

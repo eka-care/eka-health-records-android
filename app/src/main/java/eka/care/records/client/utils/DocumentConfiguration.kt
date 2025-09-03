@@ -2,6 +2,7 @@ package eka.care.records.client.utils
 
 import androidx.annotation.Keep
 import com.eka.networking.token.TokenStorage
+import eka.care.records.data.remote.Environment
 
 @Keep
 data class DocumentConfiguration(
@@ -13,5 +14,6 @@ data class DocumentConfiguration(
     val isDebugApp: Boolean = false,
     val apiCallTimeOutInSec: Long = 30L,
     val headers: Map<String, String>,
-    val tokenStorage: TokenStorage
+    val tokenStorage: TokenStorage,
+    val environment: Environment = Environment.PROD,
 )

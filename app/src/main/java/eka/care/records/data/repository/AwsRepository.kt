@@ -4,6 +4,7 @@ import android.webkit.MimeTypeMap
 import com.eka.networking.client.EkaNetwork
 import com.haroldadmin.cnradapter.NetworkResponse
 import eka.care.records.client.utils.Document
+import eka.care.records.data.remote.EnvironmentManager
 import eka.care.records.data.remote.api.AwsService
 import eka.care.records.data.remote.dto.request.Batch
 import eka.care.records.data.remote.dto.request.FileType
@@ -28,7 +29,7 @@ class AwsRepository {
             appId = Document.getConfiguration().appId,
             service = "aws_service"
         ).create(
-            serviceUrl = "https://api.eka.care/mr/",
+            serviceUrl = "${EnvironmentManager.getBaseUrl()}/mr/",
             serviceClass = AwsService::class.java
         )
 
