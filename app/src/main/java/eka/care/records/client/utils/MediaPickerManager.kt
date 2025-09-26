@@ -60,7 +60,7 @@ object MediaPickerManager {
         }
     }
 
-    fun scanDocument(context: Context) {
+    fun scanDocument(context: Activity) {
         val options = GmsDocumentScannerOptions.Builder()
             .setGalleryImportAllowed(true)
             .setPageLimit(4)
@@ -70,7 +70,7 @@ object MediaPickerManager {
 
         val scanner = GmsDocumentScanning.getClient(options)
 
-        scanner.getStartScanIntent(context as Activity)
+        scanner.getStartScanIntent(context)
             .addOnSuccessListener { intentSender ->
                 val request = IntentSenderRequest.Builder(intentSender).build()
                 host?.scanDocuments(request)
