@@ -5,6 +5,9 @@ plugins {
 }
 
 buildscript {
+    dependencies {
+        classpath(libs.org.jacoco.core)
+    }
     repositories {
         flatDir {
             dirs("libs")

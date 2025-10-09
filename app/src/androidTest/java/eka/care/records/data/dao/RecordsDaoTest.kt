@@ -6,6 +6,7 @@ import androidx.test.core.app.ApplicationProvider
 import eka.care.records.data.db.RecordsDatabase
 import eka.care.records.data.entity.FileEntity
 import eka.care.records.data.entity.RecordEntity
+import eka.care.records.data.entity.RecordStatus
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertNotNull
 import kotlinx.coroutines.runBlocking
@@ -111,11 +112,12 @@ class RecordsDaoTest {
             updatedAt = now()
         )
         recordsDao.createRecords(listOf(record))
-        val updated = record.copy(documentType = "updatedType", isDirty = true)
+        val updated =
+            record.copy(documentType = "updatedType", status = RecordStatus.UPDATED_LOCALLY)
         recordsDao.updateRecord(updated)
         val fetched = recordsDao.getRecordById("recUpdate")
         assertEquals("updatedType", fetched?.documentType)
-        assertEquals(true, fetched?.isDirty)
+        assertEquals(true, fetched?.status == RecordStatus.UPDATED_LOCALLY)
     }
 
     @Test
@@ -144,9 +146,10 @@ class RecordsDaoTest {
             createdAt = now(),
             updatedAt = now()
         )
-        val dirty = clean.copy(documentId = "recDirty", isDirty = true)
+        val dirty = clean.copy(documentId = "recDirty", status = RecordStatus.UPDATED_LOCALLY)
         recordsDao.createRecords(listOf(clean, dirty))
-        val dirtyRecords = recordsDao.getDirtyRecords("biz4")
+        val dirtyRecords =
+            recordsDao.getRecordsByStatus("biz4", listOf(RecordStatus.UPDATED_LOCALLY))
         assertEquals(1, dirtyRecords?.size)
         assertEquals("recDirty", dirtyRecords?.first()?.documentId)
     }
@@ -160,9 +163,9 @@ class RecordsDaoTest {
             createdAt = now(),
             updatedAt = now()
         )
-        val archived = active.copy(documentId = "recArchived", isDeleted = true)
+        val archived = active.copy(documentId = "recArchived", status = RecordStatus.ARCHIVED)
         recordsDao.createRecords(listOf(active, archived))
-        val deletedRecords = recordsDao.getDeletedRecords("biz5")
+        val deletedRecords = recordsDao.getRecordsByStatus("biz5", listOf(RecordStatus.ARCHIVED))
         assertEquals(1, deletedRecords?.size)
         assertEquals("recArchived", deletedRecords?.first()?.documentId)
     }
@@ -284,9 +287,9 @@ class RecordsDaoTest {
             updatedAt = now()
         )
         recordsDao.createRecords(listOf(record))
-        val updated = record.copy(isDeleted = true)
+        val updated = record.copy(status = RecordStatus.ARCHIVED)
         recordsDao.updateRecord(updated)
-        val deleted = recordsDao.getDeletedRecords("bizD")
+        val deleted = recordsDao.getRecordsByStatus("bizD", listOf(RecordStatus.ARCHIVED))
         assertEquals(1, deleted?.size)
         assertEquals("toBeDeleted", deleted?.first()?.documentId)
     }
@@ -304,8 +307,7 @@ class RecordsDaoTest {
             documentType = "typeF",
             documentHash = "hashF",
             source = "sourceF",
-            isDirty = true,
-            isDeleted = true,
+            status = RecordStatus.UPDATED_LOCALLY,
             isSmart = true,
             smartReport = "{\"field\":\"value\"}"
         )
@@ -314,8 +316,7 @@ class RecordsDaoTest {
         assertNotNull(fetched)
         assertEquals("thumb.png", fetched?.thumbnail)
         assertEquals("typeF", fetched?.documentType)
-        assertEquals(true, fetched?.isDirty)
-        assertEquals(true, fetched?.isDeleted)
+        assertEquals(true, fetched?.status == RecordStatus.UPDATED_LOCALLY)
         assertEquals(true, fetched?.isSmart)
         assertEquals("{\"field\":\"value\"}", fetched?.smartReport)
     }
