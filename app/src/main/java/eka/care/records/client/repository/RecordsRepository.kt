@@ -4,6 +4,7 @@ import eka.care.records.client.model.CaseModel
 import eka.care.records.client.model.DocumentTypeCount
 import eka.care.records.client.model.RecordModel
 import eka.care.records.client.model.SortOrder
+import eka.care.records.client.model.TagModel
 import eka.care.records.data.entity.CaseStatus
 import eka.care.records.data.entity.CaseUiState
 import eka.care.records.data.entity.EncounterEntity
@@ -31,7 +32,8 @@ interface RecordsRepository {
         caseId: String?,
         includeDeleted: Boolean,
         documentType: String?,
-        sortOrder: SortOrder
+        sortOrder: SortOrder,
+        tags: List<String> = emptyList(),
     ): Flow<List<RecordModel>>
 
     fun getRecordTypeCounts(
@@ -90,4 +92,8 @@ interface RecordsRepository {
     suspend fun assignRecordToCase(caseId: String, recordId: String): Unit
 
     suspend fun assignRecordLocally(caseId : String, recordId : String)
+
+    suspend fun addTag(recordId: String, tag: String)
+
+    fun getTags(businessId: String, ownerIds: List<String>): Flow<List<TagModel>>
 }

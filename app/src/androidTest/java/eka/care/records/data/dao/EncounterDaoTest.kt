@@ -3,6 +3,7 @@ package eka.care.records.data.dao
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import eka.care.records.data.db.RecordsDatabase
+import eka.care.records.data.entity.CaseStatus
 import eka.care.records.data.entity.EncounterEntity
 import eka.care.records.data.entity.EncounterRecordCrossRef
 import eka.care.records.data.entity.RecordEntity
@@ -71,12 +72,16 @@ class EncounterDaoTest {
             updatedAt = System.currentTimeMillis()
         )
         encounterDao.insertEncounter(encounter)
-        val updated = encounter.copy(name = "New Name", encounterType = "newType", isDirty = true)
+        val updated = encounter.copy(
+            name = "New Name",
+            encounterType = "newType",
+            status = CaseStatus.UPDATED_LOCALLY
+        )
         encounterDao.updateEncounter(updated)
         val fetched = encounterDao.getEncounterById("enc2")
         assertEquals("New Name", fetched?.encounter?.name)
         assertEquals("newType", fetched?.encounter?.encounterType)
-        assertEquals(true, fetched?.encounter?.isDirty)
+        assertEquals(true, fetched?.encounter?.status == CaseStatus.UPDATED_LOCALLY)
     }
 
     @Test
@@ -163,12 +168,11 @@ class EncounterDaoTest {
             encounterType = "typeS",
             createdAt = System.currentTimeMillis(),
             updatedAt = System.currentTimeMillis(),
-            isSynced = true
         )
-        val unsynced = synced.copy(encounterId = "enc7", isSynced = false)
+        val unsynced = synced.copy(encounterId = "enc7", status = CaseStatus.UPDATED_LOCALLY)
         encounterDao.insertEncounter(synced)
         encounterDao.insertEncounter(unsynced)
-        val result = encounterDao.getUnsyncedEncounters("owner6")
+        val result = encounterDao.getEncountersByStatus("biz6", listOf(CaseStatus.UPDATED_LOCALLY))
         assertEquals(1, result?.size)
         assertEquals("enc7", result?.first()?.encounterId)
     }
@@ -183,12 +187,11 @@ class EncounterDaoTest {
             encounterType = "typeC",
             createdAt = System.currentTimeMillis(),
             updatedAt = System.currentTimeMillis(),
-            isDirty = false
         )
-        val dirty = clean.copy(encounterId = "enc9", isDirty = true)
+        val dirty = clean.copy(encounterId = "enc9", status = CaseStatus.UPDATED_LOCALLY)
         encounterDao.insertEncounter(clean)
         encounterDao.insertEncounter(dirty)
-        val result = encounterDao.getDirtyEncounter("owner7")
+        val result = encounterDao.getEncountersByStatus("biz7", listOf(CaseStatus.UPDATED_LOCALLY))
         assertEquals(1, result?.size)
         assertEquals("enc9", result?.first()?.encounterId)
     }
@@ -366,10 +369,10 @@ class EncounterDaoTest {
             encounterType = "typeClean",
             createdAt = now(),
             updatedAt = now(),
-            isDirty = false
         )
         encounterDao.insertEncounter(encounter)
-        val result = encounterDao.getDirtyEncounter("ownerClean")
+        val result =
+            encounterDao.getEncountersByStatus("ownerClean", listOf(CaseStatus.UPDATED_LOCALLY))
         assertTrue(result?.isEmpty() == true)
     }
 
@@ -383,10 +386,11 @@ class EncounterDaoTest {
             encounterType = "typeSync",
             createdAt = now(),
             updatedAt = now(),
-            isSynced = true
+            status = CaseStatus.SYNC_COMPLETED
         )
         encounterDao.insertEncounter(encounter)
-        val result = encounterDao.getUnsyncedEncounters("ownerSync")
+        val result =
+            encounterDao.getEncountersByStatus("ownerSync", listOf(CaseStatus.UPDATED_LOCALLY))
         assertTrue(result?.isEmpty() == true)
     }
 

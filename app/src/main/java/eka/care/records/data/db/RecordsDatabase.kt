@@ -11,15 +11,17 @@ import eka.care.records.data.entity.EncounterEntity
 import eka.care.records.data.entity.EncounterRecordCrossRef
 import eka.care.records.data.entity.FileEntity
 import eka.care.records.data.entity.RecordEntity
+import eka.care.records.data.entity.TagEntity
 
 @Database(
     entities = [
         RecordEntity::class,
         FileEntity::class,
         EncounterEntity::class,
-        EncounterRecordCrossRef::class
+        EncounterRecordCrossRef::class,
+        TagEntity::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 @TypeConverters(Converters::class)

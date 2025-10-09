@@ -145,6 +145,12 @@ class RecordsSync(
         )
         if (record != null) {
             recordsRepository.updateRecord(recordToStore)
+            recordItem.metadata?.tags?.forEach {
+                recordsRepository.addTag(
+                    recordId = record.documentId,
+                    tag = it
+                )
+            }
             Records.logEvent(
                 EventLog(
                     params = JSONObject().also { param ->
@@ -157,6 +163,12 @@ class RecordsSync(
             )
         } else {
             recordsRepository.createRecords(listOf(recordToStore))
+            recordItem.metadata?.tags?.forEach {
+                recordsRepository.addTag(
+                    recordId = recordToStore.documentId,
+                    tag = it
+                )
+            }
             Records.logEvent(
                 EventLog(
                     params = JSONObject().also { param ->

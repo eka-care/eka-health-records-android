@@ -4,12 +4,17 @@ import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.eka.networking.token.TokenStorage
+import eka.care.records.client.model.SortOrder
 import eka.care.records.client.utils.Document
 import eka.care.records.client.utils.DocumentConfiguration
 import eka.care.records.data.dao.EncounterRecordDao
 import eka.care.records.data.dao.RecordsDao
 import eka.care.records.data.db.RecordsDatabase
+import eka.care.records.data.entity.CaseStatus
+import eka.care.records.data.entity.CaseUiState
 import eka.care.records.data.entity.RecordEntity
+import eka.care.records.data.entity.RecordStatus
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -54,7 +59,8 @@ class RecordsRepositoryImplTest {
                     override fun onSessionExpired() {}
                 },
                 appVersionName = "1.0",
-                appVersionCode = 1
+                appVersionCode = 1,
+                provider = "eka.care.records.test"
             )
         )
         context = ApplicationProvider.getApplicationContext()
@@ -149,7 +155,7 @@ class RecordsRepositoryImplTest {
         repo.createRecords(listOf(record))
         repo.deleteRecords(listOf("recDel"))
         val deleted = repo.getRecordById("recDel")
-        assertEquals(true, deleted?.isDeleted)
+        assertEquals(true, deleted?.status == RecordStatus.ARCHIVED)
     }
 
     @Test
@@ -175,7 +181,10 @@ class RecordsRepositoryImplTest {
             ownerId = "own4",
             name = "CaseName",
             type = "TypeA",
-            isSynced = false
+            createdAt = now(),
+            updatedAt = now(),
+            status = CaseStatus.CREATED_LOCALLY,
+            uiStatus = CaseUiState.WAITING_TO_UPLOAD,
         )
         assertNotNull(id)
         val case = repo.getCaseByCaseId(id)
@@ -186,7 +195,8 @@ class RecordsRepositoryImplTest {
     @Test
     fun updateCaseReturnsNullIfCaseNotFound() = runBlocking {
         val repo = RecordsRepositoryImpl(context)
-        val result = repo.updateCase("noCase", "newName", "newType")
+        val result =
+            repo.updateCase("noCase", "newName", "newType", CaseStatus.NONE, CaseUiState.NONE)
         assertNull(result)
     }
 
@@ -199,7 +209,10 @@ class RecordsRepositoryImplTest {
             ownerId = "own5",
             name = "CaseRel",
             type = "TypeRel",
-            isSynced = false
+            createdAt = now(),
+            updatedAt = now(),
+            status = CaseStatus.CREATED_LOCALLY,
+            uiStatus = CaseUiState.WAITING_TO_UPLOAD,
         )
         val record = RecordEntity(
             documentId = "recRel",
@@ -212,5 +225,48 @@ class RecordsRepositoryImplTest {
         repo.assignRecordToCase(caseId, "recRel")
         val caseModel = repo.getCaseWithRecords(caseId)
         assertTrue(caseModel?.records?.any { it.id == "recRel" } == true)
+    }
+
+    @Test
+    fun readRecordsFilterByTags() = runBlocking {
+        val repo = RecordsRepositoryImpl(context)
+        val record1 = RecordEntity(
+            documentId = "r1",
+            businessId = "b1",
+            ownerId = "o1",
+            createdAt = 1L,
+            updatedAt = 1L,
+            documentType = "ot"
+        )
+        val record2 = RecordEntity(
+            documentId = "r2",
+            businessId = "b1",
+            ownerId = "o1",
+            createdAt = 2L,
+            updatedAt = 2L,
+            documentType = "ot"
+        )
+        repo.createRecords(listOf(record1, record2))
+
+        repo.addTag("r1", "finance")
+        repo.addTag("r1", "urgent")
+        repo.addTag("r1", "hr")
+        repo.addTag("r2", "hr")
+
+        val tagsToFilter = listOf("finance", "hr", "urgent")
+        val recordsFlow = repo.readRecords(
+            businessId = "b1",
+            ownerIds = listOf("o1"),
+            caseId = null,
+            includeDeleted = false,
+            documentType = "ot",
+            sortOrder = SortOrder.CREATED_AT_ASC,
+            tags = tagsToFilter
+        )
+
+        val results = recordsFlow.first()
+
+        assertEquals(2, results.size)
+        assertEquals("r1", results[0].id)
     }
 }

@@ -3,6 +3,7 @@ plugins {
     id("maven-publish")
     id("kotlin-kapt")
     id("kotlin-parcelize")
+    id("jacoco")
     kotlin("android")
 }
 
@@ -20,6 +21,7 @@ android {
         debug {
             isMinifyEnabled = false
             isJniDebuggable = true
+            enableUnitTestCoverage = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

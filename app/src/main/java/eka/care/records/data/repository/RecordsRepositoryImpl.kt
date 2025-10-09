@@ -1,6 +1,7 @@
 package eka.care.records.data.repository
 
 import android.content.Context
+import androidx.sqlite.db.SimpleSQLiteQuery
 import androidx.sqlite.db.SupportSQLiteQueryBuilder
 import com.google.gson.Gson
 import com.haroldadmin.cnradapter.NetworkResponse
@@ -10,6 +11,7 @@ import eka.care.records.client.model.EventLog
 import eka.care.records.client.model.RecordModel
 import eka.care.records.client.model.RecordUiState
 import eka.care.records.client.model.SortOrder
+import eka.care.records.client.model.TagModel
 import eka.care.records.client.repository.RecordsRepository
 import eka.care.records.client.utils.Records
 import eka.care.records.client.utils.RecordsUtility
@@ -24,6 +26,7 @@ import eka.care.records.data.entity.EncounterRecordCrossRef
 import eka.care.records.data.entity.FileEntity
 import eka.care.records.data.entity.RecordEntity
 import eka.care.records.data.entity.RecordStatus
+import eka.care.records.data.entity.TagEntity
 import eka.care.records.data.entity.toCaseModel
 import eka.care.records.data.remote.dto.request.CaseRequest
 import eka.care.records.data.remote.dto.request.FileType
@@ -38,6 +41,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
@@ -490,6 +494,14 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
             )
         }
         dao.insertRecordWithFiles(record = record, files = files)
+        tags.forEach {
+            dao.insertTag(
+                TagEntity(
+                    documentId = id,
+                    tag = it
+                )
+            )
+        }
         caseId?.let { insertRecordIntoCase(caseId = it, documentId = id) }
 
         return@supervisorScope id
@@ -502,8 +514,9 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
         includeDeleted: Boolean,
         documentType: String?,
         sortOrder: SortOrder,
-    ): Flow<List<RecordModel>> = flow {
-        try {
+        tags: List<String>
+    ): Flow<List<RecordModel>> {
+        return flow {
             val selection = StringBuilder()
             val selectionArgs = mutableListOf<String>()
 
@@ -525,11 +538,21 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                 selectionArgs.addAll(ownerIds)
             }
 
-            val query = SupportSQLiteQueryBuilder
-                .builder("EKA_RECORDS_TABLE")
-                .selection(selection.toString().trim(), selectionArgs.toTypedArray())
-                .orderBy("${sortOrder.value} ${sortOrder.order}")
-                .create()
+            if (tags.isNotEmpty()) {
+                val placeholders = tags.joinToString(",") { "?" }
+                selection.append("AND t.tag IN ($placeholders) ")
+                selectionArgs.addAll(tags)
+            }
+
+            val sql = """
+                SELECT DISTINCT r.* FROM EKA_RECORDS_TABLE r
+                LEFT JOIN record_tags_table t 
+                    ON r.document_id = t.document_id
+                WHERE ${selection.toString().trim()}
+                ORDER BY ${sortOrder.value} ${sortOrder.order}
+            """.trimIndent()
+
+            val query = SimpleSQLiteQuery(sql, selectionArgs.toTypedArray())
 
             if (caseId != null) {
                 val records = getCaseWithRecords(caseId)?.records ?: emptyList()
@@ -554,7 +577,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                 }
                 emitAll(dataFlow)
             }
-        } catch (e: Exception) {
+        }.catch { e ->
             logRecordSyncEvent(
                 bId = businessId,
                 oId = ownerIds.joinToString(","),
@@ -890,6 +913,27 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
 
     override suspend fun getUniqueEncounterTypes(businessId: String): Flow<List<String>> {
         return encountersDao.getUniqueEncounterType(businessId)
+    }
+
+    override suspend fun addTag(recordId: String, tag: String) {
+        dao.insertTag(TagEntity(documentId = recordId, tag = tag))
+    }
+
+    override fun getTags(businessId: String, ownerIds: List<String>): Flow<List<TagModel>> {
+        return flow {
+            val data = dao.getDocumentTagsForBusinessAndOwners(
+                businessId = businessId,
+                ownerIds = ownerIds,
+            )
+            emitAll(data)
+        }.catch { e ->
+            logRecordSyncEvent(
+                bId = businessId,
+                oId = ownerIds.joinToString(","),
+                msg = "Error getting tags: ${e.localizedMessage}"
+            )
+            emit(emptyList())
+        }
     }
 
     private suspend fun insertRecordIntoCase(caseId: String, documentId: String) {

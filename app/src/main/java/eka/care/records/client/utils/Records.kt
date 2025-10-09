@@ -12,6 +12,7 @@ import eka.care.records.client.model.DocumentTypeCount
 import eka.care.records.client.model.EventLog
 import eka.care.records.client.model.RecordModel
 import eka.care.records.client.model.SortOrder
+import eka.care.records.client.model.TagModel
 import eka.care.records.client.utils.RecordsUtility.Companion.getWorkerTag
 import eka.care.records.data.contract.LogInterceptor
 import eka.care.records.data.db.RecordsDatabase
@@ -113,6 +114,7 @@ class Records private constructor() {
         includeDeleted: Boolean = false,
         documentType: String? = null,
         sortOrder: SortOrder,
+        tags: List<String> = emptyList()
     ): Flow<List<RecordModel>> {
         return recordsRepository.readRecords(
             businessId = businessId,
@@ -120,7 +122,8 @@ class Records private constructor() {
             caseId = caseId,
             includeDeleted = includeDeleted,
             documentType = documentType,
-            sortOrder = sortOrder
+            sortOrder = sortOrder,
+            tags = tags
         )
     }
 
@@ -214,6 +217,16 @@ class Records private constructor() {
 
     suspend fun syncOrigin(ownerId: String) {
         encounterRepository.syncOrigin(ownerId)
+    }
+
+    fun getTags(
+        businessId: String,
+        ownerIds: List<String>
+    ): Flow<List<TagModel>> {
+        return recordsRepository.getTags(
+            businessId = businessId,
+            ownerIds = ownerIds,
+        )
     }
 
     fun clearAllData() {
