@@ -73,7 +73,7 @@ afterEvaluate {
 }
 
 dependencies {
-    implementation("androidx.activity:activity:1.6.0-alpha05")
+    implementation(libs.androidx.activity)
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.core.ktx)
     kapt(libs.room.compiler)
@@ -89,6 +89,8 @@ dependencies {
     }
     implementation(libs.retrofit.gson)
     implementation(libs.haroldadmin.networkresponseadapter)
+    implementation("com.google.mlkit:text-recognition:16.0.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
 
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
