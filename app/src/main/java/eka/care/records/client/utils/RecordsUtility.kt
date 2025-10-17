@@ -2,7 +2,9 @@ package eka.care.records.client.utils
 
 import android.content.Context
 import android.content.ContextWrapper
+import android.net.Uri
 import android.webkit.MimeTypeMap
+import eka.care.records.data.mlkit.OCRTextExtractor
 import eka.care.records.data.repository.MyFileRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -16,6 +18,7 @@ class RecordsUtility {
     companion object{
         suspend fun downloadFile(url: String?, context: Context, type: String?): String {
             if (url == null) return ""
+            val ocrTextExtractor = OCRTextExtractor(context = context)
 
             val directory = ContextWrapper(context).getDir("cache", Context.MODE_PRIVATE)
             val ext = if (type?.trim()?.lowercase() == "pdf") "pdf" else "jpg"
@@ -24,7 +27,11 @@ class RecordsUtility {
             withContext(Dispatchers.IO) {
                 val myFileRepository = MyFileRepository()
                 val resp = myFileRepository.downloadFile(url)
-                resp?.saveFile(File(directory, childPath))
+                val file = File(directory, childPath)
+                resp?.saveFile(file)
+                if (ext == "jpg") {
+                    ocrTextExtractor.extractTagsFromDocument(Uri.fromFile(file))
+                }
             }
 
             return "${directory.path}/$childPath"

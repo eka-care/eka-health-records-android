@@ -1,4 +1,5 @@
 [versions]
+activity = "1.11.0"
 agp = "8.9.1"
 espressoCore = "3.7.0"
 kotlin = "2.0.0"
@@ -18,6 +19,7 @@ network = "2.0.3"
 coreKtxVersion = "1.7.0"
 
 [libraries]
+androidx-activity = { module = "androidx.activity:activity", version.ref = "activity" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "espressoCore" }
 androidx-room-testing = { module = "androidx.room:room-testing", version.ref = "roomTesting" }
