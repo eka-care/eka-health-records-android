@@ -24,4 +24,10 @@ import androidx.room.Index
 data class TagEntity(
     @ColumnInfo(name = "document_id") val documentId: String,
     @ColumnInfo(name = "tag") val tag: String,
+    @ColumnInfo(name = "type") val tagType: TagType = TagType.DOCUMENT_TAG
 )
+
+enum class TagType {
+    DOCUMENT_TAG,
+    SEARCH_TAG
+}
