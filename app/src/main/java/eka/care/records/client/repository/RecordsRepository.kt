@@ -22,7 +22,8 @@ interface RecordsRepository {
         caseId: String?,
         documentType: String = "ot",
         documentDate: Long? = null,
-        tags: List<String>
+        tags: List<String>,
+        isAbhaLinked: Boolean = true
     ): String?
 
     suspend fun createRecords(records: List<RecordEntity>)

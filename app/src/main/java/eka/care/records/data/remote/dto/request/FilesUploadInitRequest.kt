@@ -29,6 +29,8 @@ data class Batch(
     val captainOid : String? = null,
     @SerializedName("cases")
     val cases: List<String>? = null,
+    @SerializedName("ndhm")
+    val isAbhaLinked: Boolean = true,
 )
 
 @Keep

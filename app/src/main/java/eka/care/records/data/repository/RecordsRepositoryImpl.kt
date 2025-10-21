@@ -450,7 +450,8 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
         caseId: String?,
         documentType: String,
         documentDate: Long?,
-        tags: List<String>
+        tags: List<String>,
+        isAbhaLinked: Boolean,
     ): String? = supervisorScope {
         if (files.isEmpty()) {
             return@supervisorScope null
@@ -477,7 +478,8 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
             documentDate = documentDate ?: time,
             documentHash = files.first().md5(),
             status = RecordStatus.CREATED_LOCALLY,
-            uiState = RecordUiState.WAITING_TO_UPLOAD
+            uiState = RecordUiState.WAITING_TO_UPLOAD,
+            isAbhaLink = isAbhaLinked
         )
         val files = files.map { file ->
             val compressedFile =

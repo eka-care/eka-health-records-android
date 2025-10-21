@@ -94,6 +94,7 @@ class Records private constructor() {
         caseId: String? = null,
         documentType: String = "ot",
         documentDate: Long? = null,
+        isAbhaLinked: Boolean = true,
         tags: List<String> = emptyList()
     ): String? {
         return recordsRepository.createRecord(
@@ -103,7 +104,8 @@ class Records private constructor() {
             caseId = caseId,
             documentDate = documentDate,
             documentType = documentType,
-            tags = tags
+            tags = tags,
+            isAbhaLinked = isAbhaLinked
         )
     }
 
