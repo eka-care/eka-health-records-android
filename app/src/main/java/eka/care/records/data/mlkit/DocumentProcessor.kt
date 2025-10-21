@@ -26,13 +26,10 @@ suspend fun <T> Task<T>.await(): T {
     }
 }
 
-
-internal class OCRTextExtractor(
-    private val context: Context
-) {
+internal object OCRTextExtractor {
     val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
 
-    suspend fun extractTagsFromDocument(imageUri: Uri): Result<List<String>> =
+    suspend fun extractTagsFromDocument(imageUri: Uri, context: Context): Result<List<String>> =
         withContext(Dispatchers.IO) {
             try {
                 val inputImage = InputImage.fromFilePath(context, imageUri)
