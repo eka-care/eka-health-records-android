@@ -24,7 +24,8 @@ class RecordsUtility {
             withContext(Dispatchers.IO) {
                 val myFileRepository = MyFileRepository()
                 val resp = myFileRepository.downloadFile(url)
-                resp?.saveFile(File(directory, childPath))
+                val file = File(directory, childPath)
+                resp?.saveFile(file)
             }
 
             return "${directory.path}/$childPath"
@@ -71,6 +72,16 @@ class RecordsUtility {
 
         fun getWorkerTag(businessId: String): String {
             return "sync_records_${businessId}"
+        }
+
+        fun isImage(fileType: String?): Boolean {
+            return fileType?.trim()?.lowercase() != "pdf"
+        }
+
+        fun getFileByPath(context: Context, path: String): File {
+            val directory = ContextWrapper(context).getDir("cache", Context.MODE_PRIVATE)
+            val file = File(directory, path)
+            return file
         }
     }
 }
