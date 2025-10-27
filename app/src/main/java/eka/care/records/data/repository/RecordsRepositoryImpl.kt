@@ -283,7 +283,8 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                 tags = emptyList(), // TODO add tags from the user tags table
                 documentType = record.documentType,
                 documentDate = record.documentDate,
-                cases = linkedCases
+                cases = linkedCases,
+                isAbhaLinked = record.isAbhaLink
             )
         if (uploadInitResponse?.error == true) {
             logRecordSyncEvent(
