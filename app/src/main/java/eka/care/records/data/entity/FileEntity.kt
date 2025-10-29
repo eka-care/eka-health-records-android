@@ -22,4 +22,6 @@ data class FileEntity(
     @ColumnInfo(name = "document_id") val documentId: String,
     @ColumnInfo(name = "file_path") val filePath: String,
     @ColumnInfo(name = "file_type") var fileType: String,
+    @ColumnInfo(name = "last_used") var lastUsed: Long = System.currentTimeMillis(),
+    @ColumnInfo(name = "size_bytes") var sizeBytes: Long = 0L,
 )

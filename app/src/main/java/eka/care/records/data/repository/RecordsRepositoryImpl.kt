@@ -31,6 +31,7 @@ import eka.care.records.data.entity.toCaseModel
 import eka.care.records.data.remote.dto.request.CaseRequest
 import eka.care.records.data.remote.dto.request.FileType
 import eka.care.records.data.remote.dto.request.UpdateFileDetailsRequest
+import eka.care.records.data.utility.FileUtils
 import eka.care.records.data.utility.LoggerConstant.Companion.BUSINESS_ID
 import eka.care.records.data.utility.LoggerConstant.Companion.CASE_ID
 import eka.care.records.data.utility.LoggerConstant.Companion.DOCUMENT_ID
@@ -499,7 +500,9 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
             FileEntity(
                 documentId = record.documentId,
                 filePath = path,
-                fileType = type
+                fileType = type,
+                lastUsed = System.currentTimeMillis(),
+                sizeBytes = FileUtils.getFileSize(filePath = path)
             )
         }
         dao.insertRecordWithFiles(record = record, files = files)
@@ -612,6 +615,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                 oId = record.ownerId,
                 msg = "Found local files for record: $id",
             )
+            updateRecordFileLastUsed(files)
             return RecordModel(
                 id = record.documentId,
                 thumbnail = record.thumbnail,
@@ -639,6 +643,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                 oId = record.ownerId,
                 msg = "Found smart report for record: $id",
             )
+            updateRecordFileLastUsed(files ?: emptyList())
             return RecordModel(
                 id = record.documentId,
                 thumbnail = record.thumbnail,
@@ -693,7 +698,9 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                 FileEntity(
                     documentId = record.documentId,
                     filePath = filePath,
-                    fileType = fileType
+                    fileType = fileType,
+                    lastUsed = System.currentTimeMillis(),
+                    sizeBytes = FileUtils.getFileSize(filePath)
                 )
             )
             logRecordSyncEvent(
@@ -720,6 +727,14 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                 )
             } ?: emptyList()
         )
+    }
+
+    private fun updateRecordFileLastUsed(files: List<FileEntity>) {
+        CoroutineScope(Dispatchers.IO).launch {
+            val updatedFiles =
+                files.map { file -> file.copy(lastUsed = System.currentTimeMillis()) }
+            dao.updateRecordFiles(updatedFiles)
+        }
     }
 
     override fun getRecordTypeCounts(

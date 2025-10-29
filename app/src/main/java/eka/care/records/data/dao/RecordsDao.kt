@@ -58,6 +58,18 @@ interface RecordsDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertRecordFile(recordFile: FileEntity): Long
 
+    @Update
+    suspend fun updateRecordFiles(recordFiles: List<FileEntity>)
+
+    @Delete
+    suspend fun deleteRecordFiles(recordFiles: List<FileEntity>)
+
+    @Query("SELECT SUM(size_bytes) FROM files_table")
+    suspend fun getTotalFileStorageSize(): Long?
+
+    @Query("SELECT document_id FROM FILES_TABLE ORDER BY last_used DESC LIMIT 1")
+    suspend fun lastUsedFileDocumentId(): String?
+
     @Query("SELECT * FROM FILES_TABLE WHERE DOCUMENT_ID = :documentId")
     suspend fun getRecordFile(documentId: String): List<FileEntity>?
 
