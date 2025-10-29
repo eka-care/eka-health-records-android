@@ -43,6 +43,7 @@ class AwsRepository {
         documentDate: Long? = null,
         tags: List<String>,
         cases : List<String>? = null,
+        isAbhaLinked: Boolean = false,
     ): FilesUploadInitResponse? {
         val batch = mutableListOf<Batch>()
 
@@ -56,7 +57,8 @@ class AwsRepository {
                     tags = tags,
                     documentType = documentType,
                     documentDate = documentDate,
-                    cases = cases
+                    cases = cases,
+                    isAbhaLinked = isAbhaLinked
                 )
             )
         } else {
@@ -70,7 +72,8 @@ class AwsRepository {
                         tags = tags,
                         documentType = documentType,
                         documentDate = documentDate,
-                        cases = cases
+                        cases = cases,
+                        isAbhaLinked = isAbhaLinked
                     )
                 )
             }

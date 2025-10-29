@@ -25,6 +25,7 @@ data class RecordEntity(
     @ColumnInfo(name = "document_date") var documentDate: Long? = null,
     @ColumnInfo(name = "document_type") var documentType: String = "ot",
     @ColumnInfo(name = "document_hash") var documentHash: String? = null,
+    @ColumnInfo(name = "is_abha_link") var isAbhaLink: Boolean = true,
     @ColumnInfo(name = "source") var source: String? = null,
     @ColumnInfo(name = "is_smart") var isSmart: Boolean = false,
     @ColumnInfo(name = "smart_report_field") var smartReport: String? = null,
