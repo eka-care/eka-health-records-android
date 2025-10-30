@@ -29,22 +29,22 @@ suspend fun <T> Task<T>.await(): T {
 internal object OCRTextExtractor {
     val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
 
-    suspend fun extractTagsFromDocument(imageUri: Uri, context: Context): Result<List<String>> =
+    suspend fun extractTagsFromDocument(imageUri: Uri, context: Context): Result<String> =
         withContext(Dispatchers.IO) {
             try {
                 val inputImage = InputImage.fromFilePath(context, imageUri)
                 val result = recognizer.process(inputImage).await()
 
-                val tagList =
-                    result.textBlocks.mapNotNull { it.text }.filter { !it.containsDigit() }
+                val tagList = result.text
                 Log.d("OCRTextExtractor", "extractTagsFromDocument text : $tagList")
                 Result.success(tagList)
             } catch (e: Exception) {
+                Log.e(
+                    "OCRTextExtractor",
+                    "extractTagsFromDocument error : ${e.localizedMessage}",
+                    e
+                )
                 Result.failure(e)
             }
         }
-}
-
-fun String.containsDigit(): Boolean {
-    return this.any { it.isDigit() }
 }

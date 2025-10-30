@@ -3,6 +3,7 @@ package eka.care.records.client.utils
 import android.content.Context
 import android.content.ContextWrapper
 import android.webkit.MimeTypeMap
+import androidx.core.net.toUri
 import eka.care.records.data.repository.MyFileRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -79,8 +80,8 @@ class RecordsUtility {
         }
 
         fun getFileByPath(context: Context, path: String): File {
-            val directory = ContextWrapper(context).getDir("cache", Context.MODE_PRIVATE)
-            val file = File(directory, path)
+            path.toUri()
+            val file = File(context.cacheDir, path)
             return file
         }
     }

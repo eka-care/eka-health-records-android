@@ -13,6 +13,7 @@ data class DocumentConfiguration(
     val provider: String,
     val isDebugApp: Boolean = false,
     val apiCallTimeOutInSec: Long = 30L,
+    val maxAvailableStorage: Long = 1L * 1024L * 1024L * 1024L,
     val headers: Map<String, String>,
     val tokenStorage: TokenStorage,
     val environment: Environment = Environment.PROD,

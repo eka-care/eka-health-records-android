@@ -129,6 +129,16 @@ class Records private constructor() {
         )
     }
 
+    suspend fun searchRecords(
+        businessId: String,
+        ownerIds: List<String>,
+        query: String,
+    ): List<RecordModel> = recordsRepository.searchRecords(
+        businessId = businessId,
+        ownerIds = ownerIds,
+        query = query
+    )
+
     fun getRecordsCountGroupByType(
         businessId: String,
         ownerIds: List<String>,
