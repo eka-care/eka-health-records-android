@@ -1,15 +1,12 @@
 package eka.care.records.data.mlkit
 
 import android.content.Context
-import android.net.Uri
-import android.util.Log
 import com.google.android.gms.tasks.Task
-import com.google.mlkit.vision.common.InputImage
-import com.google.mlkit.vision.text.TextRecognition
-import com.google.mlkit.vision.text.latin.TextRecognizerOptions
-import kotlinx.coroutines.Dispatchers
+import eka.care.records.data.entity.models.FileType
+import eka.care.records.data.mlkit.interfaces.DocumentParser
+import eka.care.records.data.mlkit.parsers.ImageParser
+import eka.care.records.data.mlkit.parsers.PdfParser
 import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.withContext
 import kotlin.coroutines.resumeWithException
 
 suspend fun <T> Task<T>.await(): T {
@@ -27,24 +24,24 @@ suspend fun <T> Task<T>.await(): T {
 }
 
 internal object OCRTextExtractor {
-    val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+    suspend fun extractTextFromDocument(
+        fileType: String,
+        filePath: String,
+        context: Context
+    ): Result<String> {
+        val parser = getParserByFileType(FileType.fromString(fileType))
+        return parser.parseDocument(filePath = filePath, context = context)
+    }
 
-    suspend fun extractTagsFromDocument(imageUri: Uri, context: Context): Result<String> =
-        withContext(Dispatchers.IO) {
-            try {
-                val inputImage = InputImage.fromFilePath(context, imageUri)
-                val result = recognizer.process(inputImage).await()
+    fun getParserByFileType(fileType: FileType): DocumentParser {
+        return when (fileType) {
+            FileType.IMAGE -> {
+                ImageParser()
+            }
 
-                val tagList = result.text
-                Log.d("OCRTextExtractor", "extractTagsFromDocument text : $tagList")
-                Result.success(tagList)
-            } catch (e: Exception) {
-                Log.e(
-                    "OCRTextExtractor",
-                    "extractTagsFromDocument error : ${e.localizedMessage}",
-                    e
-                )
-                Result.failure(e)
+            FileType.PDF -> {
+                PdfParser()
             }
         }
+    }
 }

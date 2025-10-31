@@ -1,10 +1,7 @@
 package eka.care.records.data.repository
 
 import android.content.Context
-import android.net.Uri
 import android.util.Log
-import androidx.core.content.FileProvider
-import androidx.core.net.toUri
 import androidx.sqlite.db.SimpleSQLiteQuery
 import androidx.sqlite.db.SupportSQLiteQueryBuilder
 import com.google.gson.Gson
@@ -534,22 +531,14 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
         CoroutineScope(Dispatchers.IO).launch {
             val recordDetails = getRecordDetails(recordId)
             recordDetails?.files?.forEach { file ->
-                if (RecordsUtility.isImage(file.fileType)) {
-                    file.filePath?.let { path ->
-                        val absolutePath = path.toUri().path ?: return@launch
-                        val actualFile = File(absolutePath)
-                        val uri: Uri = FileProvider.getUriForFile(
-                            context,
-                            Document.getConfiguration().provider,
-                            File(actualFile.absolutePath)
-                        )
-                        val result = OCRTextExtractor.extractTagsFromDocument(
-                            context = context,
-                            imageUri = uri
-                        )
-                        result.onSuccess {
-                            updateFileData(fileId = file.id, ocrText = it)
-                        }
+                file.filePath?.let { path ->
+                    val result = OCRTextExtractor.extractTextFromDocument(
+                        context = context,
+                        filePath = path,
+                        fileType = file.fileType
+                    )
+                    result.onSuccess {
+                        updateFileData(fileId = file.id, ocrText = it)
                     }
                 }
             }
@@ -636,13 +625,6 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
         ownerIds: List<String>,
         query: String
     ): List<RecordModel> {
-//        @Query("""
-//        SELECT r.*
-//        FROM eka_records_table r
-//        JOIN file_entity_fts f ON r.document_id = f.document_id
-//        WHERE status != 4 AND business_id = business_id AND f.ocr_text MATCH :searchText
-//        GROUP BY r.document_id
-//    """)
         val selection = StringBuilder()
         val selectionArgs = mutableListOf<String>()
 

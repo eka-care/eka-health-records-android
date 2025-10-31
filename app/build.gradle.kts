@@ -9,7 +9,7 @@ plugins {
 
 android {
     namespace = "eka.care.documents"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         minSdk = 23
@@ -90,7 +90,7 @@ dependencies {
     implementation(libs.retrofit.gson)
     implementation(libs.haroldadmin.networkresponseadapter)
     implementation("com.google.mlkit:text-recognition:16.0.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
+    implementation(libs.kotlinx.coroutines.android)
 
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
