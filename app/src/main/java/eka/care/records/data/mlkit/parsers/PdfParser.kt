@@ -5,7 +5,6 @@ import android.graphics.Bitmap
 import android.graphics.pdf.PdfRenderer
 import android.os.ParcelFileDescriptor
 import androidx.core.graphics.createBitmap
-import androidx.core.net.toUri
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.TextRecognizer
@@ -25,10 +24,7 @@ class PdfParser : DocumentParser {
                 if (filePath.isEmpty()) {
                     return@withContext Result.success("")
                 }
-                val absolutePath = filePath.toUri().path ?: return@withContext Result.failure(
-                    Exception("Invalid file path")
-                )
-                val file = File(absolutePath)
+                val file = File(filePath)
                 if (!file.exists()) {
                     return@withContext Result.failure(Exception("File does not exist"))
                 }

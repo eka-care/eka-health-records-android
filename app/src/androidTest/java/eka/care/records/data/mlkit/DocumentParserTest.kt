@@ -32,6 +32,7 @@ class DocumentParserTest {
 
         val parser = PdfParser()
         val result = parser.parseDocument(outFile.absolutePath, context)
+        println("Extracted text:\n${result.getOrNull()}")
 
         assertTrue(result.isSuccess)
         val text = result.getOrNull() ?: ""
