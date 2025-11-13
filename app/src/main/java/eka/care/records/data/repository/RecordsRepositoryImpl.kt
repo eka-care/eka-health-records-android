@@ -529,6 +529,9 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
 
     private fun generateOCRText(recordId: String) {
         CoroutineScope(Dispatchers.IO).launch {
+            if (!Document.getConfiguration().enableSearch) {
+                return@launch
+            }
             val recordDetails = getRecordDetails(recordId)
             recordDetails?.files?.forEach { file ->
                 file.filePath?.let { path ->
