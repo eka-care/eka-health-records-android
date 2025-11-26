@@ -88,7 +88,14 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                 syncRecords(it)
             }
         } catch (ex: Exception) {
-
+            Records.logEvent(
+                EventLog(
+                    params = JSONObject().also { param ->
+                        param.put(BUSINESS_ID, businessId)
+                    },
+                    message = ex.localizedMessage ?: "Error during syncLocal",
+                )
+            )
         }
     }
 
@@ -506,6 +513,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
             )
         }
         caseId?.let { insertRecordIntoCase(caseId = it, documentId = id) }
+        syncLocal(businessId = businessId)
 
         return@supervisorScope id
     }
@@ -581,11 +589,6 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                 emitAll(dataFlow)
             }
         }.catch { e ->
-            logRecordSyncEvent(
-                bId = businessId,
-                oId = ownerIds.joinToString(","),
-                msg = "Error reading records: ${e.localizedMessage}",
-            )
             emit(emptyList())
         }
     }
@@ -745,11 +748,6 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
 
             emitAll(dao.getDocumentTypeCounts(query))
         } catch (e: Exception) {
-            logRecordSyncEvent(
-                bId = businessId,
-                oId = ownerIds.joinToString(","),
-                msg = "Error getting record type counts: ${e.localizedMessage}"
-            )
             emit(emptyList())
         }
     }
