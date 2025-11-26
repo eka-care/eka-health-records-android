@@ -35,7 +35,7 @@ class Records private constructor() {
         @Volatile
         private var INSTANCE: Records? = null
 
-        fun getInstance(context: Context, token: String): Records {
+        fun getInstance(context: Context): Records {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: buildClient().also {
                     it.db = RecordsDatabase.getInstance(context)

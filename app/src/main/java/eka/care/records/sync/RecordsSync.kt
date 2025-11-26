@@ -22,7 +22,6 @@ import eka.care.records.data.repository.SyncRecordsRepository
 import eka.care.records.data.utility.LoggerConstant.Companion.BUSINESS_ID
 import eka.care.records.data.utility.LoggerConstant.Companion.DOCUMENT_ID
 import eka.care.records.data.utility.LoggerConstant.Companion.OWNER_ID
-import eka.care.records.data.utility.LoggerConstant.Companion.UPDATED_AT
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.awaitClose
@@ -80,16 +79,6 @@ class RecordsSync(
     private suspend fun fetchRecords(businessId: String, ownerIds: List<String>) {
         ownerIds.forEach { ownerId ->
             val updatedAt = recordsRepository.getLatestRecordUpdatedAt(businessId, ownerId)
-            Records.logEvent(
-                EventLog(
-                    params = JSONObject().also { param ->
-                        param.put(BUSINESS_ID, businessId)
-                        param.put(OWNER_ID, ownerId)
-                        param.put(UPDATED_AT, updatedAt)
-                    },
-                    "Records updated till: $updatedAt"
-                )
-            )
             fetchRecordsFromServer(
                 updatedAt = updatedAt,
                 businessId = businessId,
@@ -211,16 +200,6 @@ class RecordsSync(
     private suspend fun fetchCases(businessId: String, ownerIds: List<String>) {
         ownerIds.forEach { ownerId ->
             val updatedAt = recordsRepository.getLatestCaseUpdatedAt(businessId, ownerId)
-            Records.logEvent(
-                EventLog(
-                    params = JSONObject().also { param ->
-                        param.put(OWNER_ID, ownerId)
-                        param.put(BUSINESS_ID, businessId)
-                        param.put(UPDATED_AT, updatedAt)
-                    },
-                    "Cases updated till: $updatedAt"
-                )
-            )
             fetchCasesFromServer(
                 updatedAt = updatedAt,
                 businessId = businessId,
