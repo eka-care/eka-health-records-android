@@ -48,10 +48,13 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
+import kotlinx.coroutines.withContext
+import org.json.JSONObject
 import java.io.File
 import java.util.UUID
 
@@ -452,7 +455,6 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
     override suspend fun createRecords(records: List<RecordEntity>) {
         records.forEach {
             dao.insertRecordWithFiles(it, emptyList())
-            generateOCRText(recordId = it.documentId)
         }
     }
 
@@ -520,30 +522,45 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                 )
             )
         }
-        generateOCRText(recordId = id)
         caseId?.let { insertRecordIntoCase(caseId = it, documentId = id) }
         syncLocal(businessId = businessId)
-
         return@supervisorScope id
     }
 
-    private fun generateOCRText(recordId: String) {
+    fun parseDocuments(businessId: String, ownerIds: List<String>) {
         CoroutineScope(Dispatchers.IO).launch {
-            if (!Document.getConfiguration().enableSearch) {
-                return@launch
+            val records = readRecords(
+                businessId = businessId,
+                ownerIds = ownerIds,
+                caseId = null,
+                includeDeleted = false,
+                documentType = null,
+                sortOrder = SortOrder.UPDATED_AT_DSC,
+                tags = emptyList()
+            ).first()
+            records.forEach { record ->
+                generateOCRText(recordId = record.id)
             }
-            val recordDetails = getRecordDetails(recordId)
-            recordDetails?.files?.forEach { file ->
-                file.filePath?.let { path ->
-                    val result = OCRTextExtractor.extractTextFromDocument(
-                        context = context,
-                        filePath = path,
-                        fileType = file.fileType
-                    )
-                    result.onSuccess {
-                        updateFileData(fileId = file.id, ocrText = it)
-                    }
-                }
+        }
+    }
+
+    private suspend fun generateOCRText(recordId: String) = withContext(Dispatchers.IO) {
+        if (!Document.getConfiguration().enableSearch) {
+            return@withContext
+        }
+        val recordDetails = getRecordDetails(recordId)
+        if (recordDetails == null || recordDetails.files.isEmpty()) {
+            return@withContext
+        }
+        val filesData = dao.getRecordFile(documentId = recordId)
+        filesData?.filter { file -> file.ocrText.isNullOrBlank() }?.forEach { file ->
+            val result = OCRTextExtractor.extractTextFromDocument(
+                context = context,
+                filePath = file.filePath,
+                fileType = file.fileType
+            )
+            result.onSuccess {
+                updateFileData(fileId = file.id, ocrText = it)
             }
         }
     }

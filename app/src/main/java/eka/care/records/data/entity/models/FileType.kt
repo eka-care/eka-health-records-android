@@ -6,7 +6,7 @@ enum class FileType {
 
     companion object {
         fun fromString(fileType: String): FileType {
-            return when (fileType) {
+            return when (fileType.lowercase()) {
                 "pdf" -> FileType.PDF
                 else -> FileType.IMAGE
             }

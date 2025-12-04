@@ -70,6 +70,7 @@ class RecordsSync(
                 ownerIds = ownerIds
             )
             recordsRepository.startAutoSync(businessId = businessId)
+            recordsRepository.parseDocuments(businessId = businessId, ownerIds = ownerIds)
             setProgress(workDataOf("syncing" to false))
             Result.success()
         }
