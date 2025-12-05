@@ -47,7 +47,6 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
-import org.json.JSONObject
 import java.io.File
 import java.util.UUID
 
@@ -90,7 +89,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
         } catch (ex: Exception) {
             Records.logEvent(
                 EventLog(
-                    params = JSONObject().also { param ->
+                    params = mutableMapOf<String, Any?>().also { param ->
                         param.put(BUSINESS_ID, businessId)
                     },
                     message = ex.localizedMessage ?: "Error during syncLocal",
@@ -955,7 +954,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
     ) {
         Records.logEvent(
             EventLog(
-                params = JSONObject().also { param ->
+                params = mutableMapOf<String, Any?>().also { param ->
                     param.put(DOCUMENT_ID, dId)
                     param.put(BUSINESS_ID, bId)
                     param.put(CASE_ID, caseId)

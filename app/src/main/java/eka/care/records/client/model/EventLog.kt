@@ -1,10 +1,9 @@
 package eka.care.records.client.model
 
 import androidx.annotation.Keep
-import org.json.JSONObject
 
 @Keep
 data class EventLog(
-    val params: JSONObject = JSONObject(),
+    val params: Map<String, Any?> = emptyMap(),
     val message: String? = null,
 )

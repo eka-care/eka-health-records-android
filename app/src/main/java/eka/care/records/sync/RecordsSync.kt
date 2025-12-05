@@ -30,7 +30,6 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withContext
-import org.json.JSONObject
 
 class RecordsSync(
     appContext: Context,
@@ -52,7 +51,7 @@ class RecordsSync(
             val ownerIds = inputData.getStringArray("ownerIds")?.toList() ?: emptyList()
             Records.logEvent(
                 EventLog(
-                    params = JSONObject().also { param ->
+                    params = mutableMapOf<String, Any?>().also { param ->
                         param.put(BUSINESS_ID, businessId)
                         param.put(OWNER_ID, ownerIds.joinToString(","))
                     },
@@ -142,7 +141,7 @@ class RecordsSync(
             }
             Records.logEvent(
                 EventLog(
-                    params = JSONObject().also { param ->
+                    params = mutableMapOf<String, Any?>().also { param ->
                         param.put(BUSINESS_ID, businessId)
                         param.put(OWNER_ID, recordItem.patientId)
                         param.put(DOCUMENT_ID, record.documentId)
@@ -160,7 +159,7 @@ class RecordsSync(
             }
             Records.logEvent(
                 EventLog(
-                    params = JSONObject().also { param ->
+                    params = mutableMapOf<String, Any?>().also { param ->
                         param.put(DOCUMENT_ID, id)
                         param.put(BUSINESS_ID, businessId)
                         param.put(OWNER_ID, recordItem.patientId)
