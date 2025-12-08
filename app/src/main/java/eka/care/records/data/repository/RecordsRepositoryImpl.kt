@@ -54,7 +54,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withContext
-import org.json.JSONObject
 import java.io.File
 import java.util.UUID
 
@@ -528,6 +527,9 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
     }
 
     fun parseDocuments(businessId: String, ownerIds: List<String>) {
+        if (!Document.getConfiguration().enableSearch) {
+            return
+        }
         CoroutineScope(Dispatchers.IO).launch {
             val records = readRecords(
                 businessId = businessId,
