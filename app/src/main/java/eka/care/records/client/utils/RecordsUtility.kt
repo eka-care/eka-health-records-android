@@ -3,7 +3,6 @@ package eka.care.records.client.utils
 import android.content.Context
 import android.content.ContextWrapper
 import android.webkit.MimeTypeMap
-import androidx.core.net.toUri
 import eka.care.records.data.repository.MyFileRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -73,16 +72,6 @@ class RecordsUtility {
 
         fun getWorkerTag(businessId: String): String {
             return "sync_records_${businessId}"
-        }
-
-        fun isImage(fileType: String?): Boolean {
-            return fileType?.trim()?.lowercase() != "pdf"
-        }
-
-        fun getFileByPath(context: Context, path: String): File {
-            path.toUri()
-            val file = File(context.cacheDir, path)
-            return file
         }
     }
 }
