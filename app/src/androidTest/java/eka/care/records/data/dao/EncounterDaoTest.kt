@@ -413,4 +413,30 @@ class EncounterDaoTest {
         val latest = encounterDao.getLatestEncounterUpdatedAt("bizLatest", "ownerLatest")
         assertEquals(now2, latest)
     }
+
+//    @Test
+//    fun testPdfTextExtraction() = runBlocking {
+//        val context = ApplicationProvider.getApplicationContext<Context>()
+//
+//        // Copy PDF from assets to cache dir
+//        val assetName = "test-report.pdf"
+//        val inputStream = context.assets.open(assetName)
+//        val outFile = File(context.cacheDir, assetName)
+//        FileOutputStream(outFile).use { output ->
+//            inputStream.copyTo(output)
+//        }
+//
+//        val parser = PdfParser()
+//        val result = parser.parseDocument(outFile.absolutePath, context)
+//
+//        TestCase.assertTrue(result.isSuccess)
+//        val text = result.getOrNull() ?: ""
+//
+//        // Debug output
+//        println("Extracted text:\n$text")
+//
+//        // Optional: validate some keywords
+//        TestCase.assertTrue(text.contains("Niraj", ignoreCase = true))
+//        TestCase.assertTrue(text.contains("Education", ignoreCase = true))
+//    }
 }

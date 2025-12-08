@@ -24,7 +24,8 @@ class RecordsUtility {
             withContext(Dispatchers.IO) {
                 val myFileRepository = MyFileRepository()
                 val resp = myFileRepository.downloadFile(url)
-                resp?.saveFile(File(directory, childPath))
+                val file = File(directory, childPath)
+                resp?.saveFile(file)
             }
 
             return "${directory.path}/$childPath"

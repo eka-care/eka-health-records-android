@@ -1,6 +1,7 @@
 package eka.care.records.data.repository
 
 import android.content.Context
+import android.util.Log
 import androidx.sqlite.db.SimpleSQLiteQuery
 import androidx.sqlite.db.SupportSQLiteQueryBuilder
 import com.google.gson.Gson
@@ -13,6 +14,7 @@ import eka.care.records.client.model.RecordUiState
 import eka.care.records.client.model.SortOrder
 import eka.care.records.client.model.TagModel
 import eka.care.records.client.repository.RecordsRepository
+import eka.care.records.client.utils.Document
 import eka.care.records.client.utils.Records
 import eka.care.records.client.utils.RecordsUtility
 import eka.care.records.client.utils.RecordsUtility.Companion.getMimeType
@@ -28,9 +30,11 @@ import eka.care.records.data.entity.RecordEntity
 import eka.care.records.data.entity.RecordStatus
 import eka.care.records.data.entity.TagEntity
 import eka.care.records.data.entity.toCaseModel
+import eka.care.records.data.mlkit.OCRTextExtractor
 import eka.care.records.data.remote.dto.request.CaseRequest
 import eka.care.records.data.remote.dto.request.FileType
 import eka.care.records.data.remote.dto.request.UpdateFileDetailsRequest
+import eka.care.records.data.utility.FileUtils
 import eka.care.records.data.utility.LoggerConstant.Companion.BUSINESS_ID
 import eka.care.records.data.utility.LoggerConstant.Companion.CASE_ID
 import eka.care.records.data.utility.LoggerConstant.Companion.DOCUMENT_ID
@@ -40,13 +44,16 @@ import id.zelory.compressor.Compressor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.UUID
 
@@ -499,10 +506,13 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
             FileEntity(
                 documentId = record.documentId,
                 filePath = path,
-                fileType = type
+                fileType = type,
+                lastUsed = System.currentTimeMillis(),
+                sizeBytes = FileUtils.getFileSize(filePath = path)
             )
         }
         dao.insertRecordWithFiles(record = record, files = files)
+
         tags.forEach {
             dao.insertTag(
                 TagEntity(
@@ -513,8 +523,49 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
         }
         caseId?.let { insertRecordIntoCase(caseId = it, documentId = id) }
         syncLocal(businessId = businessId)
-
         return@supervisorScope id
+    }
+
+    fun parseDocuments(businessId: String, ownerIds: List<String>) {
+        if (!Document.getConfiguration().enableSearch) {
+            return
+        }
+        CoroutineScope(Dispatchers.IO).launch {
+            val records = readRecords(
+                businessId = businessId,
+                ownerIds = ownerIds,
+                caseId = null,
+                includeDeleted = false,
+                documentType = null,
+                sortOrder = SortOrder.UPDATED_AT_DSC,
+                tags = emptyList()
+            ).first()
+            records.forEach { record ->
+                generateOCRText(recordId = record.id)
+            }
+            cleanUpDiskSpace()
+        }
+    }
+
+    private suspend fun generateOCRText(recordId: String) = withContext(Dispatchers.IO) {
+        if (!Document.getConfiguration().enableSearch) {
+            return@withContext
+        }
+        val recordDetails = getRecordDetails(recordId)
+        if (recordDetails == null || recordDetails.files.isEmpty()) {
+            return@withContext
+        }
+        val filesData = dao.getRecordFile(documentId = recordId)
+        filesData?.filter { file -> file.ocrText.isNullOrBlank() }?.forEach { file ->
+            val result = OCRTextExtractor.extractTextFromDocument(
+                context = context,
+                filePath = file.filePath,
+                fileType = file.fileType
+            )
+            result.onSuccess {
+                updateFileData(fileId = file.id, ocrText = it)
+            }
+        }
     }
 
     override fun readRecords(
@@ -592,6 +643,59 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
         }
     }
 
+    override suspend fun searchRecords(
+        businessId: String,
+        ownerIds: List<String>,
+        query: String
+    ): List<RecordModel> {
+        logRecordSyncEvent(
+            dId = "",
+            bId = businessId,
+            oId = ownerIds.toString(),
+            msg = "Search query : $query",
+        )
+        val selection = StringBuilder()
+        val selectionArgs = mutableListOf<String>()
+
+        selection.append("STATUS != 4 AND ")
+        selection.append("BUSINESS_ID = ? ")
+        selectionArgs.add(businessId)
+        if (ownerIds.isNotEmpty()) {
+            val placeholders = ownerIds.joinToString(",") { "?" }
+            selection.append("AND (OWNER_ID IN ($placeholders)) ")
+            selectionArgs.addAll(ownerIds)
+        }
+        selection.append("AND f.ocr_text MATCH ? ")
+        selectionArgs.add("*${query.lowercase().trim()}*")
+
+        val sortOrder = SortOrder.UPDATED_AT_DSC
+        val sql = """
+                SELECT DISTINCT r.* FROM EKA_RECORDS_TABLE r
+                JOIN file_entity_fts f ON r.document_id = f.document_id
+                WHERE ${selection.toString().trim()}
+                ORDER BY ${sortOrder.value} ${sortOrder.order}
+            """.trimIndent()
+        Log.d("RecordsRepositoryImpl", "Search SQL: $sql")
+        val sqlQuery = SimpleSQLiteQuery(sql, selectionArgs.toTypedArray())
+
+        val searchResults = dao.searchDocument(query = sqlQuery)
+        return searchResults.map {
+            RecordModel(
+                id = it.documentId,
+                thumbnail = it.thumbnail ?: dao.getRecordFile(it.documentId)
+                    ?.firstOrNull()?.filePath,
+                status = it.status,
+                uiState = it.uiState,
+                createdAt = it.createdAt,
+                updatedAt = it.updatedAt,
+                documentType = it.documentType,
+                documentDate = it.documentDate,
+                isSmart = it.isSmart,
+                smartReport = it.smartReport
+            )
+        }
+    }
+
     override suspend fun getRecordById(id: String) = dao.getRecordById(id = id)
 
     override suspend fun getRecordByDocumentId(id: String) = dao.getRecordByDocumentId(id = id)
@@ -612,6 +716,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                 oId = record.ownerId,
                 msg = "Found local files for record: $id",
             )
+            updateRecordFileLastUsed(files)
             return RecordModel(
                 id = record.documentId,
                 thumbnail = record.thumbnail,
@@ -639,6 +744,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                 oId = record.ownerId,
                 msg = "Found smart report for record: $id",
             )
+            updateRecordFileLastUsed(files ?: emptyList())
             return RecordModel(
                 id = record.documentId,
                 thumbnail = record.thumbnail,
@@ -693,7 +799,9 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                 FileEntity(
                     documentId = record.documentId,
                     filePath = filePath,
-                    fileType = fileType
+                    fileType = fileType,
+                    lastUsed = System.currentTimeMillis(),
+                    sizeBytes = FileUtils.getFileSize(filePath)
                 )
             )
             logRecordSyncEvent(
@@ -720,6 +828,14 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                 )
             } ?: emptyList()
         )
+    }
+
+    private fun updateRecordFileLastUsed(files: List<FileEntity>) {
+        CoroutineScope(Dispatchers.IO).launch {
+            val updatedFiles =
+                files.map { file -> file.copy(lastUsed = System.currentTimeMillis()) }
+            dao.updateRecordFiles(updatedFiles)
+        }
     }
 
     override fun getRecordTypeCounts(
@@ -809,7 +925,8 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
     }
 
     override suspend fun insertRecordFile(file: FileEntity): Long {
-        return dao.insertRecordFile(recordFile = file)
+        val result = dao.insertRecordFile(recordFile = file)
+        return result
     }
 
     override suspend fun getRecordFile(localId: String): List<FileEntity>? {
@@ -933,6 +1050,32 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                 msg = "Error getting tags: ${e.localizedMessage}"
             )
             emit(emptyList())
+        }
+    }
+
+    override suspend fun updateFileData(fileId: Long, ocrText: String) {
+        try {
+            dao.addOcrTextToFile(fileId = fileId, ocrText = ocrText)
+        } catch (e: Exception) {
+            logRecordSyncEvent(
+                bId = "",
+                oId = "",
+                msg = "Error updating file data: ${e.localizedMessage}"
+            )
+        }
+    }
+
+    // This function remove files which are not recently used
+    private fun cleanUpDiskSpace() {
+        CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
+            if (!Document.getConfiguration().enableSearch) {
+                return@launch
+            }
+            val files =
+                dao.getFilesToDeleteByMaxSize(Document.getConfiguration().maxAvailableStorage)
+            files.forEach { fileEntity ->
+                dao.deleteRecordFiles(listOf(fileEntity))
+            }
         }
     }
 

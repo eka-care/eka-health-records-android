@@ -9,7 +9,7 @@ plugins {
 
 android {
     namespace = "eka.care.documents"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         minSdk = 23
@@ -73,7 +73,7 @@ afterEvaluate {
 }
 
 dependencies {
-    implementation("androidx.activity:activity:1.6.0-alpha05")
+    implementation(libs.androidx.activity)
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.core.ktx)
     kapt(libs.room.compiler)
@@ -89,6 +89,8 @@ dependencies {
     }
     implementation(libs.retrofit.gson)
     implementation(libs.haroldadmin.networkresponseadapter)
+    implementation(libs.text.recognition)
+    implementation(libs.kotlinx.coroutines.android)
 
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

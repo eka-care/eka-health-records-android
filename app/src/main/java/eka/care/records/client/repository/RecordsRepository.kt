@@ -37,6 +37,12 @@ interface RecordsRepository {
         tags: List<String> = emptyList(),
     ): Flow<List<RecordModel>>
 
+    suspend fun searchRecords(
+        businessId: String,
+        ownerIds: List<String>,
+        query: String,
+    ): List<RecordModel>
+
     fun getRecordTypeCounts(
         businessId: String,
         ownerIds: List<String>,
@@ -97,4 +103,5 @@ interface RecordsRepository {
     suspend fun addTag(recordId: String, tag: String)
 
     fun getTags(businessId: String, ownerIds: List<String>): Flow<List<TagModel>>
+    suspend fun updateFileData(fileId: Long, ocrText: String)
 }

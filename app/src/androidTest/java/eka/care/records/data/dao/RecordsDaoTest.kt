@@ -320,4 +320,442 @@ class RecordsDaoTest {
         assertEquals(true, fetched?.isSmart)
         assertEquals("{\"field\":\"value\"}", fetched?.smartReport)
     }
+
+    // Tests for getFilesToDeleteByMaxSize SQL function
+    @Test
+    fun testGetFilesToDeleteByMaxSize_emptyDatabase_returnsEmpty() = runBlocking {
+        val maxSize = 1000L
+        val result = recordsDao.getFilesToDeleteByMaxSize(maxSize)
+        assertEquals(0, result.size)
+    }
+
+    @Test
+    fun testGetFilesToDeleteByMaxSize_singleDocumentUnderLimit_returnsEmpty() = runBlocking {
+        val record = RecordEntity(
+            documentId = "doc1",
+            businessId = "biz1",
+            ownerId = "owner1",
+            createdAt = now(),
+            updatedAt = now()
+        )
+        recordsDao.createRecords(listOf(record))
+
+        val file1 = FileEntity(
+            documentId = "doc1",
+            filePath = "/tmp/file1",
+            fileType = "pdf",
+            lastUsed = 1000L,
+            sizeBytes = 100L
+        )
+        recordsDao.insertRecordFile(file1)
+
+        val maxSize = 1000L
+        val result = recordsDao.getFilesToDeleteByMaxSize(maxSize)
+
+        assertEquals(0, result.size)
+    }
+
+    @Test
+    fun testGetFilesToDeleteByMaxSize_singleDocumentOverLimit_deletesIt() = runBlocking {
+        val record = RecordEntity(
+            documentId = "doc1",
+            businessId = "biz1",
+            ownerId = "owner1",
+            createdAt = now(),
+            updatedAt = now()
+        )
+        recordsDao.createRecords(listOf(record))
+
+        val file1 = FileEntity(
+            documentId = "doc1",
+            filePath = "/tmp/file1",
+            fileType = "pdf",
+            lastUsed = 1000L,
+            sizeBytes = 1500L
+        )
+        recordsDao.insertRecordFile(file1)
+
+        val maxSize = 1000L
+        val result = recordsDao.getFilesToDeleteByMaxSize(maxSize)
+
+        // When a single document exceeds maxSize, it still gets deleted
+        // User confirmed: SQL does not keep the last document if it exceeds maxSize
+        assertEquals(1, result.size)
+        assertEquals("doc1", result[0].documentId)
+    }
+
+    @Test
+    fun testGetFilesToDeleteByMaxSize_multipleDocuments_deletesOldest() = runBlocking {
+        val records = listOf(
+            RecordEntity(
+                documentId = "doc1",
+                businessId = "biz1",
+                ownerId = "owner1",
+                createdAt = now(),
+                updatedAt = now()
+            ),
+            RecordEntity(
+                documentId = "doc2",
+                businessId = "biz1",
+                ownerId = "owner1",
+                createdAt = now(),
+                updatedAt = now()
+            ),
+            RecordEntity(
+                documentId = "doc3",
+                businessId = "biz1",
+                ownerId = "owner1",
+                createdAt = now(),
+                updatedAt = now()
+            )
+        )
+        recordsDao.createRecords(records)
+
+        // doc1: oldest (1000L), size 100
+        val file1 = FileEntity(
+            documentId = "doc1",
+            filePath = "/tmp/file1",
+            fileType = "pdf",
+            lastUsed = 1000L,
+            sizeBytes = 100L
+        )
+        // doc2: middle (2000L), size 100
+        val file2 = FileEntity(
+            documentId = "doc2",
+            filePath = "/tmp/file2",
+            fileType = "pdf",
+            lastUsed = 2000L,
+            sizeBytes = 100L
+        )
+        // doc3: newest (3000L), size 100
+        val file3 = FileEntity(
+            documentId = "doc3",
+            filePath = "/tmp/file3",
+            fileType = "pdf",
+            lastUsed = 3000L,
+            sizeBytes = 100L
+        )
+
+        recordsDao.insertRecordFile(file1)
+        recordsDao.insertRecordFile(file2)
+        recordsDao.insertRecordFile(file3)
+
+        val maxSize = 200L // Can keep 2 documents
+        val result = recordsDao.getFilesToDeleteByMaxSize(maxSize)
+
+        assertEquals(1, result.size)
+        assertEquals("doc1", result[0].documentId)
+    }
+
+    @Test
+    fun testGetFilesToDeleteByMaxSize_multipleFilesPerDocument() = runBlocking {
+        val records = listOf(
+            RecordEntity(
+                documentId = "doc1",
+                businessId = "biz1",
+                ownerId = "owner1",
+                createdAt = now(),
+                updatedAt = now()
+            ),
+            RecordEntity(
+                documentId = "doc2",
+                businessId = "biz1",
+                ownerId = "owner1",
+                createdAt = now(),
+                updatedAt = now()
+            )
+        )
+        recordsDao.createRecords(records)
+
+        // doc1: 2 files, total size 300, oldest lastUsed = 1000L
+        val file1a = FileEntity(
+            documentId = "doc1",
+            filePath = "/tmp/file1a",
+            fileType = "pdf",
+            lastUsed = 1000L,
+            sizeBytes = 100L
+        )
+        val file1b = FileEntity(
+            documentId = "doc1",
+            filePath = "/tmp/file1b",
+            fileType = "pdf",
+            lastUsed = 1500L,
+            sizeBytes = 200L
+        )
+
+        // doc2: 2 files, total size 400, oldest lastUsed = 2000L
+        val file2a = FileEntity(
+            documentId = "doc2",
+            filePath = "/tmp/file2a",
+            fileType = "pdf",
+            lastUsed = 2000L,
+            sizeBytes = 150L
+        )
+        val file2b = FileEntity(
+            documentId = "doc2",
+            filePath = "/tmp/file2b",
+            fileType = "pdf",
+            lastUsed = 2500L,
+            sizeBytes = 250L
+        )
+
+        recordsDao.insertRecordFile(file1a)
+        recordsDao.insertRecordFile(file1b)
+        recordsDao.insertRecordFile(file2a)
+        recordsDao.insertRecordFile(file2b)
+
+        val maxSize = 400L // Can only keep doc2
+        val result = recordsDao.getFilesToDeleteByMaxSize(maxSize)
+
+        assertEquals(2, result.size)
+        assertEquals("doc1", result[0].documentId)
+        assertEquals("doc1", result[1].documentId)
+    }
+
+    @Test
+    fun testGetFilesToDeleteByMaxSize_complexScenario() = runBlocking {
+        val records = listOf(
+            RecordEntity(
+                documentId = "doc1",
+                businessId = "biz1",
+                ownerId = "owner1",
+                createdAt = now(),
+                updatedAt = now()
+            ),
+            RecordEntity(
+                documentId = "doc2",
+                businessId = "biz1",
+                ownerId = "owner1",
+                createdAt = now(),
+                updatedAt = now()
+            ),
+            RecordEntity(
+                documentId = "doc3",
+                businessId = "biz1",
+                ownerId = "owner1",
+                createdAt = now(),
+                updatedAt = now()
+            ),
+            RecordEntity(
+                documentId = "doc4",
+                businessId = "biz1",
+                ownerId = "owner1",
+                createdAt = now(),
+                updatedAt = now()
+            ),
+            RecordEntity(
+                documentId = "doc5",
+                businessId = "biz1",
+                ownerId = "owner1",
+                createdAt = now(),
+                updatedAt = now()
+            )
+        )
+        recordsDao.createRecords(records)
+
+        // doc1: size 50, lastUsed 1000
+        recordsDao.insertRecordFile(
+            FileEntity(
+                documentId = "doc1",
+                filePath = "/tmp/f1",
+                fileType = "pdf",
+                lastUsed = 1000L,
+                sizeBytes = 50L
+            )
+        )
+
+        // doc2: size 150, lastUsed 2000
+        recordsDao.insertRecordFile(
+            FileEntity(
+                documentId = "doc2",
+                filePath = "/tmp/f2",
+                fileType = "pdf",
+                lastUsed = 2000L,
+                sizeBytes = 150L
+            )
+        )
+
+        // doc3: size 200, lastUsed 3000
+        recordsDao.insertRecordFile(
+            FileEntity(
+                documentId = "doc3",
+                filePath = "/tmp/f3a",
+                fileType = "pdf",
+                lastUsed = 3000L,
+                sizeBytes = 100L
+            )
+        )
+        recordsDao.insertRecordFile(
+            FileEntity(
+                documentId = "doc3",
+                filePath = "/tmp/f3b",
+                fileType = "pdf",
+                lastUsed = 3500L,
+                sizeBytes = 100L
+            )
+        )
+
+        // doc4: size 300, lastUsed 4000
+        recordsDao.insertRecordFile(
+            FileEntity(
+                documentId = "doc4",
+                filePath = "/tmp/f4",
+                fileType = "pdf",
+                lastUsed = 4000L,
+                sizeBytes = 300L
+            )
+        )
+
+        // doc5: size 100, lastUsed 5000 (newest)
+        recordsDao.insertRecordFile(
+            FileEntity(
+                documentId = "doc5",
+                filePath = "/tmp/f5",
+                fileType = "pdf",
+                lastUsed = 5000L,
+                sizeBytes = 100L
+            )
+        )
+
+        val maxSize =
+            600L // Should keep doc5(100) + doc4(300) + doc3(200) = 600, delete doc1 and doc2
+        val result = recordsDao.getFilesToDeleteByMaxSize(maxSize)
+
+        assertEquals(2, result.size)
+        val deletedDocIds = result.map { it.documentId }.toSet()
+        assertEquals(setOf("doc1", "doc2"), deletedDocIds)
+    }
+
+    @Test
+    fun testGetFilesToDeleteByMaxSize_identicalLastUsedTimestamps() = runBlocking {
+        val records = listOf(
+            RecordEntity(
+                documentId = "doc1",
+                businessId = "biz1",
+                ownerId = "owner1",
+                createdAt = now(),
+                updatedAt = now()
+            ),
+            RecordEntity(
+                documentId = "doc2",
+                businessId = "biz1",
+                ownerId = "owner1",
+                createdAt = now(),
+                updatedAt = now()
+            ),
+            RecordEntity(
+                documentId = "doc3",
+                businessId = "biz1",
+                ownerId = "owner1",
+                createdAt = now(),
+                updatedAt = now()
+            )
+        )
+        recordsDao.createRecords(records)
+
+        // All documents have the same lastUsed timestamp
+        val file1 = FileEntity(
+            documentId = "doc1",
+            filePath = "/tmp/file1",
+            fileType = "pdf",
+            lastUsed = 1000L,
+            sizeBytes = 100L
+        )
+        val file2 = FileEntity(
+            documentId = "doc2",
+            filePath = "/tmp/file2",
+            fileType = "pdf",
+            lastUsed = 1000L,
+            sizeBytes = 100L
+        )
+        val file3 = FileEntity(
+            documentId = "doc3",
+            filePath = "/tmp/file3",
+            fileType = "pdf",
+            lastUsed = 1000L,
+            sizeBytes = 100L
+        )
+
+        recordsDao.insertRecordFile(file1)
+        recordsDao.insertRecordFile(file2)
+        recordsDao.insertRecordFile(file3)
+
+        val maxSize = 200L
+        val result = recordsDao.getFilesToDeleteByMaxSize(maxSize)
+
+        // Should delete 1 document, determined by document_id ordering
+        assertEquals(1, result.size)
+    }
+
+    @Test
+    fun testGetFilesToDeleteByMaxSize_zeroMaxSize() = runBlocking {
+        val record = RecordEntity(
+            documentId = "doc1",
+            businessId = "biz1",
+            ownerId = "owner1",
+            createdAt = now(),
+            updatedAt = now()
+        )
+        recordsDao.createRecords(listOf(record))
+
+        val file1 = FileEntity(
+            documentId = "doc1",
+            filePath = "/tmp/file1",
+            fileType = "pdf",
+            lastUsed = 1000L,
+            sizeBytes = 100L
+        )
+        recordsDao.insertRecordFile(file1)
+
+        val maxSize = 0L
+        val result = recordsDao.getFilesToDeleteByMaxSize(maxSize)
+
+        // With maxSize = 0, SQL still deletes the document since it can't fit
+        assertEquals(1, result.size)
+        assertEquals("doc1", result[0].documentId)
+    }
+
+    @Test
+    fun testGetFilesToDeleteByMaxSize_largeMaxSize() = runBlocking {
+        val records = listOf(
+            RecordEntity(
+                documentId = "doc1",
+                businessId = "biz1",
+                ownerId = "owner1",
+                createdAt = now(),
+                updatedAt = now()
+            ),
+            RecordEntity(
+                documentId = "doc2",
+                businessId = "biz1",
+                ownerId = "owner1",
+                createdAt = now(),
+                updatedAt = now()
+            )
+        )
+        recordsDao.createRecords(records)
+
+        val file1 = FileEntity(
+            documentId = "doc1",
+            filePath = "/tmp/file1",
+            fileType = "pdf",
+            lastUsed = 1000L,
+            sizeBytes = 100L
+        )
+        val file2 = FileEntity(
+            documentId = "doc2",
+            filePath = "/tmp/file2",
+            fileType = "pdf",
+            lastUsed = 2000L,
+            sizeBytes = 100L
+        )
+
+        recordsDao.insertRecordFile(file1)
+        recordsDao.insertRecordFile(file2)
+
+        val maxSize = 10000L // Much larger than total
+        val result = recordsDao.getFilesToDeleteByMaxSize(maxSize)
+
+        assertEquals(0, result.size)
+    }
 }

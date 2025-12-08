@@ -58,6 +58,15 @@ interface RecordsDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertRecordFile(recordFile: FileEntity): Long
 
+    @Update
+    suspend fun updateRecordFiles(recordFiles: List<FileEntity>)
+
+    @Query("UPDATE FILES_TABLE SET OCR_TEXT = :ocrText WHERE file_id = :fileId")
+    suspend fun addOcrTextToFile(fileId: Long, ocrText: String)
+
+    @Delete
+    suspend fun deleteRecordFiles(recordFiles: List<FileEntity>)
+
     @Query("SELECT * FROM FILES_TABLE WHERE DOCUMENT_ID = :documentId")
     suspend fun getRecordFile(documentId: String): List<FileEntity>?
 
@@ -81,4 +90,36 @@ interface RecordsDao {
         ownerIds: List<String>,
         ownerIdsSize: Int = ownerIds.size
     ): Flow<List<TagModel>>
+
+    @Query(
+        """
+        WITH document_stats AS (
+            SELECT 
+                document_id,
+                SUM(size_bytes) as total_size,
+                MIN(last_used) as oldest_last_used
+            FROM files_table
+            GROUP BY document_id
+        ),
+        documents_to_keep AS (
+            SELECT 
+                ds1.document_id
+            FROM document_stats ds1
+            WHERE (
+                SELECT COALESCE(SUM(ds2.total_size), 0)
+                FROM document_stats ds2
+                WHERE ds2.oldest_last_used > ds1.oldest_last_used
+                   OR (ds2.oldest_last_used = ds1.oldest_last_used AND ds2.document_id >= ds1.document_id)
+            ) <= :maxSizeBytes
+        )
+        SELECT f.*
+        FROM files_table f
+        WHERE f.document_id NOT IN (SELECT document_id FROM documents_to_keep)
+        ORDER BY f.last_used ASC
+    """
+    )
+    suspend fun getFilesToDeleteByMaxSize(maxSizeBytes: Long): List<FileEntity>
+
+    @RawQuery
+    suspend fun searchDocument(query: SupportSQLiteQuery): List<RecordEntity>
 }

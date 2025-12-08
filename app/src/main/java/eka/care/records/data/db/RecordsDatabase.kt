@@ -10,6 +10,7 @@ import eka.care.records.data.dao.RecordsDao
 import eka.care.records.data.entity.EncounterEntity
 import eka.care.records.data.entity.EncounterRecordCrossRef
 import eka.care.records.data.entity.FileEntity
+import eka.care.records.data.entity.FileEntityFts
 import eka.care.records.data.entity.RecordEntity
 import eka.care.records.data.entity.TagEntity
 
@@ -17,15 +18,16 @@ import eka.care.records.data.entity.TagEntity
     entities = [
         RecordEntity::class,
         FileEntity::class,
+        FileEntityFts::class,
         EncounterEntity::class,
         EncounterRecordCrossRef::class,
         TagEntity::class
     ],
-    version = 6,
+    version = 8,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
-abstract class RecordsDatabase : RoomDatabase() {
+internal abstract class RecordsDatabase : RoomDatabase() {
     abstract fun recordsDao(): RecordsDao
     abstract fun encounterDao(): EncounterRecordDao
 

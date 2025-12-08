@@ -129,6 +129,26 @@ class Records private constructor() {
         )
     }
 
+    suspend fun searchRecords(
+        businessId: String,
+        ownerIds: List<String>,
+        query: String,
+    ): Result<List<RecordModel>> {
+        try {
+            require(Document.getConfiguration().enableSearch) {
+                "Search is not enabled in the configuration."
+            }
+            val searchResults = recordsRepository.searchRecords(
+                businessId = businessId,
+                ownerIds = ownerIds,
+                query = query
+            )
+            return Result.success(searchResults)
+        } catch (e: Exception) {
+            return Result.failure(e)
+        }
+    }
+
     fun getRecordsCountGroupByType(
         businessId: String,
         ownerIds: List<String>,
