@@ -15,7 +15,6 @@ import eka.care.records.data.entity.FileEntity
 import eka.care.records.data.entity.RecordEntity
 import eka.care.records.data.entity.RecordStatus
 import eka.care.records.data.entity.TagEntity
-import eka.care.records.data.entity.models.DocumentGroup
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -92,54 +91,34 @@ interface RecordsDao {
         ownerIdsSize: Int = ownerIds.size
     ): Flow<List<TagModel>>
 
-    @Query("SELECT * FROM files_table ORDER BY last_used ASC")
-    suspend fun getAllFilesSortedByLastUsed(): List<FileEntity>
-
-    @Transaction
-    suspend fun getFilesToDeleteByMaxSize(maxSizeBytes: Long): List<FileEntity> {
-        val allFiles = getAllFilesSortedByLastUsed()
-
-        if (allFiles.isEmpty()) return emptyList()
-
-        // Group files by document_id
-        val filesByDocument = allFiles.groupBy { it.documentId }
-
-        // Calculate cumulative size for each document group
-        val documentGroups = mutableListOf<DocumentGroup>()
-        for ((documentId, files) in filesByDocument) {
-            val totalSize = files.sumOf { it.sizeBytes }
-            // Use the most recent last_used timestamp from all files in this document
-            val lastUsed = files.minOf { it.lastUsed }
-            documentGroups.add(DocumentGroup(documentId, files, totalSize, lastUsed))
-        }
-
-        // Sort document groups by their most recent last_used timestamp (ascending - oldest first)
-        documentGroups.sortBy { it.lastUsed }
-
-        // Determine which documents to keep within maxSize
-        var currentSize = 0L
-        val documentsToKeep = mutableSetOf<String>()
-        val documentsToDelete = mutableSetOf<String>()
-
-        for (group in documentGroups.reversed()) { // Start from most recently used
-            if (currentSize + group.totalSize <= maxSizeBytes) {
-                currentSize += group.totalSize
-                documentsToKeep.add(group.documentId)
-            } else {
-                documentsToDelete.add(group.documentId)
-            }
-        }
-
-        // If any file from a document needs to be deleted, delete all files from that document
-        val filesToDelete = mutableListOf<FileEntity>()
-        for (group in documentGroups) {
-            if (group.documentId in documentsToDelete) {
-                filesToDelete.addAll(group.files)
-            }
-        }
-
-        return filesToDelete
-    }
+    @Query(
+        """
+        WITH document_stats AS (
+            SELECT 
+                document_id,
+                SUM(size_bytes) as total_size,
+                MIN(last_used) as oldest_last_used
+            FROM files_table
+            GROUP BY document_id
+        ),
+        documents_to_keep AS (
+            SELECT 
+                ds1.document_id
+            FROM document_stats ds1
+            WHERE (
+                SELECT COALESCE(SUM(ds2.total_size), 0)
+                FROM document_stats ds2
+                WHERE ds2.oldest_last_used > ds1.oldest_last_used
+                   OR (ds2.oldest_last_used = ds1.oldest_last_used AND ds2.document_id >= ds1.document_id)
+            ) <= :maxSizeBytes
+        )
+        SELECT f.*
+        FROM files_table f
+        WHERE f.document_id NOT IN (SELECT document_id FROM documents_to_keep)
+        ORDER BY f.last_used ASC
+    """
+    )
+    suspend fun getFilesToDeleteByMaxSize(maxSizeBytes: Long): List<FileEntity>
 
     @RawQuery
     suspend fun searchDocument(query: SupportSQLiteQuery): List<RecordEntity>

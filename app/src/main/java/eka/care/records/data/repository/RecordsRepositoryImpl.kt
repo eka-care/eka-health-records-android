@@ -543,6 +543,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
             records.forEach { record ->
                 generateOCRText(recordId = record.id)
             }
+            cleanUpDiskSpace()
         }
     }
 
@@ -919,7 +920,6 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
 
     override suspend fun insertRecordFile(file: FileEntity): Long {
         val result = dao.insertRecordFile(recordFile = file)
-        cleanUpDiskSpace()
         return result
     }
 
@@ -1062,6 +1062,9 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
     // This function remove files which are not recently used
     private fun cleanUpDiskSpace() {
         CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
+            if (!Document.getConfiguration().enableSearch) {
+                return@launch
+            }
             val files =
                 dao.getFilesToDeleteByMaxSize(Document.getConfiguration().maxAvailableStorage)
             files.forEach { fileEntity ->
