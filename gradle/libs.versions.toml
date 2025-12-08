@@ -14,6 +14,7 @@ compressor = "3.0.1"
 networkresponseadapter = "5.0.0"
 retrofit-version = "2.11.0"
 roomTesting = "2.7.2"
+textRecognition = "16.0.1"
 workRuntimeKtx = "2.8.1"
 playServicesMlkitDocumentScanner = "16.0.0-beta1"
 network = "2.0.3"
@@ -32,6 +33,7 @@ room-runtime = { module = "androidx.room:room-runtime", version.ref = "room-vers
 room-ktx = { module = "androidx.room:room-ktx", version.ref = "room-version" }
 room-compiler = { module = "androidx.room:room-compiler", version.ref = "room-version" }
 google-gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
+text-recognition = { module = "com.google.mlkit:text-recognition", version.ref = "textRecognition" }
 zelory-compressor = { module = "id.zelory:compressor", version.ref = "compressor" }
 androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "workRuntimeKtx" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit-version" }

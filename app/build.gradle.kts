@@ -89,7 +89,7 @@ dependencies {
     }
     implementation(libs.retrofit.gson)
     implementation(libs.haroldadmin.networkresponseadapter)
-    implementation("com.google.mlkit:text-recognition:16.0.1")
+    implementation(libs.text.recognition)
     implementation(libs.kotlinx.coroutines.android)
 
     androidTestImplementation(libs.androidx.junit)
