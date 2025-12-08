@@ -13,7 +13,6 @@ import eka.care.records.client.utils.Records
 import eka.care.records.data.contract.FileStorageManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
 import java.util.UUID
@@ -43,7 +42,7 @@ class FileStorageManagerImpl(
         } catch (e: Exception) {
             Records.logEvent(
                 EventLog(
-                    params = JSONObject().also {
+                    params = mutableMapOf<String, Any?>().also {
                         it.put("fileName", file.name)
                         it.put("time", System.currentTimeMillis())
                     },
@@ -65,7 +64,7 @@ class FileStorageManagerImpl(
         } catch (e: Exception) {
             Records.logEvent(
                 EventLog(
-                    params = JSONObject().also {
+                    params = mutableMapOf<String, Any?>().also {
                         it.put("fileName", path)
                         it.put("time", System.currentTimeMillis())
                     },
@@ -109,7 +108,7 @@ class FileStorageManagerImpl(
                     } catch (e: Exception) {
                         Records.logEvent(
                             EventLog(
-                                params = JSONObject().also {
+                                params = mutableMapOf<String, Any?>().also {
                                     it.put("fileName", filePath)
                                     it.put("time", System.currentTimeMillis())
                                 },
@@ -126,7 +125,7 @@ class FileStorageManagerImpl(
             } catch (e: Exception) {
                 Records.logEvent(
                     EventLog(
-                        params = JSONObject().also {
+                        params = mutableMapOf<String, Any?>().also {
                             it.put("fileName", filePath)
                             it.put("time", System.currentTimeMillis())
                         },
@@ -143,7 +142,7 @@ class FileStorageManagerImpl(
         } catch (e: Exception) {
             Records.logEvent(
                 EventLog(
-                    params = JSONObject().also {
+                    params = mutableMapOf<String, Any?>().also {
                         it.put("time", System.currentTimeMillis())
                     },
                     message = "Error cleaning up files: ${e.message}"
