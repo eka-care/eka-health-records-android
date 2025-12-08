@@ -648,6 +648,12 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
         ownerIds: List<String>,
         query: String
     ): List<RecordModel> {
+        logRecordSyncEvent(
+            dId = "",
+            bId = businessId,
+            oId = ownerIds.toString(),
+            msg = "Search query : $query",
+        )
         val selection = StringBuilder()
         val selectionArgs = mutableListOf<String>()
 
