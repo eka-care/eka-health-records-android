@@ -3,6 +3,7 @@ package eka.care.records.data.repository
 import android.webkit.MimeTypeMap
 import com.eka.networking.client.EkaNetwork
 import com.haroldadmin.cnradapter.NetworkResponse
+import eka.care.records.client.logger.logRecordSyncEvent
 import eka.care.records.client.utils.Document
 import eka.care.records.data.remote.EnvironmentManager
 import eka.care.records.data.remote.api.AwsService
@@ -35,6 +36,7 @@ class AwsRepository {
 
     suspend fun fileUploadInit(
         documentId: String,
+        businessId: String,
         files: List<FileType>,
         isMultiFile: Boolean = false,
         isEncrypted: Boolean = false,
@@ -42,7 +44,7 @@ class AwsRepository {
         documentType: String,
         documentDate: Long? = null,
         tags: List<String>,
-        cases : List<String>? = null,
+        cases: List<String>? = null,
         isAbhaLinked: Boolean = false,
     ): FilesUploadInitResponse? {
         val batch = mutableListOf<Batch>()
@@ -79,56 +81,87 @@ class AwsRepository {
             }
         }
         val body = FilesUploadInitRequest(batchRequest = batch)
-        return withContext(Dispatchers.IO) {
-            val response =
-                when (val response = service.filesUploadInit(body, patientOid)) {
-                    is NetworkResponse.Success -> response.body
-                    is NetworkResponse.ServerError -> response.body
-                    is NetworkResponse.NetworkError -> null
-                    is NetworkResponse.UnknownError -> null
-                }
-            response
+        return try {
+            withContext(Dispatchers.IO) {
+                val response =
+                    when (val response = service.filesUploadInit(body, patientOid)) {
+                        is NetworkResponse.Success -> response.body
+                        is NetworkResponse.ServerError -> response.body
+                        is NetworkResponse.NetworkError -> null
+                        is NetworkResponse.UnknownError -> null
+                    }
+                response
+            }
+        } catch (ex: Exception) {
+            logRecordSyncEvent(
+                dId = documentId,
+                bId = businessId,
+                oId = patientOid ?: "",
+                msg = ex.message ?: "Error while calling fileUploadInit from AwsRepository"
+            )
+            return null
         }
     }
 
     suspend fun uploadFile(
+        ownerId: String,
+        businessId: String,
         file: File? = null,
         batch: BatchResponse,
         fileList: List<File>? = null
     ): AwsUploadResponse {
-        val files = fileList ?: mutableListOf(file)
-        var isResponseSuccess = false
-        var message = "Unknown Error"
-        return withContext(Dispatchers.IO) {
-            run loop@{
-                files.forEachIndexed { index, fileEntry ->
-                    fileEntry ?: return@forEachIndexed
-                    val requestFile = fileEntry.asRequestBody(fileEntry.getMimeType().toMediaType())
-                    val fileMultipartBody: MultipartBody.Part =
-                        MultipartBody.Part.createFormData("file", fileEntry.name, requestFile)
-                    val params = batch.forms[index].fields.mapValues { (_, value) ->
-                        value.toRequestBody("text/plain".toMediaTypeOrNull())
-                    }
+        try {
+            val files = fileList ?: mutableListOf(file)
+            var isResponseSuccess = false
+            var message = "Unknown Error"
+            return withContext(Dispatchers.IO) {
+                run loop@{
+                    files.forEachIndexed { index, fileEntry ->
+                        fileEntry ?: return@forEachIndexed
+                        val requestFile =
+                            fileEntry.asRequestBody(fileEntry.getMimeType().toMediaType())
+                        val fileMultipartBody: MultipartBody.Part =
+                            MultipartBody.Part.createFormData("file", fileEntry.name, requestFile)
+                        val params = batch.forms[index].fields.mapValues { (_, value) ->
+                            value.toRequestBody("text/plain".toMediaTypeOrNull())
+                        }
 
-                    val response = service.uploadFile(
-                        url = batch.forms[index].url,
-                        params = params,
-                        file = fileMultipartBody
-                    )
-                    if (response.isSuccessful) {
-                        isResponseSuccess = true
-                    } else {
-                        isResponseSuccess = false
-                        message = response.message() ?: "Failed to upload file"
-                        return@loop
+                        val response = service.uploadFile(
+                            url = batch.forms[index].url,
+                            params = params,
+                            file = fileMultipartBody
+                        )
+                        if (response.isSuccessful) {
+                            isResponseSuccess = true
+                        } else {
+                            isResponseSuccess = false
+                            message = response.message() ?: "Failed to upload file"
+                            return@loop
+                        }
                     }
                 }
+                if (isResponseSuccess) {
+                    AwsUploadResponse(error = false, documentId = batch.documentId, message = null)
+                } else {
+                    AwsUploadResponse(
+                        error = true,
+                        documentId = batch.documentId,
+                        message = message
+                    )
+                }
             }
-            if (isResponseSuccess) {
-                AwsUploadResponse(error = false, documentId = batch.documentId, message = null)
-            } else {
-                AwsUploadResponse(error = true, documentId = batch.documentId, message = message)
-            }
+        } catch (ex: Exception) {
+            logRecordSyncEvent(
+                dId = batch.documentId,
+                bId = businessId,
+                oId = ownerId,
+                msg = ex.message ?: "Error while calling uploadFile from AwsRepository"
+            )
+            return AwsUploadResponse(
+                error = true,
+                documentId = batch.documentId,
+                message = ex.message ?: "Error while calling uploadFile from AwsRepository"
+            )
         }
     }
 
