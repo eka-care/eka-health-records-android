@@ -6,6 +6,7 @@ import androidx.sqlite.db.SimpleSQLiteQuery
 import androidx.sqlite.db.SupportSQLiteQueryBuilder
 import com.google.gson.Gson
 import com.haroldadmin.cnradapter.NetworkResponse
+import eka.care.records.client.logger.logRecordSyncEvent
 import eka.care.records.client.model.CaseModel
 import eka.care.records.client.model.DocumentTypeCount
 import eka.care.records.client.model.EventLog
@@ -36,9 +37,6 @@ import eka.care.records.data.remote.dto.request.FileType
 import eka.care.records.data.remote.dto.request.UpdateFileDetailsRequest
 import eka.care.records.data.utility.FileUtils
 import eka.care.records.data.utility.LoggerConstant.Companion.BUSINESS_ID
-import eka.care.records.data.utility.LoggerConstant.Companion.CASE_ID
-import eka.care.records.data.utility.LoggerConstant.Companion.DOCUMENT_ID
-import eka.care.records.data.utility.LoggerConstant.Companion.OWNER_ID
 import eka.care.records.data.utility.isNetworkAvailable
 import id.zelory.compressor.Compressor
 import kotlinx.coroutines.CoroutineScope
@@ -158,7 +156,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
         }
         val recordWithCases = encountersDao.getRecordWithEncounters(record.documentId)
         recordWithCases.encounters.forEach { case ->
-            if(case.status == CaseStatus.CREATED_LOCALLY) {
+            if (case.status == CaseStatus.CREATED_LOCALLY) {
                 logRecordSyncEvent(
                     caseId = case.encounterId,
                     bId = case.businessId,
@@ -266,7 +264,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
             }
         val recordWithCases = encountersDao.getRecordWithEncounters(record.documentId)
         recordWithCases.encounters.forEach { case ->
-            if(case.status == CaseStatus.CREATED_LOCALLY) {
+            if (case.status == CaseStatus.CREATED_LOCALLY) {
                 logRecordSyncEvent(
                     caseId = case.encounterId,
                     bId = case.businessId,
@@ -289,6 +287,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
         )
         val uploadInitResponse =
             awsRepository.fileUploadInit(
+                businessId = record.businessId,
                 documentId = record.documentId,
                 files = fileContentList,
                 patientOid = record.ownerId,
@@ -299,17 +298,17 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                 cases = linkedCases,
                 isAbhaLinked = record.isAbhaLink
             )
-        if (uploadInitResponse?.error == true) {
+        if (uploadInitResponse == null || uploadInitResponse.error == true) {
             logRecordSyncEvent(
                 dId = record.documentId,
                 bId = record.businessId,
                 oId = record.ownerId,
-                msg = "Upload initialization error: ${uploadInitResponse.message}"
+                msg = "Upload initialization error: ${uploadInitResponse?.message}"
             )
             dao.updateRecord(record.copy(uiState = RecordUiState.SYNC_FAILED))
             return
         }
-        val batchResponse = uploadInitResponse?.batchResponse?.firstOrNull()
+        val batchResponse = uploadInitResponse.batchResponse?.firstOrNull()
         if (batchResponse == null) {
             logRecordSyncEvent(
                 dId = record.documentId,
@@ -321,7 +320,12 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
             return
         }
         val uploadResponse =
-            awsRepository.uploadFile(batch = batchResponse, fileList = files)
+            awsRepository.uploadFile(
+                ownerId = record.ownerId,
+                businessId = record.businessId,
+                batch = batchResponse,
+                fileList = files
+            )
         if (uploadResponse.error) {
             logRecordSyncEvent(
                 dId = record.documentId,
@@ -496,13 +500,21 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
             isAbhaLink = isAbhaLinked
         )
         val files = files.map { file ->
-            val compressedFile =
-                if (file.extension.lowercase() == "pdf") file else Compressor.compress(
-                    context,
-                    file
+            val finalFile = if (file.extension.lowercase() == "pdf") file else Compressor.compress(
+                context,
+                file
+            )
+            val path = finalFile.path
+            val type = finalFile.extension
+            if (finalFile.length() == 0L) {
+                logRecordSyncEvent(
+                    dId = record.documentId,
+                    bId = record.businessId,
+                    oId = record.ownerId,
+                    msg = "Unable to create file. File size is zero. Aborting!"
                 )
-            val path = compressedFile.path
-            val type = compressedFile.extension
+                return@supervisorScope null
+            }
             FileEntity(
                 documentId = record.documentId,
                 filePath = path,
@@ -1084,26 +1096,6 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
             EncounterRecordCrossRef(
                 encounterId = caseId,
                 documentId = documentId
-            )
-        )
-    }
-
-    private fun logRecordSyncEvent(
-        dId: String? = null,
-        caseId: String? = null,
-        bId: String,
-        oId: String,
-        msg: String
-    ) {
-        Records.logEvent(
-            EventLog(
-                params = mutableMapOf<String, Any?>().also { param ->
-                    param.put(DOCUMENT_ID, dId)
-                    param.put(BUSINESS_ID, bId)
-                    param.put(CASE_ID, caseId)
-                    param.put(OWNER_ID, oId)
-                },
-                message = msg
             )
         )
     }
