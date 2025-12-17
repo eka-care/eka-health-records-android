@@ -47,42 +47,42 @@ class AwsRepository {
         cases: List<String>? = null,
         isAbhaLinked: Boolean = false,
     ): FilesUploadInitResponse? {
-        val batch = mutableListOf<Batch>()
-
-        if (isMultiFile) {
-            batch.add(
-                Batch(
-                    documentId = documentId,
-                    files = files,
-                    isEncrypted = isEncrypted,
-                    sharable = false,
-                    tags = tags,
-                    documentType = documentType,
-                    documentDate = documentDate,
-                    cases = cases,
-                    isAbhaLinked = isAbhaLinked
-                )
-            )
-        } else {
-            files.forEach {
-                batch.add(
-                    Batch(
-                        documentId = documentId,
-                        files = listOf(it),
-                        isEncrypted = isEncrypted,
-                        sharable = false,
-                        tags = tags,
-                        documentType = documentType,
-                        documentDate = documentDate,
-                        cases = cases,
-                        isAbhaLinked = isAbhaLinked
+        return withContext(Dispatchers.IO) {
+            try {
+                val batch = mutableListOf<Batch>()
+                if (isMultiFile) {
+                    batch.add(
+                        Batch(
+                            documentId = documentId,
+                            files = files,
+                            isEncrypted = isEncrypted,
+                            sharable = false,
+                            tags = tags,
+                            documentType = documentType,
+                            documentDate = documentDate,
+                            cases = cases,
+                            isAbhaLinked = isAbhaLinked
+                        )
                     )
-                )
-            }
-        }
-        val body = FilesUploadInitRequest(batchRequest = batch)
-        return try {
-            withContext(Dispatchers.IO) {
+                } else {
+                    files.forEach {
+                        batch.add(
+                            Batch(
+                                documentId = documentId,
+                                files = listOf(it),
+                                isEncrypted = isEncrypted,
+                                sharable = false,
+                                tags = tags,
+                                documentType = documentType,
+                                documentDate = documentDate,
+                                cases = cases,
+                                isAbhaLinked = isAbhaLinked
+                            )
+                        )
+                    }
+                }
+                val body = FilesUploadInitRequest(batchRequest = batch)
+
                 val response =
                     when (val response = service.filesUploadInit(body, patientOid)) {
                         is NetworkResponse.Success -> response.body
@@ -91,15 +91,15 @@ class AwsRepository {
                         is NetworkResponse.UnknownError -> null
                     }
                 response
+            } catch (ex: Exception) {
+                logRecordSyncEvent(
+                    dId = documentId,
+                    bId = businessId,
+                    oId = patientOid ?: "",
+                    msg = ex.message ?: "Error while calling fileUploadInit from AwsRepository"
+                )
+                return@withContext null
             }
-        } catch (ex: Exception) {
-            logRecordSyncEvent(
-                dId = documentId,
-                bId = businessId,
-                oId = patientOid ?: "",
-                msg = ex.message ?: "Error while calling fileUploadInit from AwsRepository"
-            )
-            return null
         }
     }
 
@@ -110,11 +110,11 @@ class AwsRepository {
         batch: BatchResponse,
         fileList: List<File>? = null
     ): AwsUploadResponse {
-        try {
-            val files = fileList ?: mutableListOf(file)
-            var isResponseSuccess = false
-            var message = "Unknown Error"
-            return withContext(Dispatchers.IO) {
+        return withContext(Dispatchers.IO) {
+            try {
+                val files = fileList ?: mutableListOf(file)
+                var isResponseSuccess = false
+                var message = "Unknown Error"
                 run loop@{
                     files.forEachIndexed { index, fileEntry ->
                         fileEntry ?: return@forEachIndexed
@@ -149,19 +149,19 @@ class AwsRepository {
                         message = message
                     )
                 }
+            } catch (ex: Exception) {
+                logRecordSyncEvent(
+                    dId = batch.documentId,
+                    bId = businessId,
+                    oId = ownerId,
+                    msg = ex.message ?: "Error while calling uploadFile from AwsRepository"
+                )
+                return@withContext AwsUploadResponse(
+                    error = true,
+                    documentId = batch.documentId,
+                    message = ex.message ?: "Error while calling uploadFile from AwsRepository"
+                )
             }
-        } catch (ex: Exception) {
-            logRecordSyncEvent(
-                dId = batch.documentId,
-                bId = businessId,
-                oId = ownerId,
-                msg = ex.message ?: "Error while calling uploadFile from AwsRepository"
-            )
-            return AwsUploadResponse(
-                error = true,
-                documentId = batch.documentId,
-                message = ex.message ?: "Error while calling uploadFile from AwsRepository"
-            )
         }
     }
 
