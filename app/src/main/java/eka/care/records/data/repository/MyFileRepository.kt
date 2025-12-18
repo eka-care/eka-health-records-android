@@ -2,6 +2,7 @@ package eka.care.records.data.repository
 
 import com.eka.networking.client.EkaNetwork
 import com.haroldadmin.cnradapter.NetworkResponse
+import eka.care.records.client.logger.logRecordSyncEvent
 import eka.care.records.data.remote.EnvironmentManager
 import eka.care.records.data.remote.api.MyFileService
 import eka.care.records.data.remote.dto.request.UpdateFileDetailsRequest
@@ -71,17 +72,63 @@ class MyFileRepository {
         }
     }
 
-    suspend fun deleteDocument(documentId: String, filterId: String?): Int? {
+    suspend fun deleteDocument(documentId: String, filterId: String?, businessId: String): Int? {
         return withContext(Dispatchers.IO) {
-            val errorCode =
-                when (val response =
-                    myFileService.deleteDocument(documentId = documentId, filterId = filterId)) {
-                    is NetworkResponse.Success -> response.code
-                    is NetworkResponse.ServerError -> response.code // handleServerError(response.code)
-                    is NetworkResponse.NetworkError -> null //handleNetworkError(response.error)
-                    is NetworkResponse.UnknownError -> response.code //handleUnknownError(response.error)
-                }
-            errorCode
+            try {
+                val errorCode =
+                    when (val response =
+                        myFileService.deleteDocument(
+                            documentId = documentId,
+                            filterId = filterId
+                        )) {
+                        is NetworkResponse.Success -> {
+                            logRecordSyncEvent(
+                                dId = documentId,
+                                bId = businessId,
+                                oId = filterId ?: "",
+                                msg = "Delete success: $documentId"
+                            )
+                            response.code
+                        }
+
+                        is NetworkResponse.ServerError -> {
+                            logRecordSyncEvent(
+                                dId = documentId,
+                                bId = businessId,
+                                oId = filterId ?: "",
+                                msg = "Delete Error: $documentId, ${response.response}"
+                            )
+                            response.code
+                        } // handleServerError(response.code)
+                        is NetworkResponse.NetworkError -> {
+                            logRecordSyncEvent(
+                                dId = documentId,
+                                bId = businessId,
+                                oId = filterId ?: "",
+                                msg = "Delete Error: $documentId, ${response.error.toString()}"
+                            )
+                            null
+                        } //handleNetworkError(response.error)
+                        is NetworkResponse.UnknownError -> {
+                            logRecordSyncEvent(
+                                dId = documentId,
+                                bId = businessId,
+                                oId = filterId ?: "",
+                                msg = "Delete Error: $documentId, ${response.response}"
+                            )
+                            response.code
+                        } //handleUnknownError(response.error)
+                    }
+                errorCode
+            } catch (ex: Exception) {
+                logRecordSyncEvent(
+                    dId = documentId,
+                    bId = businessId,
+                    oId = filterId ?: "",
+                    msg = "Delete error: ${ex.message.toString()}"
+                )
+                null
+            }
         }
     }
 }
