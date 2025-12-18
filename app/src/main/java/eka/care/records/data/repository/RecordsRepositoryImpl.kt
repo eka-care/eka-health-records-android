@@ -222,7 +222,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
             filterId = record.ownerId,
             businessId = record.businessId
         )
-        if (result in (200..299)) {
+        if (result in (200..299) || result == 404) {
             dao.deleteRecord(record)
             logRecordSyncEvent(
                 dId = record.documentId,
