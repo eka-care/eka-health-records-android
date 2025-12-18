@@ -218,7 +218,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
     private suspend fun syncDeletedRecordsToServer(record: RecordEntity) {
         val documentId = record.documentId
         val result = myFileRepository.deleteDocument(
-            documentId,
+            documentId = documentId,
             filterId = record.ownerId,
             businessId = record.businessId
         )
@@ -337,7 +337,11 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                 oId = record.ownerId,
                 msg = "Upload error: ${uploadResponse.message}"
             )
-            myFileRepository.deleteDocument(record.documentId, record.ownerId, record.businessId)
+            myFileRepository.deleteDocument(
+                documentId = record.documentId,
+                filterId = record.ownerId,
+                businessId = record.businessId
+            )
             dao.updateRecord(record.copy(uiState = RecordUiState.SYNC_FAILED))
             return
         }
