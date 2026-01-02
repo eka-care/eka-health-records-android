@@ -40,6 +40,7 @@ import eka.care.records.data.utility.LoggerConstant.Companion.BUSINESS_ID
 import eka.care.records.data.utility.LoggerConstant.Companion.CASE_ID
 import eka.care.records.data.utility.LoggerConstant.Companion.DOCUMENT_ID
 import eka.care.records.data.utility.LoggerConstant.Companion.OWNER_ID
+import eka.care.records.data.utility.getNetworkCapabilities
 import eka.care.records.data.utility.isNetworkAvailable
 import id.zelory.compressor.Compressor
 import kotlinx.coroutines.CancellationException
@@ -245,6 +246,11 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
         if (isNetworkAvailable(context = context)) {
             dao.updateRecord(record.copy(uiState = RecordUiState.SYNCING))
         } else {
+            logNetworkCapabilities(
+                businessId = record.businessId,
+                documentId = record.documentId,
+                ownerId = record.ownerId,
+            )
             dao.updateRecord(record.copy(uiState = RecordUiState.WAITING_FOR_NETWORK))
             return
         }
@@ -338,6 +344,11 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
         if (isNetworkAvailable(context = context)) {
             dao.updateRecord(record.copy(uiState = RecordUiState.SYNCING))
         } else {
+            logNetworkCapabilities(
+                businessId = record.businessId,
+                documentId = record.documentId,
+                ownerId = record.ownerId,
+            )
             dao.updateRecord(record.copy(uiState = RecordUiState.WAITING_FOR_NETWORK))
             return
         }
@@ -455,10 +466,31 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
         )
     }
 
+    private fun logNetworkCapabilities(
+        businessId: String,
+        documentId: String? = null,
+        encounterId: String? = null,
+        ownerId: String
+    ) {
+        val capabilities = getNetworkCapabilities(context = context)
+        logRecordSyncEvent(
+            dId = documentId,
+            bId = businessId,
+            oId = ownerId,
+            caseId = encounterId,
+            msg = "Internet Capabilities : $capabilities"
+        )
+    }
+
     private suspend fun uploadEncounter(encounter: EncounterEntity) {
         if (isNetworkAvailable(context = context)) {
             encountersDao.updateEncounter(encounter.copy(uiState = CaseUiState.SYNCING))
         } else {
+            logNetworkCapabilities(
+                businessId = encounter.businessId,
+                encounterId = encounter.encounterId,
+                ownerId = encounter.ownerId,
+            )
             encountersDao.updateEncounter(encounter.copy(uiState = CaseUiState.WAITING_FOR_NETWORK))
             return
         }
@@ -500,6 +532,11 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
         if (isNetworkAvailable(context = context)) {
             encountersDao.updateEncounter(encounter.copy(uiState = CaseUiState.SYNCING))
         } else {
+            logNetworkCapabilities(
+                businessId = encounter.businessId,
+                encounterId = encounter.encounterId,
+                ownerId = encounter.ownerId,
+            )
             encountersDao.updateEncounter(encounter.copy(uiState = CaseUiState.WAITING_FOR_NETWORK))
             return
         }
