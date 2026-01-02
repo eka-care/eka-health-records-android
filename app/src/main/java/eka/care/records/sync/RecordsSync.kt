@@ -147,7 +147,7 @@ class RecordsSync(
                         param.put(OWNER_ID, recordItem.patientId)
                         param.put(DOCUMENT_ID, record.documentId)
                     },
-                    message = "Updated record for businessId: $businessId"
+                    message = "Updated record for businessId: $businessId ownerId: ${recordItem.patientId} documentId: ${record.documentId}"
                 )
             )
         } else {
