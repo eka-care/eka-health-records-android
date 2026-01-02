@@ -55,7 +55,7 @@ class RecordsSync(
                         param.put(BUSINESS_ID, businessId)
                         param.put(OWNER_ID, ownerIds.joinToString(","))
                     },
-                    "Starting sync for businessId: $businessId, ownerIds: $ownerIds"
+                    "Starting sync worker for businessId: $businessId, ownerIds: $ownerIds"
                 )
             )
             recordsRepository.syncLocal(
