@@ -37,8 +37,13 @@ import eka.care.records.data.remote.dto.request.FileType
 import eka.care.records.data.remote.dto.request.UpdateFileDetailsRequest
 import eka.care.records.data.utility.FileUtils
 import eka.care.records.data.utility.LoggerConstant.Companion.BUSINESS_ID
+import eka.care.records.data.utility.LoggerConstant.Companion.CASE_ID
+import eka.care.records.data.utility.LoggerConstant.Companion.DOCUMENT_ID
+import eka.care.records.data.utility.LoggerConstant.Companion.OWNER_ID
+import eka.care.records.data.utility.getNetworkCapabilities
 import eka.care.records.data.utility.isNetworkAvailable
 import id.zelory.compressor.Compressor
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -65,13 +70,71 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
     private var syncJob: Job? = null
 
     fun startAutoSync(businessId: String) {
+        if (syncJob != null && syncJob?.isActive == true) {
+            Records.logEvent(
+                EventLog(
+                    params = mutableMapOf<String, Any?>().also { param ->
+                        param.put(BUSINESS_ID, businessId)
+                    },
+                    message = "Local Sync Job already running!",
+                )
+            )
+            return
+        }
         syncJob?.cancel()
+        syncJob = null
         syncJob = CoroutineScope(Dispatchers.IO).launch {
             syncLocal(businessId)
+        }.also { job ->
+            job.invokeOnCompletion {
+                when (it) {
+                    null -> {
+                        Records.logEvent(
+                            EventLog(
+                                params = mutableMapOf<String, Any?>().also { param ->
+                                    param.put(BUSINESS_ID, businessId)
+                                },
+                                message = "Local Sync Job Completed! $businessId",
+                            )
+                        )
+                    }
+
+                    is CancellationException -> {
+                        Records.logEvent(
+                            EventLog(
+                                params = mutableMapOf<String, Any?>().also { param ->
+                                    param.put(BUSINESS_ID, businessId)
+                                },
+                                message = "Local Sync Job Cancelled with Throwable! ${it.message}",
+                            )
+                        )
+                    }
+
+                    else -> {
+                        Records.logEvent(
+                            EventLog(
+                                params = mutableMapOf<String, Any?>().also { param ->
+                                    param.put(BUSINESS_ID, businessId)
+                                },
+                                message = "Local Sync Job Completed with Error! ${it.message}",
+                            )
+                        )
+                    }
+                }
+                syncJob = null
+            }
         }
     }
 
     suspend fun syncLocal(businessId: String) {
+        Records.logEvent(
+            EventLog(
+                params = mutableMapOf<String, Any?>().also { param ->
+                    param.put(BUSINESS_ID, businessId)
+                },
+                message = "Starting sync to server $businessId",
+            )
+        )
         try {
             encountersDao.getEncountersByStatus(
                 businessId, listOf(
@@ -91,13 +154,15 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
             )?.also {
                 syncRecords(it)
             }
+        } catch (cancellationException: CancellationException) {
+            throw cancellationException
         } catch (ex: Exception) {
             Records.logEvent(
                 EventLog(
                     params = mutableMapOf<String, Any?>().also { param ->
                         param.put(BUSINESS_ID, businessId)
                     },
-                    message = ex.localizedMessage ?: "Error during syncLocal",
+                    message = "Error during syncLocal ${ex.localizedMessage}",
                 )
             )
         }
@@ -105,44 +170,74 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
 
     private suspend fun syncRecords(records: List<RecordEntity>) = supervisorScope {
         records.forEach {
-            when (it.status) {
-                RecordStatus.CREATED_LOCALLY -> {
-                    uploadRecords(it)
-                }
+            try {
+                when (it.status) {
+                    RecordStatus.CREATED_LOCALLY -> {
+                        uploadRecords(it)
+                    }
 
-                RecordStatus.UPDATED_LOCALLY -> {
-                    updateDocument(it)
-                }
+                    RecordStatus.UPDATED_LOCALLY -> {
+                        updateDocument(it)
+                    }
 
-                RecordStatus.ARCHIVED -> {
-                    syncDeletedRecordsToServer(it)
-                }
+                    RecordStatus.ARCHIVED -> {
+                        syncDeletedRecordsToServer(it)
+                    }
 
-                else -> {
-                    //NO-OP
+                    else -> {
+                        //NO-OP
+                    }
                 }
+            } catch (ex: CancellationException) {
+                throw ex
+            } catch (e: Exception) {
+                Records.logEvent(
+                    EventLog(
+                        params = mutableMapOf<String, Any?>().also { param ->
+                            param.put(BUSINESS_ID, it.businessId)
+                            param.put(OWNER_ID, it.ownerId)
+                            param.put(DOCUMENT_ID, it.documentId)
+                        },
+                        message = "Error during document sync ${it.documentId} ${e.localizedMessage} ",
+                    )
+                )
             }
         }
     }
 
     private suspend fun syncEncounters(encounters: List<EncounterEntity>) = supervisorScope {
         encounters.forEach {
-            when (it.status) {
-                CaseStatus.CREATED_LOCALLY -> {
-                    uploadEncounter(it)
-                }
+            try {
+                when (it.status) {
+                    CaseStatus.CREATED_LOCALLY -> {
+                        uploadEncounter(it)
+                    }
 
-                CaseStatus.UPDATED_LOCALLY -> {
-                    updateEncounter(it)
-                }
+                    CaseStatus.UPDATED_LOCALLY -> {
+                        updateEncounter(it)
+                    }
 
-                CaseStatus.ARCHIVED -> {
-                    syncDeletedEncounterToServer(it)
-                }
+                    CaseStatus.ARCHIVED -> {
+                        syncDeletedEncounterToServer(it)
+                    }
 
-                else -> {
-                    //NO-OP
+                    else -> {
+                        //NO-OP
+                    }
                 }
+            } catch (ex: CancellationException) {
+                throw ex
+            } catch (e: Exception) {
+                Records.logEvent(
+                    EventLog(
+                        params = mutableMapOf<String, Any?>().also { param ->
+                            param.put(BUSINESS_ID, it.businessId)
+                            param.put(OWNER_ID, it.ownerId)
+                            param.put(CASE_ID, it.encounterId)
+                        },
+                        message = "Error during encounter sync ${it.encounterId} ${e.localizedMessage} ",
+                    )
+                )
             }
         }
     }
@@ -151,6 +246,11 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
         if (isNetworkAvailable(context = context)) {
             dao.updateRecord(record.copy(uiState = RecordUiState.SYNCING))
         } else {
+            logNetworkCapabilities(
+                businessId = record.businessId,
+                documentId = record.documentId,
+                ownerId = record.ownerId,
+            )
             dao.updateRecord(record.copy(uiState = RecordUiState.WAITING_FOR_NETWORK))
             return
         }
@@ -244,6 +344,11 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
         if (isNetworkAvailable(context = context)) {
             dao.updateRecord(record.copy(uiState = RecordUiState.SYNCING))
         } else {
+            logNetworkCapabilities(
+                businessId = record.businessId,
+                documentId = record.documentId,
+                ownerId = record.ownerId,
+            )
             dao.updateRecord(record.copy(uiState = RecordUiState.WAITING_FOR_NETWORK))
             return
         }
@@ -325,6 +430,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
         }
         val uploadResponse =
             awsRepository.uploadFile(
+                documentId = record.documentId,
                 ownerId = record.ownerId,
                 businessId = record.businessId,
                 batch = batchResponse,
@@ -360,10 +466,31 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
         )
     }
 
+    private fun logNetworkCapabilities(
+        businessId: String,
+        documentId: String? = null,
+        encounterId: String? = null,
+        ownerId: String
+    ) {
+        val capabilities = getNetworkCapabilities(context = context)
+        logRecordSyncEvent(
+            dId = documentId,
+            bId = businessId,
+            oId = ownerId,
+            caseId = encounterId,
+            msg = "Internet Capabilities : $capabilities"
+        )
+    }
+
     private suspend fun uploadEncounter(encounter: EncounterEntity) {
         if (isNetworkAvailable(context = context)) {
             encountersDao.updateEncounter(encounter.copy(uiState = CaseUiState.SYNCING))
         } else {
+            logNetworkCapabilities(
+                businessId = encounter.businessId,
+                encounterId = encounter.encounterId,
+                ownerId = encounter.ownerId,
+            )
             encountersDao.updateEncounter(encounter.copy(uiState = CaseUiState.WAITING_FOR_NETWORK))
             return
         }
@@ -405,6 +532,11 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
         if (isNetworkAvailable(context = context)) {
             encountersDao.updateEncounter(encounter.copy(uiState = CaseUiState.SYNCING))
         } else {
+            logNetworkCapabilities(
+                businessId = encounter.businessId,
+                encounterId = encounter.encounterId,
+                ownerId = encounter.ownerId,
+            )
             encountersDao.updateEncounter(encounter.copy(uiState = CaseUiState.WAITING_FOR_NETWORK))
             return
         }

@@ -104,6 +104,7 @@ class AwsRepository {
     }
 
     suspend fun uploadFile(
+        documentId: String,
         ownerId: String,
         businessId: String,
         file: File? = null,
@@ -151,14 +152,14 @@ class AwsRepository {
                 }
             } catch (ex: Exception) {
                 logRecordSyncEvent(
-                    dId = batch.documentId,
+                    dId = documentId,
                     bId = businessId,
                     oId = ownerId,
                     msg = ex.message ?: "Error while calling uploadFile from AwsRepository"
                 )
                 return@withContext AwsUploadResponse(
                     error = true,
-                    documentId = batch.documentId,
+                    documentId = documentId,
                     message = ex.message ?: "Error while calling uploadFile from AwsRepository"
                 )
             }
