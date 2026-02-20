@@ -9,6 +9,7 @@ buildscript {
         classpath(libs.org.jacoco.core)
     }
     repositories {
+        mavenLocal()
         flatDir {
             dirs("libs")
         }
