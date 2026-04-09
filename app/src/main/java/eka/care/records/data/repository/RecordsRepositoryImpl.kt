@@ -455,7 +455,8 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
             record.copy(
                 uiState = RecordUiState.SYNC_SUCCESS,
                 documentId = uploadResponse.documentId,
-                status = RecordStatus.SYNC_COMPLETED
+                status = RecordStatus.SYNC_COMPLETED,
+                isAnalysing = true
             )
         )
         logRecordSyncEvent(

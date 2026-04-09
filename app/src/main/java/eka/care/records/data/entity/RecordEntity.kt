@@ -29,6 +29,7 @@ data class RecordEntity(
     @ColumnInfo(name = "source") var source: String? = null,
     @ColumnInfo(name = "is_smart") var isSmart: Boolean = false,
     @ColumnInfo(name = "smart_report_field") var smartReport: String? = null,
+    @ColumnInfo(name = "is_analysing") var isAnalysing: Boolean = false,
 )
 
 enum class RecordStatus(val value: Int) {
@@ -51,5 +52,6 @@ fun RecordEntity.toRecordModel(): RecordModel {
         documentType = documentType,
         isSmart = isSmart,
         smartReport = smartReport,
+        isAnalysing = isAnalysing,
     )
 }

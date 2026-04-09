@@ -122,6 +122,7 @@ class RecordsSync(
     private suspend fun storeRecord(item: Item, businessId: String) {
         val recordItem = item.record.item
         val record = recordsRepository.getRecordByDocumentId(recordItem.documentId)
+        val autoTags = recordItem.metadata?.autoTags
         val recordToStore = RecordEntity(
             documentId = record?.documentId ?: recordItem.documentId,
             ownerId = recordItem.patientId ?: "",
@@ -130,7 +131,8 @@ class RecordsSync(
             updatedAt = recordItem.updatedAt ?: recordItem.uploadDate ?: 0L,
             documentDate = recordItem.metadata?.documentDate,
             documentType = recordItem.documentType ?: "ot",
-            isSmart = recordItem.metadata?.autoTags?.contains("1") == true,
+            isSmart = autoTags?.contains("1") == true,
+            isAnalysing = autoTags?.contains("0") == true,
         )
         if (record != null) {
             recordsRepository.updateRecord(recordToStore)
