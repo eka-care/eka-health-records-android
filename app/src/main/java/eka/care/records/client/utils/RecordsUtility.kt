@@ -53,18 +53,22 @@ class RecordsUtility {
         }
 
         fun File.md5(): String {
+            if (!this.exists()) return ""
             val buffer = ByteArray(1024 * 4)
             val md = MessageDigest.getInstance("MD5")
-
-            FileInputStream(this).use { fis ->
-                var bytesRead: Int
-                while (fis.read(buffer).also { bytesRead = it } != -1) {
-                    md.update(buffer, 0, bytesRead)
+            return try {
+                FileInputStream(this).use { fis ->
+                    var bytesRead: Int
+                    while (fis.read(buffer).also { bytesRead = it } != -1) {
+                        md.update(buffer, 0, bytesRead)
+                    }
                 }
+                val digest = md.digest()
+                digest.joinToString("") { "%02x".format(it) }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                ""
             }
-
-            val digest = md.digest()
-            return digest.joinToString("") { "%02x".format(it) }
         }
 
         fun File.getMimeType(): String? =
