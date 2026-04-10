@@ -614,11 +614,6 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
         if (files.isEmpty()) {
             return@supervisorScope null
         }
-
-        if (!files.first().exists()) {
-            return@supervisorScope null
-        }
-
         val time = System.currentTimeMillis() / 1000
         val id = UUID.randomUUID().toString()
         val thumbnail =
