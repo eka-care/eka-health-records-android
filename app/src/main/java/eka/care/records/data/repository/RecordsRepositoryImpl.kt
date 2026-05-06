@@ -785,7 +785,8 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                             documentType = it.documentType,
                             documentDate = it.documentDate,
                             isSmart = it.isSmart,
-                            smartReport = it.smartReport
+                            smartReport = it.smartReport,
+                            isAnalysing = it.isAnalysing
                         )
                     }
                 }
@@ -844,7 +845,8 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                 documentType = it.documentType,
                 documentDate = it.documentDate,
                 isSmart = it.isSmart,
-                smartReport = it.smartReport
+                smartReport = it.smartReport,
+                isAnalysing = it.isAnalysing
             )
         }
     }
@@ -879,6 +881,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                 documentType = record.documentType,
                 isSmart = record.isSmart,
                 smartReport = record.smartReport,
+                isAnalysing = record.isAnalysing,
                 status = record.status,
                 files = files.map { file ->
                     RecordModel.RecordFile(
@@ -907,6 +910,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                 documentType = record.documentType,
                 isSmart = record.isSmart,
                 smartReport = record.smartReport,
+                isAnalysing = record.isAnalysing,
                 status = record.status,
                 files = files?.map { file ->
                     RecordModel.RecordFile(
@@ -973,6 +977,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
             documentType = record.documentType,
             isSmart = record.isSmart,
             smartReport = smartReportField,
+            isAnalysing = record.isAnalysing,
             files = getRecordFile(record.documentId)?.map { file ->
                 RecordModel.RecordFile(
                     id = file.id,
