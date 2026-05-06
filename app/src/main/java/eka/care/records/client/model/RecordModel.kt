@@ -26,6 +26,8 @@ data class RecordModel(
     val isSmart: Boolean = false,
     @SerializedName("smartReport")
     val smartReport: String? = null,
+    @SerializedName("isAnalysing")
+    val isAnalysing: Boolean = false,
     @SerializedName("files")
     val files: List<RecordFile> = emptyList(),
 ) {
