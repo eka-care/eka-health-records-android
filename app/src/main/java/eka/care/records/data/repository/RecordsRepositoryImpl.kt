@@ -640,6 +640,15 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
             isAbhaLink = isAbhaLinked
         )
         val files = files.map { file ->
+            if (!file.exists()) {
+                logRecordSyncEvent(
+                    dId = record.documentId,
+                    bId = record.businessId,
+                    oId = record.ownerId,
+                    msg = "Unable to create record. Source file missing: ${file.path}"
+                )
+                return@supervisorScope null
+            }
             val finalFile = if (file.extension.lowercase() == "pdf") file else Compressor.compress(
                 context,
                 file
