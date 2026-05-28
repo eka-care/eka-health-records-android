@@ -122,4 +122,7 @@ interface RecordsDao {
 
     @RawQuery
     suspend fun searchDocument(query: SupportSQLiteQuery): List<RecordEntity>
+
+    @Query("UPDATE eka_records_table SET is_analysing = 0 WHERE is_analysing = 1 AND created_at < :cutoffTimestamp")
+    suspend fun resetStaleAnalysingRecords(cutoffTimestamp: Long)
 }

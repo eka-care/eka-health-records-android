@@ -40,6 +40,7 @@ import eka.care.records.data.utility.LoggerConstant.Companion.BUSINESS_ID
 import eka.care.records.data.utility.LoggerConstant.Companion.CASE_ID
 import eka.care.records.data.utility.LoggerConstant.Companion.DOCUMENT_ID
 import eka.care.records.data.utility.LoggerConstant.Companion.OWNER_ID
+import eka.care.records.data.utility.TimeProvider
 import eka.care.records.data.utility.getNetworkCapabilities
 import eka.care.records.data.utility.isNetworkAvailable
 import id.zelory.compressor.Compressor
@@ -61,6 +62,10 @@ import java.io.File
 import java.util.UUID
 
 internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepository {
+    init {
+        TimeProvider.init(context)
+    }
+
     private var dao = RecordsDatabase.getInstance(context).recordsDao()
     private var encountersDao = RecordsDatabase.getInstance(context).encounterDao()
     private val myFileRepository = MyFileRepository()
@@ -615,7 +620,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
         if (files.isEmpty()) {
             return@supervisorScope null
         }
-        val time = System.currentTimeMillis() / 1000
+        val time = TimeProvider.nowSeconds()
         val id = UUID.randomUUID().toString()
         val thumbnail =
             if (files.first().extension.lowercase() in listOf("jpg", "jpeg", "png", "webp")) {
@@ -668,7 +673,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                 documentId = record.documentId,
                 filePath = path,
                 fileType = type,
-                lastUsed = System.currentTimeMillis(),
+                lastUsed = TimeProvider.nowMillis(),
                 sizeBytes = FileUtils.getFileSize(filePath = path)
             )
         }
@@ -780,6 +785,8 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                 val records = getCaseWithRecords(caseId)?.records ?: emptyList()
                 emit(records)
             } else {
+                val tenMinutesAgo = TimeProvider.nowSeconds() - 60
+                dao.resetStaleAnalysingRecords(tenMinutesAgo)
                 val dataFlow = dao.readRecords(query).map { records ->
                     records.map {
                         RecordModel(
@@ -965,7 +972,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                     documentId = record.documentId,
                     filePath = filePath,
                     fileType = fileType,
-                    lastUsed = System.currentTimeMillis(),
+                    lastUsed = TimeProvider.nowMillis(),
                     sizeBytes = FileUtils.getFileSize(filePath)
                 )
             )
@@ -999,7 +1006,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
     private fun updateRecordFileLastUsed(files: List<FileEntity>) {
         CoroutineScope(Dispatchers.IO).launch {
             val updatedFiles =
-                files.map { file -> file.copy(lastUsed = System.currentTimeMillis()) }
+                files.map { file -> file.copy(lastUsed = TimeProvider.nowMillis()) }
             dao.updateRecordFiles(updatedFiles)
         }
     }
@@ -1126,8 +1133,8 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                 ownerId = ownerId,
                 status = status,
                 uiState = uiStatus,
-                createdAt = createdAt ?: (System.currentTimeMillis() / 1000),
-                updatedAt = updatedAt ?: (System.currentTimeMillis() / 1000),
+                createdAt = createdAt ?: TimeProvider.nowSeconds(),
+                updatedAt = updatedAt ?: TimeProvider.nowSeconds(),
             )
         )
         return@supervisorScope id

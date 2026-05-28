@@ -6,6 +6,7 @@ import androidx.room.ForeignKey
 import androidx.room.ForeignKey.Companion.CASCADE
 import androidx.room.Fts4
 import androidx.room.PrimaryKey
+import eka.care.records.data.utility.TimeProvider
 
 @Entity(
     tableName = "files_table",
@@ -23,7 +24,7 @@ data class FileEntity(
     @ColumnInfo(name = "document_id") val documentId: String,
     @ColumnInfo(name = "file_path") val filePath: String,
     @ColumnInfo(name = "file_type") var fileType: String,
-    @ColumnInfo(name = "last_used") var lastUsed: Long = System.currentTimeMillis(),
+    @ColumnInfo(name = "last_used") var lastUsed: Long = TimeProvider.nowMillis(),
     @ColumnInfo(name = "size_bytes") var sizeBytes: Long = 0L,
     @ColumnInfo(name = "ocr_text") var ocrText: String? = ""
 )
