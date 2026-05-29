@@ -11,6 +11,7 @@ import eka.care.records.client.model.EventLog
 import eka.care.records.client.model.MedicalRecordException
 import eka.care.records.client.utils.Records
 import eka.care.records.data.contract.FileStorageManager
+import eka.care.records.data.utility.TimeProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -44,7 +45,7 @@ class FileStorageManagerImpl(
                 EventLog(
                     params = mutableMapOf<String, Any?>().also {
                         it.put("fileName", file.name)
-                        it.put("time", System.currentTimeMillis())
+                        it.put("time", TimeProvider.nowMillis())
                     },
                     message = "Error saving file: ${e.message}"
                 )
@@ -66,7 +67,7 @@ class FileStorageManagerImpl(
                 EventLog(
                     params = mutableMapOf<String, Any?>().also {
                         it.put("fileName", path)
-                        it.put("time", System.currentTimeMillis())
+                        it.put("time", TimeProvider.nowMillis())
                     },
                     message = "Error deleting file: ${e.message}"
                 )
@@ -99,7 +100,7 @@ class FileStorageManagerImpl(
                     canvas.drawBitmap(bitmap, 0f, 0f, null)
                     page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
                     page.close()
-                    val tempFile = File(fileDir, "image${System.currentTimeMillis()}.png")
+                    val tempFile = File(fileDir, "image${TimeProvider.nowMillis()}.png")
                     try {
                         val out = FileOutputStream(tempFile)
                         bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
@@ -110,7 +111,7 @@ class FileStorageManagerImpl(
                             EventLog(
                                 params = mutableMapOf<String, Any?>().also {
                                     it.put("fileName", filePath)
-                                    it.put("time", System.currentTimeMillis())
+                                    it.put("time", TimeProvider.nowMillis())
                                 },
                                 message = "Error saving thumbnail: ${e.message}"
                             )
@@ -127,7 +128,7 @@ class FileStorageManagerImpl(
                     EventLog(
                         params = mutableMapOf<String, Any?>().also {
                             it.put("fileName", filePath)
-                            it.put("time", System.currentTimeMillis())
+                            it.put("time", TimeProvider.nowMillis())
                         },
                         message = "Error generating thumbnail: ${e.message}"
                     )
@@ -143,7 +144,7 @@ class FileStorageManagerImpl(
             Records.logEvent(
                 EventLog(
                     params = mutableMapOf<String, Any?>().also {
-                        it.put("time", System.currentTimeMillis())
+                        it.put("time", TimeProvider.nowMillis())
                     },
                     message = "Error cleaning up files: ${e.message}"
                 )

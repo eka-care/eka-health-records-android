@@ -22,6 +22,9 @@ import eka.care.records.data.repository.SyncRecordsRepository
 import eka.care.records.data.utility.LoggerConstant.Companion.BUSINESS_ID
 import eka.care.records.data.utility.LoggerConstant.Companion.DOCUMENT_ID
 import eka.care.records.data.utility.LoggerConstant.Companion.OWNER_ID
+import eka.care.records.data.utility.TimeProvider
+import java.text.SimpleDateFormat
+import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.awaitClose
@@ -102,6 +105,12 @@ class RecordsSync(
             )
             if (response?.body() == null) {
                 break
+            }
+            response.headers()["Date"]?.let { dateHeader ->
+                try {
+                    val sdf = SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", Locale.US)
+                    sdf.parse(dateHeader)?.time?.let { TimeProvider.updateFromServerTime(it) }
+                } catch (_: Exception) { }
             }
             response.body()?.let {
                 storeRecords(records = it.items, businessId = businessId)
