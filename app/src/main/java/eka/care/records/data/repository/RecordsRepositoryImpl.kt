@@ -785,8 +785,6 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                 val records = getCaseWithRecords(caseId)?.records ?: emptyList()
                 emit(records)
             } else {
-                val tenMinutesAgo = TimeProvider.nowSeconds() - 600
-                dao.resetStaleAnalysingRecords(tenMinutesAgo)
                 val dataFlow = dao.readRecords(query).map { records ->
                     records.map {
                         RecordModel(
