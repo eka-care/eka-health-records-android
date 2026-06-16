@@ -21,7 +21,7 @@ data class EncounterEntity(
     @ColumnInfo(name = "name") val name: String,
     @ColumnInfo(name = "encounter_type") val encounterType: String? = null,
     @ColumnInfo(name = "created_at") val createdAt: Long,
-    @ColumnInfo(name = "updated_at") val updatedAt: Long,
+    @ColumnInfo(name = "updated_at") val updatedAt: Long? = null,
 )
 
 enum class CaseStatus(val value: Int) {

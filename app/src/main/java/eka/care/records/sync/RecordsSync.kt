@@ -271,6 +271,7 @@ class RecordsSync(
                 caseId = caseRecord.encounter.encounterId,
                 name = case.itemDetails?.displayName ?: "Unknown Case",
                 type = case.itemDetails?.type ?: "unknown",
+                updatedAt = case.updatedAt,
                 status = CaseStatus.NONE,
                 uiStatus = CaseUiState.NONE
             )

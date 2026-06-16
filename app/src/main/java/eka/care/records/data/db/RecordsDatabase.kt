@@ -23,7 +23,7 @@ import eka.care.records.data.entity.TagEntity
         EncounterRecordCrossRef::class,
         TagEntity::class
     ],
-    version = 9,
+    version = 10,
     exportSchema = false
 )
 @TypeConverters(Converters::class)

@@ -17,7 +17,7 @@ data class RecordModel(
     @SerializedName("createdAt")
     val createdAt: Long,
     @SerializedName("updatedAt")
-    val updatedAt: Long,
+    val updatedAt: Long? = null,
     @SerializedName("documentDate")
     val documentDate: Long? = null,
     @SerializedName("documentType")

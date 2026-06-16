@@ -637,7 +637,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
             thumbnail = thumbnail,
             documentType = documentType,
             createdAt = time,
-            updatedAt = time,
+            updatedAt = null,
             documentDate = documentDate ?: time,
             documentHash = files.first().md5(),
             status = RecordStatus.CREATED_LOCALLY,
@@ -773,10 +773,10 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
 
             val sql = """
                 SELECT DISTINCT r.* FROM EKA_RECORDS_TABLE r
-                LEFT JOIN record_tags_table t 
+                LEFT JOIN record_tags_table t
                     ON r.document_id = t.document_id
                 WHERE ${selection.toString().trim()}
-                ORDER BY ${sortOrder.value} ${sortOrder.order}
+                ORDER BY CASE WHEN updated_at IS NULL OR updated_at = 0 THEN 0 ELSE 1 END ASC, ${sortOrder.value} ${sortOrder.order}
             """.trimIndent()
 
             val query = SimpleSQLiteQuery(sql, selectionArgs.toTypedArray())
@@ -1134,7 +1134,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                 status = status,
                 uiState = uiStatus,
                 createdAt = createdAt ?: TimeProvider.nowSeconds(),
-                updatedAt = updatedAt ?: TimeProvider.nowSeconds(),
+                updatedAt = updatedAt,
             )
         )
         return@supervisorScope id
@@ -1144,6 +1144,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
         caseId: String,
         name: String,
         type: String,
+        updatedAt: Long?,
         status: CaseStatus,
         uiStatus: CaseUiState
     ): String? {
@@ -1154,6 +1155,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
                 encounterType = type,
                 status = status,
                 uiState = uiStatus,
+                updatedAt = updatedAt ?: encounter.encounter.updatedAt,
             )
         )
         encountersDao.updateEncounter(updatedEncounter.encounter)

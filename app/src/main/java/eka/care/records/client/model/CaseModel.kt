@@ -14,7 +14,7 @@ data class CaseModel(
     @SerializedName("createdAt")
     val createdAt: Long,
     @SerializedName("updatedAt")
-    val updatedAt: Long,
+    val updatedAt: Long? = null,
     @SerializedName("files")
     val records: List<RecordModel> = emptyList(),
 )
