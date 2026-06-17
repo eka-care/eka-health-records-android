@@ -84,6 +84,7 @@ interface RecordsRepository {
         caseId: String,
         name: String,
         type: String,
+        updatedAt: Long? = null,
         status: CaseStatus,
         uiStatus: CaseUiState
     ): String?

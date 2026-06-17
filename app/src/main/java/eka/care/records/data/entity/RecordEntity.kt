@@ -21,7 +21,7 @@ data class RecordEntity(
     @ColumnInfo(name = "owner_id") val ownerId: String,
     @ColumnInfo(name = "thumbnail") var thumbnail: String? = null,
     @ColumnInfo(name = "created_at") var createdAt: Long,
-    @ColumnInfo(name = "updated_at") var updatedAt: Long,
+    @ColumnInfo(name = "updated_at") var updatedAt: Long? = null,
     @ColumnInfo(name = "document_date") var documentDate: Long? = null,
     @ColumnInfo(name = "document_type") var documentType: String = "ot",
     @ColumnInfo(name = "document_hash") var documentHash: String? = null,

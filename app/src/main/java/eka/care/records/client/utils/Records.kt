@@ -196,7 +196,7 @@ class Records private constructor() {
             name = name,
             type = type,
             createdAt = createdAt,
-            updatedAt = updatedAt,
+            updatedAt = null,
             status = CaseStatus.CREATED_LOCALLY,
             uiStatus = CaseUiState.WAITING_TO_UPLOAD
         )
