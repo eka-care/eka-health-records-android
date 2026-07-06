@@ -617,14 +617,9 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
         }
         val time = System.currentTimeMillis() / 1000
         val id = UUID.randomUUID().toString()
-        val thumbnail =
-            if (files.first().extension.lowercase() in listOf("jpg", "jpeg", "png", "webp")) {
-                files.first().path
-            } else {
-                fileStorageManager.generateThumbnail(
-                    filePath = files.first().path
-                )
-            }
+        val thumbnail = fileStorageManager.generateThumbnail(
+            filePath = files.first().path
+        ) ?: files.first().path
         val record = RecordEntity(
             documentId = id,
             businessId = businessId,
