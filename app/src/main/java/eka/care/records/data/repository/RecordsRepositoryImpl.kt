@@ -1,6 +1,7 @@
 package eka.care.records.data.repository
 
 import android.content.Context
+import android.database.sqlite.SQLiteConstraintException
 import android.util.Log
 import androidx.sqlite.db.SimpleSQLiteQuery
 import androidx.sqlite.db.SupportSQLiteQueryBuilder
@@ -1043,14 +1044,7 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
             status = RecordStatus.UPDATED_LOCALLY
         )
         dao.updateRecord(updatedRecord)
-        caseId?.let {
-            encountersDao.insertEncounterRecordCrossRef(
-                EncounterRecordCrossRef(
-                    encounterId = it,
-                    documentId = id,
-                )
-            )
-        }
+        caseId?.let { insertRecordIntoCase(caseId = it, documentId = id) }
         logRecordSyncEvent(
             dId = record.documentId,
             bId = record.businessId,
@@ -1242,12 +1236,33 @@ internal class RecordsRepositoryImpl(private val context: Context) : RecordsRepo
         }
     }
 
+    /**
+     * Links a record to a case. Both must exist locally (foreign keys): the case can be gone
+     * (archived/deleted by sync) or not synced down yet while the UI still holds its id, which
+     * used to crash the app with SQLiteConstraintException. Skips and logs instead.
+     */
     private suspend fun insertRecordIntoCase(caseId: String, documentId: String) {
-        encountersDao.insertEncounterRecordCrossRef(
-            EncounterRecordCrossRef(
-                encounterId = caseId,
-                documentId = documentId
-            )
+        val record = dao.getRecordById(documentId)
+        val case = encountersDao.getEncounterById(caseId)?.encounter
+        fun log(msg: String) = logRecordSyncEvent(
+            dId = documentId,
+            caseId = caseId,
+            bId = record?.businessId ?: case?.businessId.orEmpty(),
+            oId = record?.ownerId ?: case?.ownerId.orEmpty(),
+            msg = msg
         )
+        if (record == null || case == null) {
+            log("Skip linking record to case: ${if (case == null) "case" else "record"} not found locally")
+            return
+        }
+        try {
+            encountersDao.insertEncounterRecordCrossRef(
+                EncounterRecordCrossRef(encounterId = caseId, documentId = documentId)
+            )
+        } catch (e: SQLiteConstraintException) {
+            // Deleted between the check and the insert (sync runs in parallel)
+            log("Linking record to case failed: ${e.message}")
+        }
     }
+
 }
